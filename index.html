@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- viewport-fit=cover : indispensable pour que env(safe-area-inset-*)
+         renvoie autre chose que 0 (barre de gestes Android, encoche iOS) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Démonstration publique d'un tableau de bord budgétaire — données fictives" />
+    <meta name="theme-color" content="#1e293b" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Budget Démo" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Aucune police externe : DM Sans et IBM Plex Sans sont embarquées
+         et servies par le site (src/index.css, src/assets/fonts/). -->
+
+    <title>Dashboard Budget — Démo</title>
+  </head>
+  <body class="bg-bg text-text font-body antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
