@@ -1,0 +1,31 @@
+# Dépendances et sorties de build
+node_modules/
+dist/
+tsconfig.tsbuildinfo
+*.timestamp-*.mjs
+
+# Secrets et configuration locale
+.env
+.env.*
+.dev.vars
+.wrangler/
+
+# Données — jamais de données réelles dans ce dépôt.
+#
+# Tout public/data/ est ignoré PAR DÉFAUT : c'est là qu'atterrirait un
+# export de vraies données, et un oubli y coûterait cher.
+# Les cinq fichiers produits par scripts/generate-demo-data.mjs sont
+# ré-autorisés nommément : la démo est statique, elle ne s'affiche que si
+# ses données sont publiées avec elle.
+public/data/*
+!public/data/transactions.json
+!public/data/salary.json
+!public/data/config.json
+!public/data/budgets.json
+!public/data/references.json
+
+# Documents de pilotage — ne partent jamais en ligne
+plan/
+
+# Système
+.DS_Store
