@@ -37,14 +37,18 @@ jobs:
       GITLEAKS_VERSION: "8.24.3"
 
     steps:
+      # v5 et non v4 : les briques v4 tournent sur un Node que GitHub
+      # déprécie, et il le signale à chaque exécution. v5 est la première
+      # version qui corrige ce point — v7 existe, mais rien ici n'a besoin
+      # de ce qu'elle apporte.
       - name: Récupération du dépôt
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Node 20 et non 22 : c'est le plancher déclaré dans `engines`.
       # La CI doit éprouver la version la plus basse qu'on prétend supporter,
       # pas la plus confortable.
       - name: Node 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: 'npm'
