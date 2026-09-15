@@ -59,8 +59,9 @@ const INTERDITS = [
   /\bjoinville\b/i,
   // Personnes et identifiants personnels
   /\bvalentin\b/i, /\bduchamp\b/i, /\bvdp\b/i,
-  // Infrastructure privée
-  /workers\.dev/i, /pages\.dev/i,
+  // Infrastructure privée. Les hôtes *.pages.dev et *.workers.dev sont
+  // traités à part, plus bas : la démonstration est elle-même hébergée sur
+  // pages.dev, une interdiction sèche bloquerait son propre lien.
   // Nom de variable d'infrastructure SUIVI d'une valeur. Le nom seul peut
   // apparaître dans une explication — c'est le cas dans le README, qui s'en
   // sert comme exemple. C'est le nom ACCOLÉ À UNE VALEUR qui est une fuite.
@@ -95,6 +96,42 @@ const PORTEURS_DE_LA_LISTE = new Map([
     "vérifie qu'aucun nom réel n'entre dans les fichiers de données publiés",
   ],
 ]);
+
+// ═══════════════════════════════════════════════════════════════════════
+// HÔTES D'HÉBERGEMENT
+// ═══════════════════════════════════════════════════════════════════════
+//
+// Une adresse en *.pages.dev ou *.workers.dev désigne une infrastructure
+// Cloudflare. Celle de la démonstration est publique et doit pouvoir être
+// citée — c'est son propre lien. Toute AUTRE désigne une infrastructure qui
+// n'a rien à faire ici, à commencer par la production privée.
+//
+// D'où une liste d'hôtes autorisés plutôt qu'une interdiction sèche : le
+// contrôle reste strict, il cesse seulement d'être aveugle.
+
+const HOTE_CLOUDFLARE = /\b[a-z0-9][a-z0-9-]*\.(pages|workers)\.dev\b/gi;
+
+const HOTES_AUTORISES = new Set([
+  "dashboard-budget-demo.pages.dev",
+]);
+
+function chercherHotes(base, fichiers, etiquette, exempter = () => false) {
+  for (const f of fichiers) {
+    if (exempter(f)) continue;
+    const texte = lireTexte(join(base, f));
+    if (texte === null) continue;
+    for (const trouve of texte.matchAll(HOTE_CLOUDFLARE)) {
+      const hote = trouve[0].toLowerCase();
+      if (HOTES_AUTORISES.has(hote)) continue;
+      const ligne = texte.slice(0, trouve.index).split("\n").length;
+      echecs.push(
+        `[hôte] ${etiquette} ${f}:${ligne} cite « ${hote} », qui n'est pas ` +
+          `l'hébergement de cette démonstration.`
+      );
+      break;
+    }
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 // LISTE BLANCHE DU BUILD
@@ -230,6 +267,7 @@ for (const [f, raison] of PORTEURS_DE_LA_LISTE) {
 }
 
 chercherInterdits(RACINE, fichiersSource, "source", (f) => PORTEURS_DE_LA_LISTE.has(f));
+chercherHotes(RACINE, fichiersSource, "source", (f) => PORTEURS_DE_LA_LISTE.has(f));
 
 // ── 2. Liste noire + liste blanche — build ─────────────────────────────
 const DIST = join(RACINE, "dist");
@@ -238,6 +276,7 @@ if (!existsSync(DIST)) {
 } else {
   const fichiersBuild = parcourir(DIST);
   chercherInterdits(DIST, fichiersBuild, "build", () => false);
+  chercherHotes(DIST, fichiersBuild, "build", () => false);
 
   for (const f of fichiersBuild) {
     if (!BUILD_AUTORISE.some((r) => r.motif.test(f))) {

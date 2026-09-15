@@ -4,6 +4,8 @@
 > Aucun compte, aucun salaire, aucun prêt réel. Les chiffres sont produits par
 > un générateur à graine fixe : [`scripts/generate-demo-data.mjs`](scripts/generate-demo-data.mjs).
 
+**➜ Voir la démonstration : https://dashboard-budget-demo.pages.dev/**
+
 Version publique et statique d'un tableau de bord de finances personnelles.
 React 18, TypeScript, Vite, Tailwind, Zustand, Recharts. 508 tests.
 
