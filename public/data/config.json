@@ -1,0 +1,39 @@
+{
+  "_lisez_moi": "Jeu de démonstration — données fictives. Voir scripts/generate-demo-data.mjs.",
+  "demo": true,
+  "init": {
+    "Banque A - Courant": 4200,
+    "Banque B - Compte joint": 1350,
+    "Banque C - Compte joint": 980,
+    "Titres-restaurant": 145,
+    "Banque B - Courant": 2600
+  },
+  "transfers": [
+    "Transfert Banque A vers Banque C",
+    "Transfert Banque A vers Banque B"
+  ],
+  "comptes": [
+    "Banque A - Courant",
+    "Banque A - Part commune",
+    "Banque B - Courant",
+    "Banque B - Compte joint",
+    "Banque C - Compte joint",
+    "Titres-restaurant",
+    "Appli partagée - Part commune"
+  ],
+  "comptesLiesPrincipal": [
+    "Banque A - Part commune",
+    "Appli partagée - Part commune"
+  ],
+  "colors": {},
+  "pret": {
+    "montant": 180000,
+    "mensualite": 893.6,
+    "echeances": 240,
+    "premiere_echeance": "2022-10"
+  },
+  "couverture": {
+    "debut": "2024-09-01",
+    "fin": "2026-09-15"
+  }
+}

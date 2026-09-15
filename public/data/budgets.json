@@ -1,0 +1,68 @@
+[
+  {
+    "cat2": "Alimentation",
+    "target": 620,
+    "active": true,
+    "updated_at": "2026-09-15T09:00:00.000Z"
+  },
+  {
+    "cat2": "Transport",
+    "target": 180,
+    "active": true,
+    "updated_at": "2026-09-15T09:00:00.000Z"
+  },
+  {
+    "cat2": "Loisir",
+    "target": 140,
+    "active": true,
+    "updated_at": "2026-09-15T09:00:00.000Z"
+  },
+  {
+    "cat2": "Santé",
+    "target": 60,
+    "active": true,
+    "updated_at": "2026-09-15T09:00:00.000Z"
+  },
+  {
+    "cat2": "Habillement",
+    "target": 70,
+    "active": true,
+    "updated_at": "2026-09-15T09:00:00.000Z"
+  },
+  {
+    "cat2": "Immobilier",
+    "target": 1150,
+    "active": true,
+    "updated_at": "2026-09-15T09:00:00.000Z"
+  },
+  {
+    "cat2": "Assurances",
+    "target": 110,
+    "active": true,
+    "updated_at": "2026-09-15T09:00:00.000Z"
+  },
+  {
+    "cat2": "Autre",
+    "target": 200,
+    "active": true,
+    "updated_at": "2026-09-15T09:00:00.000Z"
+  },
+  {
+    "cat2": "Impots",
+    "target": 212,
+    "active": true,
+    "updated_at": "2026-09-15T09:00:00.000Z"
+  },
+  {
+    "cat2": "Banque",
+    "target": null,
+    "active": false,
+    "updated_at": "2026-09-15T09:00:00.000Z"
+  },
+  {
+    "cat2": "Comptes Bancaires",
+    "target": null,
+    "active": false,
+    "updated_at": "2026-09-15T09:00:00.000Z"
+  }
+]

@@ -1,0 +1,613 @@
+{
+  "months": [
+    {
+      "mk": "2021-09",
+      "entreprise": "Employeur A",
+      "brut": 2709.28,
+      "net": 2192.39,
+      "cotSal": 516.89,
+      "indem": 0,
+      "retenues": 4.78
+    },
+    {
+      "mk": "2021-10",
+      "entreprise": "Employeur A",
+      "brut": 2814.21,
+      "net": 2247.7,
+      "cotSal": 566.51,
+      "indem": 0,
+      "retenues": 35.38
+    },
+    {
+      "mk": "2021-11",
+      "entreprise": "Employeur A",
+      "brut": 2790.81,
+      "net": 2235.02,
+      "cotSal": 555.79,
+      "indem": 0,
+      "retenues": 9.81
+    },
+    {
+      "mk": "2021-12",
+      "entreprise": "Employeur A",
+      "brut": 2750.29,
+      "net": 2611.69,
+      "cotSal": 552.42,
+      "indem": 413.82,
+      "retenues": 36.27
+    },
+    {
+      "mk": "2022-01",
+      "entreprise": "Employeur A",
+      "brut": 2700.17,
+      "net": 2185.98,
+      "cotSal": 514.19,
+      "indem": 0,
+      "retenues": 17.19
+    },
+    {
+      "mk": "2022-02",
+      "entreprise": "Employeur A",
+      "brut": 2717.47,
+      "net": 2197.69,
+      "cotSal": 519.78,
+      "indem": 0,
+      "retenues": 12.98
+    },
+    {
+      "mk": "2022-03",
+      "entreprise": "Employeur A",
+      "brut": 2779.86,
+      "net": 2225.91,
+      "cotSal": 553.95,
+      "indem": 0,
+      "retenues": 28.94
+    },
+    {
+      "mk": "2022-04",
+      "entreprise": "Employeur A",
+      "brut": 2737.82,
+      "net": 2207.86,
+      "cotSal": 529.96,
+      "indem": 0,
+      "retenues": 2.94
+    },
+    {
+      "mk": "2022-05",
+      "entreprise": "Employeur A",
+      "brut": 2751.89,
+      "net": 2224.28,
+      "cotSal": 527.61,
+      "indem": 0,
+      "retenues": 27.67
+    },
+    {
+      "mk": "2022-06",
+      "entreprise": "Employeur B",
+      "brut": 2968.42,
+      "net": 3200.58,
+      "cotSal": 578.68,
+      "indem": 810.84,
+      "retenues": 14.3
+    },
+    {
+      "mk": "2022-07",
+      "entreprise": "Employeur B",
+      "brut": 2918.58,
+      "net": 2343.38,
+      "cotSal": 575.2,
+      "indem": 0,
+      "retenues": 9.96
+    },
+    {
+      "mk": "2022-08",
+      "entreprise": "Employeur B",
+      "brut": 2957.89,
+      "net": 2383.84,
+      "cotSal": 574.05,
+      "indem": 0,
+      "retenues": 29.35
+    },
+    {
+      "mk": "2022-09",
+      "entreprise": "Employeur B",
+      "brut": 2956.22,
+      "net": 2355.86,
+      "cotSal": 600.36,
+      "indem": 0,
+      "retenues": 33.49
+    },
+    {
+      "mk": "2022-10",
+      "entreprise": "Employeur B",
+      "brut": 2960.48,
+      "net": 2364.88,
+      "cotSal": 595.6,
+      "indem": 0,
+      "retenues": 3.12
+    },
+    {
+      "mk": "2022-11",
+      "entreprise": "Employeur B",
+      "brut": 2908.84,
+      "net": 2346.31,
+      "cotSal": 562.53,
+      "indem": 0,
+      "retenues": 27.62
+    },
+    {
+      "mk": "2022-12",
+      "entreprise": "Employeur B",
+      "brut": 2886.88,
+      "net": 3121.72,
+      "cotSal": 554.53,
+      "indem": 789.37,
+      "retenues": 14.2
+    },
+    {
+      "mk": "2023-01",
+      "entreprise": "Employeur B",
+      "brut": 2972.38,
+      "net": 2378.94,
+      "cotSal": 593.44,
+      "indem": 0,
+      "retenues": 8.16
+    },
+    {
+      "mk": "2023-02",
+      "entreprise": "Employeur B",
+      "brut": 2906.59,
+      "net": 2345.39,
+      "cotSal": 561.2,
+      "indem": 0,
+      "retenues": 24.22
+    },
+    {
+      "mk": "2023-03",
+      "entreprise": "Employeur B",
+      "brut": 2928.73,
+      "net": 2351.99,
+      "cotSal": 576.74,
+      "indem": 0,
+      "retenues": 37.07
+    },
+    {
+      "mk": "2023-04",
+      "entreprise": "Employeur C",
+      "brut": 3135.99,
+      "net": 2509.53,
+      "cotSal": 626.46,
+      "indem": 0,
+      "retenues": 10.23
+    },
+    {
+      "mk": "2023-05",
+      "entreprise": "Employeur C",
+      "brut": 3228.28,
+      "net": 2605.72,
+      "cotSal": 622.56,
+      "indem": 0,
+      "retenues": 5.29
+    },
+    {
+      "mk": "2023-06",
+      "entreprise": "Employeur C",
+      "brut": 3102.36,
+      "net": 3240.65,
+      "cotSal": 619.56,
+      "indem": 757.85,
+      "retenues": 1.27
+    },
+    {
+      "mk": "2023-07",
+      "entreprise": "Employeur C",
+      "brut": 3111.81,
+      "net": 2499.41,
+      "cotSal": 612.4,
+      "indem": 0,
+      "retenues": 20.26
+    },
+    {
+      "mk": "2023-08",
+      "entreprise": "Employeur C",
+      "brut": 3226.01,
+      "net": 2594.73,
+      "cotSal": 631.28,
+      "indem": 0,
+      "retenues": 13.85
+    },
+    {
+      "mk": "2023-09",
+      "entreprise": "Employeur C",
+      "brut": 3204.54,
+      "net": 2558.16,
+      "cotSal": 646.38,
+      "indem": 0,
+      "retenues": 22.73
+    },
+    {
+      "mk": "2023-10",
+      "entreprise": "Employeur C",
+      "brut": 3204.94,
+      "net": 2583.4,
+      "cotSal": 621.54,
+      "indem": 0,
+      "retenues": 30.87
+    },
+    {
+      "mk": "2023-11",
+      "entreprise": "Employeur C",
+      "brut": 3224.65,
+      "net": 2588.26,
+      "cotSal": 636.39,
+      "indem": 0,
+      "retenues": 36.8
+    },
+    {
+      "mk": "2023-12",
+      "entreprise": "Employeur C",
+      "brut": 3073.61,
+      "net": 3326.66,
+      "cotSal": 590.78,
+      "indem": 843.83,
+      "retenues": 1.78
+    },
+    {
+      "mk": "2024-01",
+      "entreprise": "Employeur C",
+      "brut": 3107.03,
+      "net": 2509.01,
+      "cotSal": 598.02,
+      "indem": 0,
+      "retenues": 32.54
+    },
+    {
+      "mk": "2024-02",
+      "entreprise": "Employeur C",
+      "brut": 3089.27,
+      "net": 2497.38,
+      "cotSal": 591.89,
+      "indem": 0,
+      "retenues": 12.6
+    },
+    {
+      "mk": "2024-03",
+      "entreprise": "Employeur C",
+      "brut": 3230.87,
+      "net": 2586.28,
+      "cotSal": 644.59,
+      "indem": 0,
+      "retenues": 39.81
+    },
+    {
+      "mk": "2024-04",
+      "entreprise": "Employeur C",
+      "brut": 3240.43,
+      "net": 2601.53,
+      "cotSal": 638.9,
+      "indem": 0,
+      "retenues": 14.36
+    },
+    {
+      "mk": "2024-05",
+      "entreprise": "Employeur D",
+      "brut": 3350.32,
+      "net": 2701.02,
+      "cotSal": 649.3,
+      "indem": 0,
+      "retenues": 33.01
+    },
+    {
+      "mk": "2024-06",
+      "entreprise": "Employeur D",
+      "brut": 3401.82,
+      "net": 3342.15,
+      "cotSal": 681.94,
+      "indem": 622.27,
+      "retenues": 33.65
+    },
+    {
+      "mk": "2024-07",
+      "entreprise": "Employeur D",
+      "brut": 3349.83,
+      "net": 2712.17,
+      "cotSal": 637.66,
+      "indem": 0,
+      "retenues": 27.3
+    },
+    {
+      "mk": "2024-08",
+      "entreprise": "Employeur D",
+      "brut": 3363.21,
+      "net": 2712.77,
+      "cotSal": 650.44,
+      "indem": 0,
+      "retenues": 25.64
+    },
+    {
+      "mk": "2024-09",
+      "entreprise": "Employeur D",
+      "brut": 3486.25,
+      "net": 2803.86,
+      "cotSal": 682.39,
+      "indem": 0,
+      "retenues": 26.64
+    },
+    {
+      "mk": "2024-10",
+      "entreprise": "Employeur D",
+      "brut": 3417.93,
+      "net": 2734.26,
+      "cotSal": 683.67,
+      "indem": 0,
+      "retenues": 24.08
+    },
+    {
+      "mk": "2024-11",
+      "entreprise": "Employeur D",
+      "brut": 3523.93,
+      "net": 2814.67,
+      "cotSal": 709.26,
+      "indem": 0,
+      "retenues": 23.72
+    },
+    {
+      "mk": "2024-12",
+      "entreprise": "Employeur D",
+      "brut": 3489.73,
+      "net": 3662.11,
+      "cotSal": 672.17,
+      "indem": 844.55,
+      "retenues": 19.66
+    },
+    {
+      "mk": "2025-01",
+      "entreprise": "Employeur D",
+      "brut": 3455.09,
+      "net": 2768.51,
+      "cotSal": 686.58,
+      "indem": 0,
+      "retenues": 4.97
+    },
+    {
+      "mk": "2025-02",
+      "entreprise": "Employeur D",
+      "brut": 3389.76,
+      "net": 2718.16,
+      "cotSal": 671.6,
+      "indem": 0,
+      "retenues": 37.9
+    },
+    {
+      "mk": "2025-03",
+      "entreprise": "Employeur D",
+      "brut": 3447.51,
+      "net": 2775.3,
+      "cotSal": 672.21,
+      "indem": 0,
+      "retenues": 4.72
+    },
+    {
+      "mk": "2025-04",
+      "entreprise": "Employeur D",
+      "brut": 3490.34,
+      "net": 2815.02,
+      "cotSal": 675.32,
+      "indem": 0,
+      "retenues": 23.83
+    },
+    {
+      "mk": "2025-05",
+      "entreprise": "Employeur D",
+      "brut": 3384.88,
+      "net": 2701.14,
+      "cotSal": 683.74,
+      "indem": 0,
+      "retenues": 18.45
+    },
+    {
+      "mk": "2025-06",
+      "entreprise": "Employeur E",
+      "brut": 3691.9,
+      "net": 3508.54,
+      "cotSal": 721.35,
+      "indem": 537.99,
+      "retenues": 2.2
+    },
+    {
+      "mk": "2025-07",
+      "entreprise": "Employeur E",
+      "brut": 3568.85,
+      "net": 2868.44,
+      "cotSal": 700.41,
+      "indem": 0,
+      "retenues": 5.89
+    },
+    {
+      "mk": "2025-08",
+      "entreprise": "Employeur E",
+      "brut": 3684.95,
+      "net": 2938.86,
+      "cotSal": 746.09,
+      "indem": 0,
+      "retenues": 10.98
+    },
+    {
+      "mk": "2025-09",
+      "entreprise": "Employeur E",
+      "brut": 3598.83,
+      "net": 2887.08,
+      "cotSal": 711.75,
+      "indem": 0,
+      "retenues": 2.67
+    },
+    {
+      "mk": "2025-10",
+      "entreprise": "Employeur E",
+      "brut": 3646.84,
+      "net": 2942.01,
+      "cotSal": 704.83,
+      "indem": 0,
+      "retenues": 14.58
+    },
+    {
+      "mk": "2025-11",
+      "entreprise": "Employeur E",
+      "brut": 3620.78,
+      "net": 2913.19,
+      "cotSal": 707.59,
+      "indem": 0,
+      "retenues": 5.36
+    },
+    {
+      "mk": "2025-12",
+      "entreprise": "Employeur E",
+      "brut": 3552.88,
+      "net": 3415.77,
+      "cotSal": 691.13,
+      "indem": 554.02,
+      "retenues": 5.16
+    },
+    {
+      "mk": "2026-01",
+      "entreprise": "Employeur E",
+      "brut": 3686.14,
+      "net": 2946.73,
+      "cotSal": 739.41,
+      "indem": 0,
+      "retenues": 11.04
+    },
+    {
+      "mk": "2026-02",
+      "entreprise": "Employeur E",
+      "brut": 3590.68,
+      "net": 2862.98,
+      "cotSal": 727.7,
+      "indem": 0,
+      "retenues": 36.61
+    },
+    {
+      "mk": "2026-03",
+      "entreprise": "Employeur E",
+      "brut": 3565.38,
+      "net": 2872.1,
+      "cotSal": 693.28,
+      "indem": 0,
+      "retenues": 3.74
+    },
+    {
+      "mk": "2026-04",
+      "entreprise": "Employeur E",
+      "brut": 3619.61,
+      "net": 2923.29,
+      "cotSal": 696.32,
+      "indem": 0,
+      "retenues": 35.73
+    },
+    {
+      "mk": "2026-05",
+      "entreprise": "Employeur E",
+      "brut": 3571.03,
+      "net": 2871.7,
+      "cotSal": 699.33,
+      "indem": 0,
+      "retenues": 21.89
+    },
+    {
+      "mk": "2026-06",
+      "entreprise": "Employeur E",
+      "brut": 3649.21,
+      "net": 3538.88,
+      "cotSal": 712.63,
+      "indem": 602.3,
+      "retenues": 24.74
+    },
+    {
+      "mk": "2026-07",
+      "entreprise": "Employeur E",
+      "brut": 3630.17,
+      "net": 2893.33,
+      "cotSal": 736.84,
+      "indem": 0,
+      "retenues": 27.66
+    },
+    {
+      "mk": "2026-08",
+      "entreprise": "Employeur E",
+      "brut": 3722.93,
+      "net": 2970.07,
+      "cotSal": 752.86,
+      "indem": 0,
+      "retenues": 25.68
+    }
+  ],
+  "cotLast": [
+    [
+      "Sécurité sociale — maladie",
+      27.92
+    ],
+    [
+      "Vieillesse plafonnée",
+      256.88
+    ],
+    [
+      "Vieillesse déplafonnée",
+      14.89
+    ],
+    [
+      "Retraite complémentaire",
+      144.08
+    ],
+    [
+      "Assurance chômage",
+      0
+    ],
+    [
+      "CSG déductible",
+      253.16
+    ],
+    [
+      "CSG/CRDS non déductible",
+      107.96
+    ],
+    [
+      "Mutuelle",
+      40.95
+    ],
+    [
+      "Prévoyance",
+      33.51
+    ]
+  ],
+  "patronLast": [
+    [
+      "Maladie — part employeur",
+      483.98
+    ],
+    [
+      "Vieillesse — part employeur",
+      387.18
+    ],
+    [
+      "Allocations familiales",
+      128.44
+    ],
+    [
+      "Retraite complémentaire",
+      218.54
+    ],
+    [
+      "Assurance chômage",
+      150.78
+    ],
+    [
+      "Accidents du travail",
+      45.42
+    ],
+    [
+      "Formation et apprentissage",
+      62.55
+    ]
+  ],
+  "lastMonth": "2026-08"
+}
