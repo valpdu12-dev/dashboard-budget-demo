@@ -4,8 +4,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDataStore } from "@/stores/useDataStore";
-import { saveImport } from "@/services/importPersistence";
+import {
+  construireJeuDepuisRapport,
+  construireJeuAncienFormat,
+  memoriserJeu,
+} from "@/services/jeuDonnees";
 import { decodeTransactions } from "@/utils/decode";
+import { telechargerOctets, MIME_XLSX } from "@/utils/telechargement";
+import { NOM_FICHIER_MODELE } from "@/services/modeleExcel";
+import type { RapportImport, FormatDetecte } from "@/services/lectureClasseur";
 import type { Transaction, RawTransactionsJSON, SalaryData } from "@/types";
 
 // -- Types pour les messages du Worker --
@@ -35,18 +42,28 @@ interface ParsedData {
 export interface ExcelWorkerState {
   status: UploadStatus;
   error: string | null;
+  /** Rapport détaillé de l'import — seulement pour le format public. */
+  rapport: RapportImport | null;
+  /** Format reconnu dans le classeur, une fois la lecture faite. */
+  format: FormatDetecte | null;
   progressStep: string;
   progressPct: number;
   validation: ValidationReport | null;
   pendingData: ParsedData | null;
   parse: (buffer: ArrayBuffer) => void;
   apply: (fileName?: string) => void;
+  /** `null` tant que rien n'a été appliqué ; `false` si la mémorisation a échoué. */
+  memorise: boolean | null;
   reset: () => void;
+  /** Demande au worker de fabriquer le classeur modèle, puis le télécharge. */
+  demanderModele: () => void;
+  /** Vrai entre la demande de modèle et sa réception. */
+  modeleEnCours: boolean;
 }
 
 export function useExcelWorker(): ExcelWorkerState {
   const workerRef = useRef<Worker | null>(null);
-  const { setUploadData } = useDataStore();
+  const { poserJeu } = useDataStore();
 
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +71,10 @@ export function useExcelWorker(): ExcelWorkerState {
   const [progressPct, setProgressPct] = useState(0);
   const [validation, setValidation] = useState<ValidationReport | null>(null);
   const [pendingData, setPendingData] = useState<ParsedData | null>(null);
+  const [modeleEnCours, setModeleEnCours] = useState(false);
+  const [rapport, setRapport] = useState<RapportImport | null>(null);
+  const [brut, setBrut] = useState<{ transactions: RawTransactionsJSON; salary: SalaryData } | null>(null);
+  const [format, setFormat] = useState<FormatDetecte | null>(null);
 
   // Initialisation lazy du worker
   const getWorker = useCallback(() => {
@@ -76,10 +97,25 @@ export function useExcelWorker(): ExcelWorkerState {
           const salary = msg.salary as SalaryData;
 
           setPendingData({ transactions: decoded, salary });
+          // La forme ENCODÉE est conservée telle quelle : c'est elle qui sera
+          // mémorisée (cinq fois plus compacte que la forme décodée), et la
+          // ré-encoder produirait une table de chaînes différente pour rien.
+          setBrut({ transactions: raw, salary });
           setValidation(msg.validation as ValidationReport);
+          setRapport((msg.rapport as RapportImport | null) ?? null);
+          setFormat((msg.format as FormatDetecte | null) ?? null);
           setStatus("success");
           setProgressStep("Termine");
           setProgressPct(100);
+        } else if (msg.type === "modele") {
+          // Le modèle ne passe pas par `status` : il n'a rien à voir avec
+          // l'import en cours, et le téléchargement ne doit pas effacer un
+          // rapport de validation affiché à l'écran.
+          setModeleEnCours(false);
+          telechargerOctets(msg.octets as Uint8Array, NOM_FICHIER_MODELE, MIME_XLSX);
+        } else if (msg.type === "modele-erreur") {
+          setModeleEnCours(false);
+          setError(msg.message);
         } else if (msg.type === "error") {
           setError(msg.message);
           setStatus("error");
@@ -109,6 +145,10 @@ export function useExcelWorker(): ExcelWorkerState {
       setError(null);
       setValidation(null);
       setPendingData(null);
+      setRapport(null);
+      setBrut(null);
+      setFormat(null);
+      setMemorise(null);
       setProgressStep("Demarrage...");
       setProgressPct(0);
 
@@ -118,27 +158,35 @@ export function useExcelWorker(): ExcelWorkerState {
     [getWorker]
   );
 
-  // Appliquer les donnees parsees au store global, et les memoriser pour les
-  // ouvertures suivantes du dashboard (arbitrage du 11/08 : au demarrage, le
-  // dernier fichier importe est affiche, et il est conserve jusqu'au suivant).
+  // Appliquer le jeu lu au store, et le memoriser pour les ouvertures
+  // suivantes. Lot B.5 : c'est le JEU ENTIER qui est pose et memorise —
+  // transactions, paie, configuration, objectifs, couverture et origine.
+  const [memorise, setMemorise] = useState<boolean | null>(null);
+
   const apply = useCallback(
     (fileName?: string) => {
-      if (!pendingData) return;
-      const importedAt = new Date().toISOString();
-      setUploadData(pendingData.transactions, pendingData.salary, {
-        fileName, importedAt,
-      });
-      // Memorisation best-effort : un echec de stockage ne doit pas empecher
-      // l'affichage des donnees qui viennent d'etre chargees.
-      saveImport({
-        transactions: pendingData.transactions,
-        salary: pendingData.salary,
-        fileName: fileName ?? "",
-        importedAt,
-      });
+      if (!brut) return;
+      // Deux chemins, un seul jeu. Le format public apporte sa configuration
+      // (soldes, bornes, prêt) ; l'ancien format n'en porte aucune, et c'est
+      // dit plutôt que comblé par celle du jeu précédent.
+      const jeu = rapport
+        ? construireJeuDepuisRapport(rapport, fileName ?? "")
+        : construireJeuAncienFormat(brut.transactions, brut.salary, fileName ?? "");
+      poserJeu(jeu);
+      // Memorisation best-effort : un echec ne doit pas empecher l'affichage
+      // des donnees qui viennent d'etre chargees. Mais il est RENDU, pour que
+      // l'ecran puisse le dire au lieu de laisser croire que c'est conserve.
+      setMemorise(memoriserJeu(jeu));
     },
-    [pendingData, setUploadData]
+    [rapport, brut, poserJeu]
   );
+
+  // Demander la fabrication du classeur modele au worker
+  const demanderModele = useCallback(() => {
+    setModeleEnCours(true);
+    setError(null);
+    getWorker().postMessage({ type: "modele" });
+  }, [getWorker]);
 
   // Reset complet
   const reset = useCallback(() => {
@@ -148,11 +196,17 @@ export function useExcelWorker(): ExcelWorkerState {
     setProgressPct(0);
     setValidation(null);
     setPendingData(null);
+    setRapport(null);
+    setBrut(null);
+    setFormat(null);
+    setMemorise(null);
   }, []);
 
   return {
     status,
     error,
+    rapport,
+    format,
     progressStep,
     progressPct,
     validation,
@@ -160,5 +214,8 @@ export function useExcelWorker(): ExcelWorkerState {
     parse,
     apply,
     reset,
+    memorise,
+    demanderModele,
+    modeleEnCours,
   };
 }

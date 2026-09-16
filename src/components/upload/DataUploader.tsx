@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Upload, FileSpreadsheet, Check, X, AlertCircle, Loader2, Download,
+  Upload, FileSpreadsheet, Check, X, AlertCircle, Loader2, Download, FileDown,
 } from "lucide-react";
 import { useUIStore } from "@/stores/useUIStore";
 import { useDataStore } from "@/stores/useDataStore";
 import { loadDashboardData } from "@/services/loadDashboardData";
-import { clearImport } from "@/services/importPersistence";
+import { oublierJeu } from "@/services/jeuDonnees";
 import { fmtImportOrigine } from "@/utils/importLabel";
 import { useExcelWorker, type ValidationReport } from "@/hooks/useExcelWorker";
+import type { RapportImport } from "@/services/lectureClasseur";
 import { MONTHS_FR } from "@/config/constants";
 
 // ---------------------------------------------------------------------------
@@ -87,6 +88,82 @@ function ValidationKPI({
       </div>
       {sub && (
         <div className="text-[11px] text-text-sec mt-0.5">{sub}</div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SOUS-COMPOSANT : Rapport de lecture (format public)
+// ---------------------------------------------------------------------------
+
+/** Situe une anomalie : feuille, ligne, colonne. */
+function situer(a: RapportImport["anomalies"][number]): string {
+  const bouts = [a.feuille];
+  if (a.ligne !== undefined) bouts.push(`ligne ${a.ligne}`);
+  if (a.colonne) bouts.push(`colonne ${a.colonne}`);
+  return bouts.join(" — ");
+}
+
+/**
+ * Le rapport ligne à ligne.
+ *
+ * Il est montré AVANT d'appliquer quoi que ce soit : c'est tout l'intérêt de
+ * l'aperçu. Une ligne rejetee sans emplacement serait inexploitable — la
+ * personne doit pouvoir ouvrir son classeur et aller a la ligne.
+ */
+export function RapportImportVue({ r }: { r: RapportImport }) {
+  const c = r.compteurs;
+  const aDesParametres =
+    r.parametres.couverture !== null ||
+    r.parametres.pret !== null ||
+    Object.keys(r.parametres.soldes).length > 0;
+
+  return (
+    <div className="mt-4">
+      <div className="flex flex-wrap gap-2 text-[12px]">
+        <span className="px-2.5 py-1 rounded-md bg-green/[0.10] border border-green/25 text-green">
+          {c.acceptees} acceptée{c.acceptees > 1 ? "s" : ""}
+        </span>
+        <span className={`px-2.5 py-1 rounded-md border ${c.rejetees > 0 ? "bg-red/[0.10] border-red/25 text-red" : "bg-border/30 border-border text-text-sec"}`}>
+          {c.rejetees} rejetée{c.rejetees > 1 ? "s" : ""}
+        </span>
+        <span className="px-2.5 py-1 rounded-md bg-border/30 border border-border text-text-sec">
+          {c.ignorees} ignorée{c.ignorees > 1 ? "s" : ""}
+        </span>
+        <span className={`px-2.5 py-1 rounded-md border ${c.avertissements > 0 ? "bg-amber/[0.10] border-amber/25 text-amber" : "bg-border/30 border-border text-text-sec"}`}>
+          {c.avertissements} avertissement{c.avertissements > 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {r.anomalies.length > 0 && (
+        <div className="mt-3 max-h-[220px] overflow-y-auto border border-border rounded-lg divide-y divide-border">
+          {r.anomalies.map((a, i) => (
+            <div key={i} className="px-3 py-2 text-[12px] leading-relaxed">
+              <span className={a.gravite === "rejet" ? "text-red font-semibold" : "text-amber font-semibold"}>
+                {a.gravite === "rejet" ? "Rejetée" : "Avertissement"}
+              </span>
+              <span className="text-text-sec"> · {situer(a)}</span>
+              <div className="text-text-sec/90 mt-0.5">{a.message}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {r.anomaliesNonListees > 0 && (
+        <p className="text-[12px] text-text-sec mt-2">
+          {r.anomaliesNonListees} autre{r.anomaliesNonListees > 1 ? "s" : ""} anomalie
+          {r.anomaliesNonListees > 1 ? "s" : ""} comptée{r.anomaliesNonListees > 1 ? "s" : ""} mais
+          non listée{r.anomaliesNonListees > 1 ? "s" : ""}.
+        </p>
+      )}
+
+      {aDesParametres && (
+        <p className="text-[12px] text-text-sec mt-3 px-3 py-2 bg-border/20 border border-border rounded-lg leading-relaxed">
+          Votre feuille Parametres a bien ete lue. Les soldes de depart, les dates
+          de releve et le pret ne sont pas encore repris par le tableau de bord :
+          seules les transactions et la paie le sont aujourd hui.
+        </p>
       )}
     </div>
   );
@@ -190,6 +267,7 @@ export function DataUploader() {
   const {
     status, error: workerError, progressStep, progressPct,
     validation, pendingData, parse, apply, reset,
+    demanderModele, modeleEnCours, rapport, memorise,
   } = worker;
 
   const isLoading = status === "loading";
@@ -305,7 +383,7 @@ export function DataUploader() {
     setApplied(false);
     // Oublier l'import memorise : sans cela il reviendrait a la prochaine
     // ouverture, alors que l'utilisateur vient justement de le congedier.
-    clearImport();
+    oublierJeu();
     // `reset()` vide le store ; sans ce rechargement, le dashboard reste vide
     // jusqu'à un rafraîchissement manuel de la page — le `useEffect` d'App.tsx
     // ne se rejoue pas, ses dépendances étant des références Zustand stables.
@@ -407,6 +485,24 @@ export function DataUploader() {
             </div>
           </div>
 
+          {/* Modele de fichier source (lot B.1) */}
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-3 px-3.5 py-2.5 bg-border/20 border border-border rounded-lg">
+            <p className="text-[12px] text-text-sec leading-relaxed">
+              Premiere fois ? Telechargez le modele : trois mois d'exemple, les
+              colonnes attendues et un mode d'emploi dans la premiere feuille.
+            </p>
+            <button
+              onClick={demanderModele}
+              disabled={modeleEnCours}
+              className="flex items-center gap-1.5 px-3.5 py-2 max-md:min-h-tap rounded-lg border border-indigo/40 bg-indigo/[0.08] text-indigo-text text-[13px] font-medium hover:bg-indigo/[0.15] disabled:opacity-60 transition-colors"
+            >
+              {modeleEnCours
+                ? <Loader2 size={15} className="animate-spin" />
+                : <FileDown size={15} />}
+              Telecharger le modele
+            </button>
+          </div>
+
           {/* Barre de progression */}
           {isLoading && <ProgressBar pct={progressPct} step={progressStep} />}
 
@@ -422,10 +518,32 @@ export function DataUploader() {
           {isSuccess && validation && (
             <>
               <ValidationSummary v={validation} />
+              {rapport && <RapportImportVue r={rapport} />}
               {applied && (
                 <div className="flex items-center gap-2 mt-3 px-3.5 py-2.5 bg-green/[0.08] border border-green/20 rounded-lg text-[13px] text-green">
                   <Check size={16} />
                   <span>Donnees appliquees avec succes. Le dashboard est maintenant a jour.</span>
+                </div>
+              )}
+              {/*
+                Lot B.5 — la memorisation peut echouer : navigation privee,
+                stockage desactive, quota depasse. L'avaler laisserait croire
+                que le fichier sera encore la a la prochaine ouverture.
+              */}
+              {applied && memorise === false && (
+                <div
+                  role="status"
+                  className="flex items-start gap-2 mt-3 px-3.5 py-2.5 bg-amber/[0.08] border border-amber/25 rounded-lg text-[13px] text-amber"
+                >
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                  <span>
+                    Ces donnees ne sont pas memorisees : votre navigateur a
+                    refuse l ecriture.{" "}
+                    <span className="text-text-sec">
+                      Elles restent affichees jusqu a la fermeture de l onglet,
+                      puis il faudra reimporter le fichier.
+                    </span>
+                  </span>
                 </div>
               )}
             </>

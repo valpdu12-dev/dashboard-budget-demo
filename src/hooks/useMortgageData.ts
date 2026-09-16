@@ -33,8 +33,18 @@ export const LOAN_PRINCIPAL = 180000;    // Montant initial emprunté
 export const LOAN_PAYMENT = 893.6;       // Mensualité (capital + intérêts)
 export const LOAN_TERMS = 240;           // Nombre total d'échéances (20 ans)
 
-const CAPITAL_TYPE = "Crédit Immobilier";
-const INTEREST_TYPE = "Intérêt du prêt";
+/**
+ * Les deux types qui font exister un prêt dans les données.
+ *
+ * Exportés depuis le lot B.4 : `useRubriques` s'en sert pour décider si
+ * l'écran Prêt immobilier a lieu d'être. Une seule source, sinon les deux
+ * définitions divergent le jour où un type change.
+ */
+export const TYPE_PRET_CAPITAL = "Crédit Immobilier";
+export const TYPE_PRET_INTERETS = "Intérêt du prêt";
+
+const CAPITAL_TYPE = TYPE_PRET_CAPITAL;
+const INTEREST_TYPE = TYPE_PRET_INTERETS;
 
 export interface MortgageKPIs {
   principal: number;        // Montant initial
@@ -124,6 +134,24 @@ export function useMortgageData() {
       return { montant: p.montant, mensualite: p.mensualite, echeances: p.echeances };
     }
     return { montant: LOAN_PRINCIPAL, mensualite: LOAN_PAYMENT, echeances: LOAN_TERMS };
+  }, [config]);
+
+  /**
+   * Vrai quand les paramètres affichés ne viennent PAS de la source.
+   *
+   * Lot B.4. Sans cet indicateur, un fichier importé qui porte des échéances
+   * de prêt sans les déclarer produit un échéancier complet — calculé sur les
+   * constantes de repli. Des chiffres inventés, présentés comme ceux de la
+   * personne, sans un mot. L'écran le dit désormais.
+   */
+  const parametresDeRepli = useMemo(() => {
+    const p = config?.pret;
+    return !(
+      p &&
+      typeof p.montant === "number" && p.montant > 0 &&
+      typeof p.mensualite === "number" && p.mensualite > 0 &&
+      typeof p.echeances === "number" && p.echeances > 0
+    );
   }, [config]);
 
   // ─── Taux périodique dérivé des paramètres du prêt ────────────────
@@ -288,6 +316,7 @@ export function useMortgageData() {
   return {
     status,
     hasData,
+    parametresDeRepli,
     kpis,
     historyData,
     projectionData,

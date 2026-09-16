@@ -1,6 +1,12 @@
 // ── Décodage des transactions JSON (encodage dictionnaire) ───────────────
 import type { Transaction, RawTransactionsJSON } from "@/types";
 
+/** Ordre des champs de l'encodage dictionnaire. Décodage et encodage le partagent. */
+export const CHAMPS_ENCODES = [
+  "compte", "type", "date", "montant", "cat1", "cat2", "cat3", "cat4",
+  "ville", "dc", "label",
+] as const;
+
 /**
  * Décode les transactions depuis le format dictionnaire V1.
  *
@@ -38,4 +44,52 @@ export function decodeTransactions(raw: RawTransactionsJSON): Transaction[] {
 /** Extrait la liste triée des mois uniques */
 export function extractAllMonths(transactions: Transaction[]): string[] {
   return Array.from(new Set(transactions.map((t) => t.monthKey))).sort();
+}
+
+/**
+ * Encode des transactions au format dictionnaire — l'inverse exact de
+ * `decodeTransactions`.
+ *
+ * Vivait dans le worker jusqu'au lot B.5. Remonté ici parce que la
+ * mémorisation d'un jeu en a besoin elle aussi : stocker la forme ENCODÉE
+ * plutôt que la forme décodée divise par cinq la place occupée dans le
+ * navigateur (mesuré : 47,5 octets par transaction contre 241,5).
+ *
+ * Deux copies de cette table auraient fini par diverger — et une divergence
+ * entre encodeur et décodeur ne se voit pas : elle décale silencieusement une
+ * colonne sur l'autre.
+ */
+/**
+ * Tout ce qu'il faut pour encoder : `monthKey` est dérivé de la date, il n'est
+ * donc pas exigé. C'est ce qui permet au worker d'encoder ses lignes brutes,
+ * qui ne le portent pas, sans construire d'objets intermédiaires.
+ */
+export type TransactionEncodable = Omit<Transaction, "monthKey">;
+
+export function encodeTransactions(data: readonly TransactionEncodable[]): RawTransactionsJSON {
+  const table = new Map<string, number>();
+  let suivant = 0;
+  const intern = (v: string): number => {
+    const vu = table.get(v);
+    if (vu !== undefined) return vu;
+    table.set(v, suivant);
+    return suivant++;
+  };
+  const opt = (v: string): number => (v ? intern(v) : -1);
+
+  const t = data.map((r) => [
+    intern(r.compte),
+    intern(r.type),
+    r.date,
+    r.montant,
+    intern(r.cat1),
+    opt(r.cat2),
+    opt(r.cat3),
+    opt(r.cat4),
+    opt(r.ville),
+    intern(r.dc),
+    opt(r.label),
+  ]);
+
+  return { s: Array.from(table.keys()), t, fields: [...CHAMPS_ENCODES] };
 }

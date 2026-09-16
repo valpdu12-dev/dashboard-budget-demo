@@ -80,13 +80,22 @@ export default function Comptes() {
   const initBalances = config?.init ?? {};
   const salaryMonths = salary?.months ?? [];
 
-  const { balancesByMonth, currentBalances, balanceChartData } = useBalances(
+  const {
+    balancesByMonth, currentBalances, balanceChartData,
+    comptesNonInitialises, aucunSoldeConnu,
+  } = useBalances(
     useDataStore.getState().transactions,
     allMonths,
     initBalances,
   );
 
   const kpis = useKPIs(baseTx, balancesByMonth, salaryMonths, currentMonth, prevMonth);
+
+  // Les comptes effectivement affichables : ceux dont on connaît le départ.
+  const COMPTES_AVEC_SOLDE_CONNU = useMemo(
+    () => COMPTES_REELS.filter((c) => !comptesNonInitialises.includes(c)),
+    [comptesNonInitialises]
+  );
 
   // Lot 1.2 — dimensions de graphique pilotées par le palier d'affichage.
   const { chartHeight, donutRadii, isSmall } = useChartSize();
@@ -133,6 +142,31 @@ export default function Comptes() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader title="Comptes" subtitle="Vue d'ensemble de vos soldes et flux" />
+
+      {/*
+        Lot B.5 — un compte sans solde de départ déclaré n'est pas à zéro : on
+        ignore son point de départ. Le compter pour 0 dans le total revenait à
+        présenter la somme des mouvements comme un patrimoine. Ces comptes sont
+        donc retirés des soldes, et nommés ici.
+      */}
+      {comptesNonInitialises.length > 0 && (
+        <div
+          role="status"
+          className="flex items-start gap-2 px-3.5 py-2.5 bg-amber/[0.08] border border-amber/25 rounded-lg text-[13px] text-amber"
+        >
+          <AlertTriangle size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
+          <span>
+            {aucunSoldeConnu
+              ? "Aucun solde de depart n est declare par votre source : les soldes ne sont pas calculables."
+              : `Solde de depart non declare pour ${comptesNonInitialises.join(", ")}.`}{" "}
+            <span className="text-text-sec">
+              Ces comptes sont exclus des soldes et du total — ils ne valent pas
+              zero, leur point de depart est inconnu. Renseignez-le dans la
+              feuille Parametres de votre fichier.
+            </span>
+          </span>
+        </div>
+      )}
         <SkeletonKPIGrid count={11} />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <SkeletonChart height={chartHeight(380)} />
@@ -148,9 +182,11 @@ export default function Comptes() {
 
       {/* ═══ Bandeau KPI (11 cards) ════════════════════════════════════════ */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 stagger-grid">
-        <KPICard label="Solde Total" value={soldeTotalCur} prev={soldeTotalPrev} color="#6366F1" icon={<Wallet size={14} />} />
+        {!aucunSoldeConnu && (
+          <KPICard label="Solde Total" value={soldeTotalCur} prev={soldeTotalPrev} color="#6366F1" icon={<Wallet size={14} />} />
+        )}
 
-        {COMPTES_REELS.map((compte) => (
+        {COMPTES_AVEC_SOLDE_CONNU.map((compte) => (
           <KPICard
             key={compte}
             label={compte}
@@ -274,7 +310,7 @@ export default function Comptes() {
               <YAxis tick={{ fill: "#6B7280", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => fmtShort(v)} />
               <Tooltip content={<ChartTooltip formatter={(v) => fmt(v)} />} />
               <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
-              {COMPTES_REELS.map((compte) => (
+              {COMPTES_AVEC_SOLDE_CONNU.map((compte) => (
                 <Line key={compte} type="monotone" dataKey={compte} stroke={couleurCompte(compte)} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
               ))}
               <Line type="monotone" dataKey="Total" stroke={couleurCompte("Total")} strokeWidth={2.5} strokeDasharray="6 3" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />

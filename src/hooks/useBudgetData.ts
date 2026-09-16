@@ -132,7 +132,7 @@ export function getBudgetStatus(
 export function useBudgetData(
   topThreshold: number = DEFAULT_TOP_THRESHOLD
 ): UseBudgetDataReturn {
-  const { budgets, status } = useDataStore();
+  const { budgets, status, config } = useDataStore();
   const { baseTx, allMonths, allMonthsInRange, periodRange } = useFilteredData();
 
   const isLoading = status === "loading";
@@ -158,12 +158,16 @@ export function useBudgetData(
   // affichée. La couverture se calcule sur le jeu COMPLET (`allMonths`) :
   // la calculer sur la période ferait de chaque filtre ses propres bornes.
   const comparableMonths = useMemo(() => {
-    const couverts = moisComparables(allMonths);
+    // RÉGIME 1 — lot B.5. Si la source DÉCLARE ses bornes de relevé, on la
+    // croit : les mois de bord entiers redeviennent comparables, au lieu
+    // d'être écartés par précaution. Sans déclaration, on retombe sur la
+    // couverture inférée. Voir docs/CONTRAT_COUVERTURE.md.
+    const couverts = moisComparables(allMonths, config?.couverture ?? null);
     if (!periodRange.from || !periodRange.to) return couverts;
     return couverts.filter(
       (mk) => mk >= periodRange.from && mk <= periodRange.to
     );
-  }, [allMonths, periodRange]);
+  }, [allMonths, periodRange, config]);
 
   // Dépenses par Cat2 par mois (tous les mois de la plage, pas seulement éligibles)
   const cat2MonthlyMap = useMemo(() => {

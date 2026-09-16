@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { loadDashboardData } from "@/services/loadDashboardData";
-import { saveImport } from "@/services/importPersistence";
+import { memoriserJeu, VERSION_SCHEMA } from "@/services/jeuDonnees";
 import { useDataStore } from "@/stores/useDataStore";
-import type { ImportMemorise } from "@/services/importPersistence";
+import type { JeuDonnees } from "@/services/jeuDonnees";
 import type { SalaryData, Config, Transaction } from "@/types";
 
 /**
@@ -49,14 +49,23 @@ function fetchApiEnPanne() {
   );
 }
 
-function memoImport(): ImportMemorise {
+/** Un jeu mémorisé, au schéma du lot B.5 : complet, transactions encodées. */
+const CONFIG_IMPORTEE = { init: { "Banque A - Courant": 1000 }, demo: false };
+
+function jeuMemorise(): JeuDonnees {
   return {
-    transactions: [
-      { date: "2026-06-01", montant: 99, label: "Importe" },
-    ] as unknown as Transaction[],
-    salary: SALAIRE as unknown as SalaryData,
-    fileName: "mon-budget.xlsx",
+    version: VERSION_SCHEMA,
+    origine: "upload",
     importedAt: "2026-08-11T18:00:00.000Z",
+    fileName: "mon-budget.xlsx",
+    transactions: {
+      fields: ["compte", "type", "date", "montant", "cat1", "cat2", "cat3", "cat4", "ville", "dc", "label"],
+      s: ["Compte courant", "Courses", "Debit", "Importe"],
+      t: [[0, 1, "2026-06-01", 99, -1, -1, -1, -1, -1, 2, 3]],
+    },
+    salary: SALAIRE as unknown as SalaryData,
+    config: CONFIG_IMPORTEE,
+    budgets: [],
   };
 }
 
@@ -95,36 +104,36 @@ describe("origine des données — les quatre valeurs", () => {
   });
 
   it("vaut « upload » dès qu'un fichier est importé", () => {
-    useDataStore.getState().setUploadData(
-      [] as Transaction[],
-      SALAIRE as unknown as SalaryData,
-      { fileName: "mon-budget.xlsx" }
-    );
+    useDataStore.getState().poserJeu(jeuMemorise());
     expect(useDataStore.getState().origin).toBe("upload");
   });
 });
 
 describe("origine des données — règles de priorité", () => {
   it("l'import l'emporte sur un chargement statique réussi", async () => {
-    saveImport(memoImport());
+    memoriserJeu(jeuMemorise());
     vi.stubGlobal("fetch", fetchToutOk());
     await loadDashboardData();
     const s = useDataStore.getState();
-    // Les fichiers du site ont bien répondu — la configuration en vient
-    // toujours — mais les données affichées sont celles du classeur.
-    expect(s.config).toEqual(CONFIG);
+    // ⚠️ RENVERSEMENT DU LOT B.5. Les fichiers du site ont bien répondu, mais
+    // leur configuration ne SURVIT PLUS sous les données importées : le jeu
+    // posé est celui du classeur, configuration comprise. Auparavant, les
+    // soldes de départ de la démonstration s'affichaient en face des
+    // transactions de la personne, sans un mot.
+    expect(s.config).toEqual(CONFIG_IMPORTEE);
+    expect(s.config).not.toEqual(CONFIG);
     expect(s.origin).toBe("upload");
   });
 
   it("l'import l'emporte aussi quand les fichiers sont injoignables", async () => {
-    saveImport(memoImport());
+    memoriserJeu(jeuMemorise());
     vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("hors ligne"))));
     await loadDashboardData();
     expect(useDataStore.getState().origin).toBe("upload");
   });
 
   it("revient à « static » une fois l'import oublié", async () => {
-    saveImport(memoImport());
+    memoriserJeu(jeuMemorise());
     vi.stubGlobal("fetch", fetchToutOk());
     await loadDashboardData();
     expect(useDataStore.getState().origin).toBe("upload");
@@ -146,10 +155,7 @@ describe("origine des données — jamais devinée", () => {
   });
 
   it("repasse à « inconnue » après reset, même après un import", () => {
-    useDataStore.getState().setUploadData(
-      [] as Transaction[],
-      SALAIRE as unknown as SalaryData
-    );
+    useDataStore.getState().poserJeu(jeuMemorise());
     useDataStore.getState().reset();
     expect(useDataStore.getState().origin).toBe("inconnue");
   });

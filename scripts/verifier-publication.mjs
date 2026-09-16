@@ -27,6 +27,7 @@
  */
 
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join, relative, extname, sep } from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -206,7 +207,7 @@ function parcourir(base, dossier = base, sortie = []) {
 }
 
 /** Les fichiers binaires ne sont pas lus comme du texte. */
-const BINAIRE = new Set([".woff2", ".woff", ".ttf", ".png", ".jpg", ".ico", ".gz"]);
+const BINAIRE = new Set([".woff2", ".woff", ".ttf", ".png", ".jpg", ".ico", ".gz", ".tgz"]);
 
 function lireTexte(chemin) {
   if (BINAIRE.has(extname(chemin))) return null;
@@ -305,6 +306,63 @@ for (const f of fichiersSource) {
         echecs.push(`[à compléter] ${f} contient encore un gabarit non renseigné.`);
         break;
       }
+    }
+  }
+}
+
+// ── 3bis. Empreintes des bibliothèques vendorisées ──────────────────
+//
+// Un binaire versionné échappe à la liste noire : elle ne sait lire que du
+// texte. Le laisser passer sans rien vérifier ouvrirait exactement le trou que
+// ce contrôle existe pour fermer.
+//
+// La réponse n'est pas de l'ignorer mais de le CLOUER : chaque tarball de
+// `vendor/` doit figurer dans `vendor/EMPREINTES.txt` avec son empreinte
+// SHA-256, et la correspondance est vérifiée ici. Un fichier absent de la
+// liste, ou dont l'empreinte a bougé d'un octet, bloque la publication.
+//
+// Le format de `EMPREINTES.txt` est exactement la sortie de
+// `shasum -a 256 vendor/<fichier>` : rien à recopier à la main.
+
+const VENDOR = join(RACINE, "vendor");
+if (existsSync(VENDOR)) {
+  const listeChemin = join(VENDOR, "EMPREINTES.txt");
+  const attendues = new Map();
+  if (existsSync(listeChemin)) {
+    for (const ligne of readFileSync(listeChemin, "utf8").split("\n")) {
+      const m = ligne.trim().match(/^([0-9a-f]{64})\s+\**(.+?)\**$/i);
+      if (m) attendues.set(m[2].replace(/^vendor\//, ""), m[1].toLowerCase());
+    }
+  } else {
+    echecs.push(
+      "[vendor] vendor/EMPREINTES.txt est absent. Un binaire versionné sans empreinte " +
+        "déclarée n'est pas vérifiable."
+    );
+  }
+
+  const binaires = readdirSync(VENDOR).filter((n) => n !== "EMPREINTES.txt" && !n.endsWith(".md"));
+  for (const nom of binaires) {
+    const attendue = attendues.get(nom);
+    if (!attendue) {
+      echecs.push(`[vendor] ${nom} n'a pas d'empreinte déclarée dans vendor/EMPREINTES.txt.`);
+      continue;
+    }
+    const reelle = createHash("sha256").update(readFileSync(join(VENDOR, nom))).digest("hex");
+    if (reelle !== attendue) {
+      echecs.push(
+        `[vendor] ${nom} ne correspond pas à son empreinte déclarée. ` +
+          `Attendu ${attendue.slice(0, 16)}…, obtenu ${reelle.slice(0, 16)}…`
+      );
+    } else {
+      notes.push(`vendor : ${nom} conforme à son empreinte déclarée`);
+    }
+  }
+
+  // Une empreinte déclarée pour un fichier disparu est une ligne morte qui
+  // finirait par couvrir autre chose. Le jeu doit être exact des deux côtés.
+  for (const nom of attendues.keys()) {
+    if (!binaires.includes(nom)) {
+      echecs.push(`[vendor] EMPREINTES.txt déclare ${nom}, qui n'existe plus dans vendor/.`);
     }
   }
 }

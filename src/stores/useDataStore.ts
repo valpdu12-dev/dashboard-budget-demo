@@ -1,6 +1,8 @@
 // ── Store Zustand pour les données chargées ──────────────────────────────
 import { create } from "zustand";
+import { decodeTransactions } from "@/utils/decode";
 import type { Transaction, SalaryData, Config, BudgetData, DataOrigin } from "@/types";
+import type { JeuDonnees } from "@/services/jeuDonnees";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -31,7 +33,15 @@ interface DataState {
    * `inconnue`, jamais une origine supposee.
    */
   setData: (tx: Transaction[], sal: SalaryData, cfg: Config, origin?: DataOrigin) => void;
-  setUploadData: (tx: Transaction[], sal: SalaryData, meta?: { fileName?: string; importedAt?: string }) => void;
+  /**
+   * Pose un JEU ENTIER — lot B.5.
+   *
+   * Transactions, paie, configuration, objectifs, couverture et origine
+   * changent d'un seul coup. C'est la seule voie pour un import : remplacer
+   * les transactions en gardant la configuration de la source précédente
+   * mélangeait deux jeux en un, sans que rien ne le dise.
+   */
+  poserJeu: (jeu: JeuDonnees) => void;
   setBudgets: (budgets: BudgetData) => void;
   setError: (msg: string) => void;
   reset: () => void;
@@ -57,14 +67,26 @@ export const useDataStore = create<DataState>((set) => ({
     status: "success", error: null, origin,
     importedAt: null, importFileName: null,
   }),
-  // Un import fait par la personne devient TOUJOURS l'origine active, meme
-  // applique par-dessus un chargement serveur reussi.
-  setUploadData: (tx, sal, meta) => set({
-    transactions: tx, salary: sal,
-    status: "success", error: null, origin: "upload",
-    importedAt: meta?.importedAt ?? new Date().toISOString(),
-    importFileName: meta?.fileName ?? null,
-  }),
+  poserJeu: (jeu) => set((etat) => ({
+    transactions: decodeTransactions(jeu.transactions),
+    // Les séries publiques (inflation INSEE, SMIC) ne décrivent personne :
+    // elles appartiennent à l'application, pas au jeu de la personne. Les
+    // laisser disparaître à chaque import était un défaut connu — la page
+    // « Salaire vs inflation » se vidait sans explication.
+    salary: {
+      ...jeu.salary,
+      inflation: jeu.salary.inflation ?? etat.salary?.inflation,
+      smic: jeu.salary.smic ?? etat.salary?.smic,
+      inflationByCategory: jeu.salary.inflationByCategory ?? etat.salary?.inflationByCategory,
+    },
+    config: jeu.config,
+    budgets: { budgets: jeu.budgets },
+    status: "success",
+    error: null,
+    origin: jeu.origine,
+    importedAt: jeu.importedAt,
+    importFileName: jeu.fileName,
+  })),
   setBudgets: (budgets) => set({ budgets }),
   setError: (msg) => set({ status: "error", error: msg }),
   reset: () => set({

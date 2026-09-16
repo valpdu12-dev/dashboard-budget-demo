@@ -3,20 +3,14 @@
 // MODE STATIQUE (lot A.4). Tout vient des fichiers du site : `/data/*.json`.
 // Il n'y a plus un seul appel `/api`.
 //
-// L'application réelle interroge une base D1 derrière une API authentifiée,
-// avec repli sur ces mêmes fichiers. La démonstration n'a pas de serveur :
-// garder le chemin API aurait produit, à chaque ouverture, un appel voué à
-// l'échec — visible dans l'onglet Réseau, et contraire à la promesse
-// affichée. Un repli qui ne replie sur rien n'est pas une sécurité, c'est
-// une requête en trop.
-//
-// Conséquence directe : l'origine des données vaut toujours `static` au
-// chargement — jamais `api`.
+// UN JEU = UN TOUT (lot B.5). Le store ne reçoit plus des morceaux posés les
+// uns après les autres, mais un JEU complet : transactions, paie,
+// configuration, objectifs, couverture et origine. Un import ne peut donc plus
+// laisser derrière lui la configuration du jeu précédent.
 
 import { useDataStore } from "@/stores/useDataStore";
-import { decodeTransactions } from "@/utils/decode";
-import { loadImport } from "@/services/importPersistence";
 import { lireObjectifsLocaux } from "@/services/budgetsLocaux";
+import { construireJeuStatique, lireJeuMemorise } from "@/services/jeuDonnees";
 import type { BudgetTarget, Config, RawTransactionsJSON, SalaryData } from "@/types";
 
 const SOURCES = [
@@ -81,61 +75,54 @@ async function attacherReferences(sal: SalaryData): Promise<SalaryData> {
  *
  * Best-effort : sans objectifs, le reste du dashboard fonctionne.
  */
-async function chargerBudgets() {
+async function chargerBudgets(): Promise<BudgetTarget[]> {
   try {
     const livres = (await lireJSON(BUDGETS_SOURCE)) as BudgetTarget[];
-    if (!Array.isArray(livres)) return;
+    if (!Array.isArray(livres)) return [];
     const locaux = lireObjectifsLocaux();
-    useDataStore.getState().setBudgets({
-      budgets: livres.map((b) => {
-        const local = locaux[b.cat2];
-        return local === undefined
-          ? b
-          : { ...b, target: local, active: true, updated_at: b.updated_at ?? null };
-      }),
+    return livres.map((b) => {
+      const local = locaux[b.cat2];
+      return local === undefined
+        ? b
+        : { ...b, target: local, active: true, updated_at: b.updated_at ?? null };
     });
   } catch (err) {
     console.warn("[Budget] Objectifs indisponibles.", err);
+    return [];
   }
 }
 
 /**
- * Remplit le store depuis les fichiers du site. Idempotent — peut être
- * rejoué à tout moment (le bouton « Revenir aux données par défaut » de
- * `DataUploader` s'en sert après un `reset()`).
+ * Remplit le store depuis les fichiers du site. Idempotent — peut être rejoué
+ * à tout moment (le bouton « Revenir aux données par défaut » s'en sert).
  *
- * Si un import a été mémorisé, il est appliqué PAR-DESSUS : au démarrage, le
- * dashboard affiche le dernier fichier importé. L'ordre importe — les
- * fichiers du site apportent la configuration et les objectifs, que le
- * classeur ne contient pas ; l'import ne remplace que les transactions et
- * les salaires.
+ * Si un jeu a été mémorisé, il est posé PAR-DESSUS : au démarrage, le
+ * dashboard affiche le dernier fichier importé. L'ordre importe — le jeu du
+ * site est posé d'abord pour que les séries publiques (inflation, SMIC)
+ * soient chargées ; `poserJeu` les conserve ensuite d'un jeu à l'autre.
  */
 export async function loadDashboardData(): Promise<void> {
-  const { setLoading, setData, setUploadData, setError } = useDataStore.getState();
-  // Lu une seule fois, avant les requêtes : le fichier mémorisé doit pouvoir
+  const { setLoading, poserJeu, setError } = useDataStore.getState();
+  // Lu une seule fois, avant les requêtes : le jeu mémorisé doit pouvoir
   // s'afficher même si les fichiers du site sont injoignables.
-  const memorise = loadImport();
+  const memorise = lireJeuMemorise();
   setLoading();
   try {
     const data = await chargerFichiers();
-    const sal = await attacherReferences(data.sal);
-    const tx = decodeTransactions(data.rawTx);
-    setData(tx, sal, data.cfg, "static");
-    void chargerBudgets();
+    const [sal, budgets] = await Promise.all([
+      attacherReferences(data.sal),
+      chargerBudgets(),
+    ]);
+    poserJeu(construireJeuStatique(data.rawTx, sal, data.cfg, budgets));
   } catch (err) {
-    // Sans import mémorisé, il n'y a rien à montrer : on remonte l'erreur.
+    // Sans jeu mémorisé, il n'y a rien à montrer : on remonte l'erreur.
     // Avec, mieux vaut afficher les données de la personne qu'un écran vide.
     if (!memorise) {
       setError(err instanceof Error ? err.message : String(err));
       return;
     }
-    console.warn("[Budget] Fichiers du site injoignables — import mémorisé affiché seul.", err);
+    console.warn("[Budget] Fichiers du site injoignables — jeu mémorisé affiché seul.", err);
   }
 
-  if (memorise) {
-    setUploadData(memorise.transactions, memorise.salary, {
-      fileName: memorise.fileName,
-      importedAt: memorise.importedAt,
-    });
-  }
+  if (memorise) poserJeu(memorise);
 }

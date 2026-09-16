@@ -7,7 +7,7 @@
 **➜ Voir la démonstration : https://dashboard-budget-demo.pages.dev/**
 
 Version publique et statique d'un tableau de bord de finances personnelles.
-React 18, TypeScript, Vite, Tailwind, Zustand, Recharts. 508 tests.
+React 18, TypeScript, Vite, Tailwind, Zustand, Recharts. 623 tests.
 
 ![Page Comptes](docs/captures/desktop-01-comptes.png)
 
@@ -32,7 +32,10 @@ tableur :
   référence publique.
 
 Ce tableau de bord répond à ces trois questions à partir d'un seul classeur
-Excel, sans ressaisie.
+Excel, sans ressaisie. Le format attendu est public et documenté —
+[`docs/FORMAT_FICHIER_SOURCE.md`](docs/FORMAT_FICHIER_SOURCE.md) — et
+l'application fabrique un classeur modèle à la demande, depuis la fenêtre
+d'import.
 
 ---
 
@@ -237,9 +240,9 @@ la valeur manque, et non un tiret muet.
 
 | | |
 |---|---|
-| Tests | **508**, 44 fichiers |
+| Tests | **623**, 53 fichiers |
 | Chaîne complète | lint → types → tests → build → contrôle de publication |
-| Durée | environ 86 s |
+| Durée | environ 90 s |
 | CI | tout ce qui précède, plus gitleaks et un contrôle de fraîcheur des données |
 
 Le **contrôle de publication** refuse de laisser passer un nom réel, un
@@ -332,7 +335,12 @@ Aucun fichier `.env` : ni API, ni jeton, ni secret.
 | **A.5** | Assainissement et contrôle de publication bloquant | ✅ |
 | **A.6** | Intégration continue | ✅ |
 | **A.7** | Ce document et les captures | ✅ |
-| **B** | Format de fichier public, validation d'import, navigation conditionnelle | à venir |
+| **B.0–B.1** | Format de fichier public documenté, classeur modèle téléchargeable | ✅ |
+| **B.2** | SheetJS 0.20.3 depuis la distribution officielle, recopiée dans le dépôt | ✅ |
+| **B.3** | Validation de l'import : lignes acceptées / rejetées, situées, aperçu avant application | ✅ |
+| **B.4** | Paie et prêt optionnels, navigation conditionnelle | ✅ |
+| **B.5** | Un jeu = un tout, version de schéma, couverture déclarée | ✅ |
+| **B.6–B.8** | Profils, confidentialité, recette | à venir |
 | **C** | Paramétrage complet par le fichier source | à venir |
 | **D** | Recette de diffusion | à venir |
 
@@ -350,14 +358,21 @@ sera absent du graphique **et du total**, sans erreur ni message. C'est la
 limite la plus dangereuse de cet état, parce qu'elle est silencieuse. Détail
 dans [`docs/LIMITES_PARAMETRAGE.md`](docs/LIMITES_PARAMETRAGE.md).
 
-**La couverture temporelle est inférée, pas mesurée.** Faute de dates de
-relevé dans le format actuel, le premier et le dernier mois des données sont
-écartés des moyennes. Un relevé qui commence effectivement le 1er du mois perd
-ce mois sans raison. C'est une supposition prudente, assumée : une moyenne
-fausse ne se voit pas, une moyenne absente se voit.
+**La couverture temporelle n'est inférée que si la source ne déclare rien.**
+Un fichier qui donne ses dates de relevé est cru sur parole, et ses mois de
+bord entiers comptent dans les moyennes. Sans déclaration, le premier et le
+dernier mois des données restent écartés : une supposition prudente, assumée —
+une moyenne fausse ne se voit pas, une moyenne absente se voit.
 
-**Le lecteur Excel est celui d'un classeur précis.** En-têtes en ligne 18,
-colonnes lues par position. Un format public et documenté est l'objet du lot B.
+**Le format public ne porte pas le détail des cotisations.** Une ligne par mois
+suffit à la feuille `Paie` ; les deux graphiques de détail des cotisations ont
+besoin d'une ligne par ligne de bulletin. Ils restent alimentés par
+l'adaptateur de l'ancien format, et affichent un message dans l'autre cas.
+
+**Le format public ne déclare pas encore les comptes.** Un fichier peut nommer
+ses propres comptes : ils seront lus, leurs transactions comptées — mais ils
+n'auront pas de solde, et l'aperçu d'import le dit nommément. C'est l'objet du
+lot C.
 
 **Le mois courant de la démonstration est figé** à septembre 2026. C'est le
 prix du déterminisme du générateur : un jeu qui bouge à chaque exécution

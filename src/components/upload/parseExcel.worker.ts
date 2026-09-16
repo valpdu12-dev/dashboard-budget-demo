@@ -5,9 +5,13 @@
 //
 // Protocole de messages :
 //   IN  : { type: "parse", buffer: ArrayBuffer }
+//         { type: "modele" }  — fabrique le classeur modèle (lot B.1)
 //   OUT : { type: "progress", step: string, pct: number }
-//         { type: "result", transactions: RawEncoded, salary: SalaryParsed, validation: Validation }
+//         { type: "result", format, transactions: RawEncoded, salary: SalaryParsed,
+//                            validation: Validation, rapport: RapportImport | null }
 //         { type: "error", message: string }
+//         { type: "modele", octets: Uint8Array }
+//         { type: "modele-erreur", message: string }
 
 // Typage Web Worker : le tsconfig principal inclut "DOM" mais pas "WebWorker",
 // on declare manuellement l'interface minimale necessaire.
@@ -19,6 +23,13 @@ declare const self: WorkerSelf;
 export {}; // Force le fichier en module ES (requis pour import XLSX)
 
 import * as XLSX from "xlsx";
+import { encodeTransactions } from "@/utils/decode";
+import { construireClasseurModele } from "@/services/modeleExcel";
+import {
+  detecterFormat,
+  lireClasseurPublic,
+  type RapportImport,
+} from "@/services/lectureClasseur";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES INTERNES AU WORKER
@@ -37,13 +48,6 @@ interface RawTransaction {
   cat4: string;
   ville: string;
   dc: string;
-}
-
-/** Format encodé par dictionnaire (identique à transactions.json) */
-interface EncodedTransactions {
-  s: string[];
-  t: (number | string)[][];
-  fields: string[];
 }
 
 /** Mois de salaire parsé */
@@ -348,36 +352,6 @@ function parseTransactionsSheet(wb: XLSX.WorkBook): RawTransaction[] {
 // ENCODAGE DICTIONNAIRE (format identique à transactions.json)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function encodeTransactions(data: RawTransaction[]): EncodedTransactions {
-  const strMap = new Map<string, number>();
-  let nextIdx = 0;
-
-  function intern(str: string): number {
-    if (!strMap.has(str)) strMap.set(str, nextIdx++);
-    return strMap.get(str)!;
-  }
-
-  const t = data.map((r) => [
-    intern(r.compte),                        // 0 : compte
-    intern(r.type),                          // 1 : type
-    r.date,                                  // 2 : date ISO
-    r.montant,                               // 3 : montant réel
-    intern(r.cat1),                          // 4 : cat1
-    r.cat2  ? intern(r.cat2)  : -1,          // 5 : cat2
-    r.cat3  ? intern(r.cat3)  : -1,          // 6 : cat3
-    r.cat4  ? intern(r.cat4)  : -1,          // 7 : cat4
-    r.ville ? intern(r.ville) : -1,          // 8 : ville
-    intern(r.dc),                            // 9 : dc
-    r.label ? intern(r.label) : -1,          // 10 : label
-  ]);
-
-  return {
-    s: Array.from(strMap.keys()),
-    t,
-    fields: ["compte", "type", "date", "montant", "cat1", "cat2", "cat3", "cat4", "ville", "dc", "label"],
-  };
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // PARSING FICHE DE PAIE
 // ─────────────────────────────────────────────────────────────────────────────
@@ -536,6 +510,23 @@ function buildValidation(rawData: RawTransaction[], salary: SalaryParsed): Valid
 self.onmessage = (event: MessageEvent) => {
   const { type, buffer } = event.data;
 
+  // ─── Fabrication du classeur modèle ───────────────────────────────────
+  // Le worker s'en charge parce qu'il embarque déjà SheetJS. Construire le
+  // modèle depuis un composant ferait entrer la bibliothèque dans le bundle
+  // principal, soit environ 400 Ko chargés à chaque ouverture pour un bouton
+  // rarement cliqué. Voir src/services/modeleExcel.ts.
+  if (type === "modele") {
+    try {
+      self.postMessage({ type: "modele", octets: construireClasseurModele() });
+    } catch (err) {
+      self.postMessage({
+        type: "modele-erreur",
+        message: `Le modèle n'a pas pu être fabriqué. Détail : ${(err as Error).message}`,
+      });
+    }
+    return;
+  }
+
   if (type !== "parse") return;
 
   try {
@@ -564,10 +555,48 @@ self.onmessage = (event: MessageEvent) => {
       );
     }
 
-    // ─── 2. Vérification des feuilles requises ──────────────────────────
-    progress("Vérification des feuilles…", 10);
+    // ─── 2. Quel format ? ───────────────────────────────────────────────
+    //
+    // La décision se prend sur la STRUCTURE du classeur, jamais sur le nom du
+    // fichier. Format public : feuille « Transactions » avec en-tête nommé en
+    // ligne 1. Ancien format de l'auteur : feuille « Transactions AAAA », en-tête
+    // en ligne 18, colonnes lues par position. Voir docs/FORMAT_FICHIER_SOURCE.md.
+    progress("Reconnaissance du format…", 10);
+    const format = detecterFormat(wb);
 
-    // Vérifier la feuille "Fiche de Paie" (la feuille Transactions est vérifiée dynamiquement)
+    if (format === "public") {
+      progress("Lecture et validation…", 20);
+      const rapport: RapportImport = lireClasseurPublic(wb);
+
+      const salaryPublic: SalaryParsed = {
+        months: rapport.paie,
+        // Le format public simple ne porte pas le détail des cotisations : il
+        // faudrait une ligne par ligne de bulletin. Les écrans concernés
+        // affichent un message plutôt que des tirets muets.
+        cotLast: [],
+        patronLast: [],
+        lastMonth: rapport.paie[rapport.paie.length - 1]?.mk ?? "",
+      };
+
+      progress("Encodage des données…", 70);
+      const transactionsPubliques = encodeTransactions(rapport.transactions);
+      const validationPublique = buildValidation(rapport.transactions, salaryPublic);
+
+      progress("Terminé", 100);
+      self.postMessage({
+        type: "result",
+        format,
+        transactions: transactionsPubliques,
+        salary: salaryPublic,
+        validation: validationPublique,
+        rapport,
+      });
+      return;
+    }
+
+    // ─── Ancien format — l'adaptateur du classeur de l'auteur ───────────
+    progress("Vérification des feuilles…", 12);
+
     if (!wb.SheetNames.includes("Fiche de Paie")) {
       throw new Error(
         `Feuille "Fiche de Paie" absente. ` +
@@ -594,7 +623,7 @@ self.onmessage = (event: MessageEvent) => {
 
     // --- 7. Resultat final ---
     progress("Termine", 100);
-    self.postMessage({ type: "result", transactions, salary, validation });
+    self.postMessage({ type: "result", format, transactions, salary, validation, rapport: null });
 
   } catch (err) {
     self.postMessage({ type: "error", message: (err as Error).message });

@@ -143,7 +143,7 @@ describe("useExcelWorker — parse()", () => {
 });
 
 describe("useExcelWorker — apply()", () => {
-  it("appelle setUploadData dans le store quand pendingData est défini", () => {
+  it("pose un JEU ENTIER dans le store quand des données ont été lues", () => {
     const { result } = renderHook(() => useExcelWorker());
 
     // Simuler un résultat complet
@@ -164,9 +164,13 @@ describe("useExcelWorker — apply()", () => {
     expect(store.status).toBe("success");
     expect(store.origin).toBe("upload");
     expect(store.transactions).toHaveLength(1);
+    // Lot B.5 — l'ancien format ne déclare ni soldes, ni bornes, ni prêt : la
+    // configuration posée est VIDE, pas celle du jeu précédent.
+    expect(store.config).toEqual({ init: {}, demo: false });
+    expect(store.budgets).toEqual({ budgets: [] });
   });
 
-  it("ne fait rien quand pendingData est null", () => {
+  it("ne fait rien quand aucune donnée n'a été lue", () => {
     const { result } = renderHook(() => useExcelWorker());
     act(() => { result.current.apply(); }); // pas de parse avant
     expect(useDataStore.getState().transactions).toHaveLength(0);

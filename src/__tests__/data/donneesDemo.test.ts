@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { decodeTransactions, extractAllMonths } from "@/utils/decode";
 import { moisComparables } from "@/utils/couverture";
+import { COMPTES_AVEC_SOLDE } from "@/config/accounts";
 import type { RawTransactionsJSON, Config, SalaryData } from "@/types";
 
 const lire = <T,>(nom: string): T =>
@@ -58,6 +59,7 @@ describe("transactions.json — format attendu par decode.ts", () => {
 });
 
 describe("couverture temporelle — le seuil de trois mois est franchi", () => {
+  // Couverture INFÉRÉE — ce que voyait l'application avant le lot B.5.
   const comparables = moisComparables(mois);
 
   it("laisse largement plus d'un mois comparable", () => {
@@ -211,5 +213,44 @@ describe("aucune donnée personnelle dans les fichiers publiés", () => {
       "SCALIAN", "ALTRAN", "Monoprix", "Joinville", "Duchamp",
     ];
     for (const mot of interdits) expect(tout).not.toContain(mot);
+  });
+});
+
+describe("couverture déclarée — régime 1, branché au lot B.5", () => {
+  const declarees = config.couverture ?? null;
+  const declares = moisComparables(mois, declarees);
+
+  it("le générateur déclare bien des bornes de relevé", () => {
+    // Le champ existait depuis le lot A.3 mais restait inerte : rien ne le
+    // lisait. C'est ce que le lot B.5 corrige.
+    expect(declarees).toEqual({ debut: "2024-09-01", fin: "2026-09-15" });
+  });
+
+  it("récupère le premier mois, que la couverture inférée écartait", () => {
+    // Le relevé commence le 1er : septembre 2024 est entier, donc comparable.
+    // La règle inférée l'excluait par précaution, faute de le savoir.
+    expect(moisComparables(mois)).not.toContain("2024-09");
+    expect(declares).toContain("2024-09");
+  });
+
+  it("continue d'écarter le dernier mois, arrêté au 15", () => {
+    expect(declares).not.toContain("2026-09");
+  });
+
+  it("donne 24 mois comparables au lieu de 23", () => {
+    expect(moisComparables(mois)).toHaveLength(23);
+    expect(declares).toHaveLength(24);
+  });
+});
+
+describe("soldes de départ — la démonstration n'affiche aucun « non initialisé »", () => {
+  it("déclare un solde pour chaque compte qui en porte un", () => {
+    // Depuis le lot B.5, un compte sans solde de départ déclaré sort des
+    // soldes et du total, et l'écran le nomme. La démonstration publiée ne
+    // doit pas être la première à déclencher ce bandeau.
+    const declares = Object.keys(config.init ?? {});
+    for (const compte of COMPTES_AVEC_SOLDE) {
+      expect(declares, `solde de départ manquant pour ${compte}`).toContain(compte);
+    }
   });
 });

@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { loadDashboardData } from "@/services/loadDashboardData";
-import { saveImport } from "@/services/importPersistence";
+import { memoriserJeu, VERSION_SCHEMA } from "@/services/jeuDonnees";
 import { useDataStore } from "@/stores/useDataStore";
-import type { ImportMemorise } from "@/services/importPersistence";
+import type { JeuDonnees } from "@/services/jeuDonnees";
 import type { SalaryData } from "@/types";
 
 /**
@@ -27,15 +27,26 @@ const CONFIG = { comptes: [] };
 
 const salaryImporte = { months: [], cotLast: [], patronLast: [], lastMonth: "2026-06" } as unknown as SalaryData;
 
-function memoImport(): ImportMemorise {
+/** La configuration que porte le jeu importé — lot B.5. */
+const CONFIG_IMPORTEE = { init: { "Banque A - Courant": 1000 }, demo: false };
+
+function memoImport(): JeuDonnees {
   return {
-    transactions: [
-      { date: "2026-06-01", montant: 99, label: "Importe" },
-      { date: "2026-06-02", montant: 42, label: "Importe" },
-    ] as unknown as ImportMemorise["transactions"],
-    salary: salaryImporte,
-    fileName: "Budget_demo.xlsx",
+    version: VERSION_SCHEMA,
+    origine: "upload",
     importedAt: "2026-08-11T18:00:00.000Z",
+    fileName: "Budget_demo.xlsx",
+    transactions: {
+      fields: ["compte", "type", "date", "montant", "cat1", "cat2", "cat3", "cat4", "ville", "dc", "label"],
+      s: ["Compte", "Type", "Debit", "Importe"],
+      t: [
+        [0, 1, "2026-06-01", 99, -1, -1, -1, -1, -1, 2, 3],
+        [0, 1, "2026-06-02", 42, -1, -1, -1, -1, -1, 2, 3],
+      ],
+    },
+    salary: salaryImporte,
+    config: CONFIG_IMPORTEE,
+    budgets: [],
   };
 }
 
@@ -73,7 +84,7 @@ describe("loadDashboardData", () => {
   });
 
   it("affiche l'import mémorisé par-dessus les fichiers du site", async () => {
-    saveImport(memoImport());
+    memoriserJeu(memoImport());
     vi.stubGlobal("fetch", mockFetchOk());
     await loadDashboardData();
     const s = useDataStore.getState();
@@ -83,16 +94,21 @@ describe("loadDashboardData", () => {
     expect(s.importedAt).toBe("2026-08-11T18:00:00.000Z");
   });
 
-  it("conserve la configuration du site, que le classeur ne contient pas", async () => {
-    // C'est la raison de l'ordre : import APRÈS les fichiers, pas à la place.
-    saveImport(memoImport());
+  it("n'hérite PLUS de la configuration du site sous les données importées", async () => {
+    // ⚠️ Renversement du lot B.5. Ce test affirmait l'inverse : la
+    // configuration du site « survivait » à l'import. Résultat, les soldes de
+    // départ de la démonstration s'affichaient en face des transactions de la
+    // personne, sans que rien ne le signale. Un jeu est désormais un tout :
+    // il apporte sa propre configuration, ou n'en a pas.
+    memoriserJeu(memoImport());
     vi.stubGlobal("fetch", mockFetchOk());
     await loadDashboardData();
-    expect(useDataStore.getState().config).toEqual(CONFIG);
+    expect(useDataStore.getState().config).toEqual(CONFIG_IMPORTEE);
+    expect(useDataStore.getState().config).not.toEqual(CONFIG);
   });
 
   it("affiche quand même l'import mémorisé si les fichiers sont injoignables", async () => {
-    saveImport(memoImport());
+    memoriserJeu(memoImport());
     vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("hors ligne"))));
     await loadDashboardData();
     const s = useDataStore.getState();
@@ -124,7 +140,7 @@ describe("loadDashboardData", () => {
   });
 
   it("revient aux fichiers du site une fois l'import oublié", async () => {
-    saveImport(memoImport());
+    memoriserJeu(memoImport());
     vi.stubGlobal("fetch", mockFetchOk());
     await loadDashboardData();
     expect(useDataStore.getState().origin).toBe("upload");

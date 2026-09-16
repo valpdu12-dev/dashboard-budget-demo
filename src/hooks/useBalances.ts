@@ -26,6 +26,18 @@ interface BalancesResult {
   balancesByMonth: Record<string, Record<string, number>>;
   currentBalances: Record<string, number>;
   balanceChartData: (monthsInRange: string[]) => Array<Record<string, number | string>>;
+  /**
+   * Comptes sans solde de départ déclaré — lot B.5.
+   *
+   * Un compte non initialisé n'est PAS à zéro : on ne connaît simplement pas
+   * son point de départ. Le compter pour 0 dans le total du patrimoine
+   * revenait à afficher la somme des mouvements en la présentant comme une
+   * fortune. Ces comptes sortent donc des soldes et du total, et l'écran les
+   * nomme.
+   */
+  comptesNonInitialises: string[];
+  /** Vrai quand AUCUN compte n'a de solde de départ : rien n'est calculable. */
+  aucunSoldeConnu: boolean;
 }
 
 export function useBalances(
@@ -44,6 +56,16 @@ export function useBalances(
     }
     return map;
   }, [transactions]);
+
+  // ── Les comptes dont la source déclare un solde de départ ─────────────
+  const comptesInitialises = useMemo(
+    () => COMPTES_REELS.filter((c) => typeof initBalances[c] === "number"),
+    [initBalances]
+  );
+  const comptesNonInitialises = useMemo(
+    () => COMPTES_REELS.filter((c) => typeof initBalances[c] !== "number"),
+    [initBalances]
+  );
 
   // ── Étape 2 : Calcul des soldes cumulatifs mois par mois ──────────────
   const balancesByMonth = useMemo(() => {
@@ -101,23 +123,33 @@ export function useBalances(
         }
       }
 
-      // Snapshot du mois avec Total
-      const total = COMPTES_REELS.reduce((sum, c) => sum + (running[c] ?? 0), 0);
-      result[mk] = { ...running, Total: total };
+      // Snapshot du mois. Seuls les comptes dont on connaît le point de
+      // départ y figurent — et donc dans le total.
+      const instantane: Record<string, number> = {};
+      for (const c of comptesInitialises) instantane[c] = running[c];
+      if (comptesInitialises.length > 0) {
+        instantane.Total = comptesInitialises.reduce((somme, c) => somme + running[c], 0);
+      }
+      result[mk] = instantane;
     }
 
     return result;
-  }, [txByMonth, allMonths, initBalances]);
+  }, [txByMonth, allMonths, initBalances, comptesInitialises]);
 
   // ── Étape 3 : Soldes du dernier mois (= soldes actuels) ───────────────
   const currentBalances = useMemo(() => {
     if (!allMonths.length) {
-      const empty: Record<string, number> = { Total: 0 };
-      for (const c of COMPTES_REELS) empty[c] = 0;
-      return empty;
+      // Sans transactions, les soldes valent leur point de départ déclaré —
+      // et rien du tout pour les comptes qui n'en déclarent pas.
+      const depart: Record<string, number> = {};
+      for (const c of comptesInitialises) depart[c] = initBalances[c];
+      if (comptesInitialises.length > 0) {
+        depart.Total = comptesInitialises.reduce((s2, c) => s2 + initBalances[c], 0);
+      }
+      return depart;
     }
     return balancesByMonth[allMonths[allMonths.length - 1]] ?? {};
-  }, [balancesByMonth, allMonths]);
+  }, [balancesByMonth, allMonths, comptesInitialises, initBalances]);
 
   // ── Étape 4 : Données pour le LineChart (mémoïsé via useMemo) ─────────
   // V1 renvoyait une fonction brute recréée à chaque render.
@@ -136,6 +168,8 @@ export function useBalances(
   }, [balancesByMonth]);
 
   return {
+    comptesNonInitialises,
+    aucunSoldeConnu: comptesInitialises.length === 0,
     balancesByMonth,
     currentBalances,
     balanceChartData,

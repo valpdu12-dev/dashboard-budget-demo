@@ -75,6 +75,10 @@ export const NAV_TABS = [
  * Clé = id de l'onglet ; valeur = liste de pills.
  * `end: true` sur la pill de la route par défaut (évite qu'elle reste
  * active sur les sous-routes).
+ *
+ * `rubrique` (lot B.4) : la pill n'existe que si le JEU COMPLET porte la
+ * donnée correspondante. Sans paie, pas d'écran Salaire ; sans prêt, pas
+ * d'écran Prêt. Voir `src/hooks/useRubriques.ts`.
  */
 export const SUB_NAV_CONFIG = {
   depenses: [
@@ -82,12 +86,12 @@ export const SUB_NAV_CONFIG = {
     { label: "Budget",   path: "/depenses/budget"            },
   ],
   revenus: [
-    { label: "Recettes",    path: "/revenus",          end: true },
-    { label: "Salaire",     path: "/revenus/salaire"             },
-    { label: "vs Inflation", path: "/revenus/inflation"          },
+    { label: "Recettes",     path: "/revenus",           end: true },
+    { label: "Salaire",      path: "/revenus/salaire",   rubrique: "paie" },
+    { label: "vs Inflation", path: "/revenus/inflation", rubrique: "paie" },
   ],
   patrimoine: [
     { label: "Épargne",    path: "/patrimoine",      end: true },
-    { label: "Prêt Immo.", path: "/patrimoine/pret"            },
+    { label: "Prêt Immo.", path: "/patrimoine/pret", rubrique: "pret" },
   ],
 } as const;

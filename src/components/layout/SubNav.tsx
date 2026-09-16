@@ -3,16 +3,25 @@
 // Style aligné sur le composant Chip (cohérence visuelle).
 import { NavLink, useLocation } from "react-router-dom";
 import { SUB_NAV_CONFIG } from "@/config/constants";
+import { useRubriques } from "@/hooks/useRubriques";
 
 type SubNavKey = keyof typeof SUB_NAV_CONFIG;
 
 export function SubNav() {
   const { pathname } = useLocation();
+  const rubriques = useRubriques();
   // Segment de tête de l'URL : "/revenus/salaire" -> "revenus"
   const tabId = pathname.split("/")[1] as SubNavKey;
-  const pills = SUB_NAV_CONFIG[tabId];
+  const toutes = SUB_NAV_CONFIG[tabId] as readonly {
+    label: string; path: string; end?: boolean; rubrique?: "paie" | "pret";
+  }[] | undefined;
 
-  if (!pills) return null;
+  // Lot B.4 : une pill dont la rubrique n'existe pas dans le jeu complet est
+  // retirée de la sous-navigation — pas grisée, pas vide : absente.
+  const pills = toutes?.filter((p) => !p.rubrique || rubriques[p.rubrique]);
+
+  // Une seule pill ne navigue nulle part : la barre devient du décor.
+  if (!pills || pills.length < 2) return null;
 
   return (
     <nav className="flex shrink-0 gap-2 overflow-x-auto px-3 py-2.5 md:px-6 border-b border-border bg-surface">

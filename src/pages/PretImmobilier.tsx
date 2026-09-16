@@ -9,7 +9,7 @@ import {
 } from "recharts";
 import {
   Home, Wallet, TrendingDown, CheckCircle2, CalendarCheck, CalendarClock,
-  Percent, Sparkles,
+  Percent, Sparkles, AlertTriangle,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -34,7 +34,7 @@ export default function PretImmobilier() {
   const donut = donutRadii(60, 100);
   const {
     status, hasData, kpis, historyData, projectionData, donutData,
-    dateFin, simulate,
+    dateFin, simulate, parametresDeRepli,
   } = useMortgageData();
 
   const [extra, setExtra] = useState(0);
@@ -78,6 +78,30 @@ export default function PretImmobilier() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Prêt Immobilier" subtitle="Suivi du crédit immobilier" />
+
+      {/*
+        Lot B.4 — les paramètres du prêt ne sont pas toujours déclarés par la
+        source. Quand ils ne le sont pas, tout l'échéancier de cette page est
+        calculé sur des constantes de repli : des chiffres cohérents, et faux.
+        Les taire reviendrait à présenter un prêt inventé comme celui de la
+        personne.
+      */}
+      {parametresDeRepli && (
+        <div
+          role="status"
+          className="flex items-start gap-2 px-3.5 py-2.5 bg-amber/[0.08] border border-amber/25 rounded-lg text-[13px] text-amber"
+        >
+          <AlertTriangle size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
+          <span>
+            Votre source ne declare pas les parametres du pret. Les montants de
+            cette page sont calcules sur des valeurs par defaut{" "}
+            <span className="text-text-sec">
+              — ils ne decrivent pas votre pret. Renseignez montant, mensualite
+              et nombre d echeances dans la feuille Parametres de votre fichier.
+            </span>
+          </span>
+        </div>
+      )}
 
       {/* KPI Cards (2×3) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 stagger-grid">
