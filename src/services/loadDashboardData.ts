@@ -11,6 +11,7 @@
 import { useDataStore } from "@/stores/useDataStore";
 import { lireObjectifsLocaux } from "@/services/budgetsLocaux";
 import { construireJeuStatique, lireJeuMemorise } from "@/services/jeuDonnees";
+import { lireProfil } from "@/services/profil";
 import type { BudgetTarget, Config, RawTransactionsJSON, SalaryData } from "@/types";
 
 const SOURCES = [
@@ -105,7 +106,11 @@ export async function loadDashboardData(): Promise<void> {
   const { setLoading, poserJeu, setError } = useDataStore.getState();
   // Lu une seule fois, avant les requêtes : le jeu mémorisé doit pouvoir
   // s'afficher même si les fichiers du site sont injoignables.
-  const memorise = lireJeuMemorise();
+  //
+  // Lot B.6 — il n'est lu QUE si le profil affiché est « personnel ». Sur le
+  // profil « démo », le jeu de la personne reste écrit sur l'appareil mais
+  // n'est pas posé : revenir à la démonstration n'efface plus rien.
+  const memorise = lireProfil() === "personnel" ? lireJeuMemorise() : null;
   setLoading();
   try {
     const data = await chargerFichiers();

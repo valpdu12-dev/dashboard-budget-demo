@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { loadDashboardData } from "@/services/loadDashboardData";
-import { memoriserJeu, VERSION_SCHEMA } from "@/services/jeuDonnees";
+import { memoriserJeu, VERSION_SCHEMA, CLE } from "@/services/jeuDonnees";
+import { enregistrerObjectifLocal } from "@/services/budgetsLocaux";
+import { afficherDemo, afficherMesDonnees, effacerMesDonnees } from "@/services/basculeProfil";
 import { useDataStore } from "@/stores/useDataStore";
 import type { JeuDonnees } from "@/services/jeuDonnees";
 import type { SalaryData } from "@/types";
@@ -151,5 +153,69 @@ describe("loadDashboardData", () => {
     expect(s.origin).toBe("static");
     expect(s.transactions).toHaveLength(1);
     expect(s.importedAt).toBeNull();
+  });
+});
+
+/**
+ * Profils Démo / Mes données — lot B.6.
+ *
+ * Avant ce lot, revenir à la démonstration EFFAÇAIT l'import mémorisé : un
+ * aller sans retour, sous un libellé qui n'annonçait rien de tel. Ce qui est
+ * affiché et ce qui est conservé sont désormais deux choses distinctes.
+ */
+describe("bascule Démo / Mes données", () => {
+  it("affiche la démo sans effacer le jeu mémorisé", async () => {
+    memoriserJeu(memoImport());
+    vi.stubGlobal("fetch", mockFetchOk());
+    await loadDashboardData();
+    expect(useDataStore.getState().origin).toBe("upload");
+
+    await afficherDemo();
+
+    const s = useDataStore.getState();
+    expect(s.origin).toBe("static");
+    expect(s.transactions).toHaveLength(1);
+    expect(s.importedAt).toBeNull();
+    // L'essentiel : le fichier de la personne est toujours là.
+    expect(localStorage.getItem(CLE)).not.toBeNull();
+  });
+
+  it("ramène les données de la personne en un geste", async () => {
+    memoriserJeu(memoImport());
+    vi.stubGlobal("fetch", mockFetchOk());
+    await afficherDemo();
+    expect(useDataStore.getState().origin).toBe("static");
+
+    await afficherMesDonnees();
+
+    const s = useDataStore.getState();
+    expect(s.origin).toBe("upload");
+    expect(s.transactions).toHaveLength(2);
+    expect(s.importFileName).toBe("Budget_demo.xlsx");
+  });
+
+  it("garde le profil « démo » d'une ouverture à l'autre", async () => {
+    // Sans mémoriser ce choix, un simple rafraîchissement de la page
+    // reposerait le jeu importé par-dessus la démonstration.
+    memoriserJeu(memoImport());
+    vi.stubGlobal("fetch", mockFetchOk());
+    await afficherDemo();
+
+    await loadDashboardData();
+
+    expect(useDataStore.getState().origin).toBe("static");
+  });
+
+  it("efface tout, et revient à la démonstration", async () => {
+    memoriserJeu(memoImport());
+    enregistrerObjectifLocal("Alimentation", 400);
+    vi.stubGlobal("fetch", mockFetchOk());
+    await loadDashboardData();
+    expect(useDataStore.getState().origin).toBe("upload");
+
+    await effacerMesDonnees();
+
+    expect(useDataStore.getState().origin).toBe("static");
+    expect(localStorage.length).toBe(0);
   });
 });

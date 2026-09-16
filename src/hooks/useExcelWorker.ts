@@ -8,7 +8,9 @@ import {
   construireJeuDepuisRapport,
   construireJeuAncienFormat,
   memoriserJeu,
+  oublierJeu,
 } from "@/services/jeuDonnees";
+import { ecrireProfil } from "@/services/profil";
 import { decodeTransactions } from "@/utils/decode";
 import { telechargerOctets, MIME_XLSX } from "@/utils/telechargement";
 import { NOM_FICHIER_MODELE } from "@/services/modeleExcel";
@@ -51,8 +53,16 @@ export interface ExcelWorkerState {
   validation: ValidationReport | null;
   pendingData: ParsedData | null;
   parse: (buffer: ArrayBuffer) => void;
-  apply: (fileName?: string) => void;
-  /** `null` tant que rien n'a été appliqué ; `false` si la mémorisation a échoué. */
+  /**
+   * Pose le jeu lu. `memoriser` (lot B.6) dit si la personne a choisi de le
+   * garder sur son appareil — la case est cochée par défaut, elle peut être
+   * décochée.
+   */
+  apply: (fileName?: string, memoriser?: boolean) => void;
+  /**
+   * `null` tant que rien n'a été appliqué, ou si la mémorisation n'a pas été
+   * demandée ; `false` si elle a été demandée et refusée par le navigateur.
+   */
   memorise: boolean | null;
   reset: () => void;
   /** Demande au worker de fabriquer le classeur modèle, puis le télécharge. */
@@ -164,7 +174,7 @@ export function useExcelWorker(): ExcelWorkerState {
   const [memorise, setMemorise] = useState<boolean | null>(null);
 
   const apply = useCallback(
-    (fileName?: string) => {
+    (fileName?: string, memoriser: boolean = true) => {
       if (!brut) return;
       // Deux chemins, un seul jeu. Le format public apporte sa configuration
       // (soldes, bornes, prêt) ; l'ancien format n'en porte aucune, et c'est
@@ -173,6 +183,18 @@ export function useExcelWorker(): ExcelWorkerState {
         ? construireJeuDepuisRapport(rapport, fileName ?? "")
         : construireJeuAncienFormat(brut.transactions, brut.salary, fileName ?? "");
       poserJeu(jeu);
+      // Ce qui est affiché vient désormais de la personne : le profil suit,
+      // sans quoi la prochaine ouverture repartirait sur la démonstration.
+      ecrireProfil("personnel");
+
+      if (!memoriser) {
+        // Lot B.6 — la case a été décochée. Il ne suffit pas de ne rien
+        // écrire : un jeu mémorisé PLUS ANCIEN reviendrait à la prochaine
+        // ouverture, à la place de celui qu'on vient d'appliquer. On l'oublie.
+        oublierJeu();
+        setMemorise(null);
+        return;
+      }
       // Memorisation best-effort : un echec ne doit pas empecher l'affichage
       // des donnees qui viennent d'etre chargees. Mais il est RENDU, pour que
       // l'ecran puisse le dire au lieu de laisser croire que c'est conserve.

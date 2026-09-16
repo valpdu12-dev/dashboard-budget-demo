@@ -31,8 +31,18 @@ import type { RapportImport } from "@/services/lectureClasseur";
  */
 export const VERSION_SCHEMA = 2;
 
-const CLE = "budget.jeu.v2";
-const CLE_V1 = "budget.import.v1";
+/** Clé du jeu mémorisé au schéma courant. */
+export const CLE = "budget.jeu.v2";
+/** Clé de l'import d'avant le lot B.5, encore relue le temps d'une migration. */
+export const CLE_V1 = "budget.import.v1";
+
+/**
+ * Les clés que ce module écrit sur l'appareil.
+ *
+ * Déclarées ici et reprises par `profil.ts`, qui tient l'inventaire complet :
+ * une clé recopiée à la main ailleurs finirait par survivre à un effacement.
+ */
+export const CLES_JEU: readonly string[] = [CLE, CLE_V1];
 
 /** Un jeu complet, tel qu'il est posé dans le store et mémorisé. */
 export interface JeuDonnees {

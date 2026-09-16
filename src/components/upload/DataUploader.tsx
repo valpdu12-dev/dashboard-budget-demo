@@ -6,8 +6,8 @@ import {
 } from "lucide-react";
 import { useUIStore } from "@/stores/useUIStore";
 import { useDataStore } from "@/stores/useDataStore";
-import { loadDashboardData } from "@/services/loadDashboardData";
-import { oublierJeu } from "@/services/jeuDonnees";
+import { afficherDemo, afficherMesDonnees, effacerMesDonnees } from "@/services/basculeProfil";
+import { jeuPersonnelDisponible } from "@/services/profil";
 import { fmtImportOrigine } from "@/utils/importLabel";
 import { useExcelWorker, type ValidationReport } from "@/hooks/useExcelWorker";
 import type { RapportImport } from "@/services/lectureClasseur";
@@ -160,9 +160,9 @@ export function RapportImportVue({ r }: { r: RapportImport }) {
 
       {aDesParametres && (
         <p className="text-[12px] text-text-sec mt-3 px-3 py-2 bg-border/20 border border-border rounded-lg leading-relaxed">
-          Votre feuille Parametres a bien ete lue. Les soldes de depart, les dates
-          de releve et le pret ne sont pas encore repris par le tableau de bord :
-          seules les transactions et la paie le sont aujourd hui.
+          Votre feuille « Paramètres » a bien été lue. Les soldes de départ, les
+          dates de relevé et le prêt ne sont pas encore repris par le tableau de
+          bord : seules les transactions et la paie le sont aujourd'hui.
         </p>
       )}
     </div>
@@ -278,6 +278,15 @@ export function DataUploader() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [applied, setApplied] = useState(false);
+  // Lot B.6 — « Garder ces donnees sur cet appareil », cochee par defaut.
+  // Cochee par defaut parce que fermer l'onglet et tout reperdre serait une
+  // surprise ; decochable parce que sur un poste partage, ecrire le budget de
+  // quelqu'un dans le navigateur sans le lui demander n'est pas acceptable.
+  const [garder, setGarder] = useState(true);
+  const [confirmEffacement, setConfirmEffacement] = useState(false);
+  // Un jeu importe est-il memorise ? Se lit dans le stockage, qui ne previent
+  // personne : on relit apres chaque geste qui peut l'avoir change.
+  const [personnelDispo, setPersonnelDispo] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
@@ -287,6 +296,9 @@ export function DataUploader() {
       setLocalError(null);
       setIsDragging(false);
       setApplied(false);
+      setGarder(true);
+      setConfirmEffacement(false);
+      setPersonnelDispo(jeuPersonnelDisponible());
     }
   }, [uploaderOpen]);
 
@@ -372,24 +384,44 @@ export function DataUploader() {
   );
 
   const handleApply = useCallback(() => {
-    apply(selectedFile?.name);
+    apply(selectedFile?.name, garder);
     setApplied(true);
-  }, [apply, selectedFile]);
+    setPersonnelDispo(jeuPersonnelDisponible());
+  }, [apply, selectedFile, garder]);
 
-  const handleReset = useCallback(() => {
+  // Lot B.6 — trois gestes, et un seul detruit quelque chose.
+  //
+  // Avant, « Revenir aux donnees par defaut » effacait l'import memorise : un
+  // aller sans retour, sous un libelle qui n'annoncait rien de tel. Revenir a
+  // la demonstration ne fait plus que changer ce qui est AFFICHE.
+  //
+  // Chacun rappelle `loadDashboardData` via le service de bascule : sans ce
+  // rechargement le dashboard resterait vide jusqu'a un rafraichissement
+  // manuel — le `useEffect` d'App.tsx ne se rejoue pas, ses dependances etant
+  // des references Zustand stables (constate sur A56 le 11/08/2026).
+  const nettoyerEcran = useCallback(() => {
     reset();
     setSelectedFile(null);
     setLocalError(null);
     setApplied(false);
-    // Oublier l'import memorise : sans cela il reviendrait a la prochaine
-    // ouverture, alors que l'utilisateur vient justement de le congedier.
-    oublierJeu();
-    // `reset()` vide le store ; sans ce rechargement, le dashboard reste vide
-    // jusqu'à un rafraîchissement manuel de la page — le `useEffect` d'App.tsx
-    // ne se rejoue pas, ses dépendances étant des références Zustand stables.
-    // Constaté sur A56 le 11/08/2026 (point ouvert n° 27).
-    void loadDashboardData();
   }, [reset]);
+
+  const handleRevenirDemo = useCallback(() => {
+    nettoyerEcran();
+    setConfirmEffacement(false);
+    void afficherDemo().finally(() => setPersonnelDispo(jeuPersonnelDisponible()));
+  }, [nettoyerEcran]);
+
+  const handleAfficherMesDonnees = useCallback(() => {
+    nettoyerEcran();
+    void afficherMesDonnees();
+  }, [nettoyerEcran]);
+
+  const handleEffacer = useCallback(() => {
+    nettoyerEcran();
+    setConfirmEffacement(false);
+    void effacerMesDonnees().finally(() => setPersonnelDispo(jeuPersonnelDisponible()));
+  }, [nettoyerEcran]);
 
   const onClose = useCallback(() => setUploaderOpen(false), [setUploaderOpen]);
 
@@ -418,7 +450,9 @@ export function DataUploader() {
               Charger un nouveau fichier
             </h2>
             <p className="text-[13px] text-text-sec mt-1">
-              Importez votre fichier <strong className="text-text/70">Budget_XXXX.xlsx</strong> pour mettre a jour le dashboard
+              Importez votre classeur <strong className="text-text/70">.xlsx</strong> pour
+              mettre à jour le tableau de bord. Le nom du fichier n'a aucune
+              importance : c'est la structure des feuilles qui compte.
             </p>
           </div>
           <button onClick={onClose} className="p-1 rounded-md text-text-sec hover:text-text transition-colors" aria-label="Fermer">
@@ -427,18 +461,78 @@ export function DataUploader() {
         </div>
 
         <div className="p-6">
-          {/* Indicateur donnees importees */}
-          {isFromUpload && (
-            <div className="flex items-center gap-2 px-3.5 py-2.5 bg-green/[0.08] border border-green/20 rounded-lg mb-5 text-[13px] text-green">
-              <Check size={16} />
-              <span>
-                Le dashboard affiche {fmtImportOrigine(importFileName, importedAt)}.{" "}
-                <button onClick={handleReset} className="text-indigo-text underline hover:no-underline">
-                  Revenir aux donnees par defaut
-                </button>
-              </span>
+          {/* Profil affiche — lot B.6 */}
+          {isFromUpload ? (
+            <div className="flex items-start gap-2 px-3.5 py-2.5 bg-green/[0.08] border border-green/20 rounded-lg mb-5 text-[13px] text-green">
+              <Check size={16} className="shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p>Le dashboard affiche {fmtImportOrigine(importFileName, importedAt)}.</p>
+                {confirmEffacement ? (
+                  <>
+                    <p className="text-text-sec mt-1.5 leading-relaxed">
+                      Seront supprimés de cet appareil : le fichier importé, les
+                      objectifs de budget que vous avez modifiés, et ce choix
+                      d'affichage. Votre classeur, lui, n'est pas touché.
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <button
+                        onClick={handleEffacer}
+                        className="px-3 py-1.5 max-md:min-h-tap rounded-lg border border-red/40 bg-red/[0.08] text-red text-[12px] font-medium hover:bg-red/[0.15] transition-colors"
+                      >
+                        Confirmer l'effacement
+                      </button>
+                      <button
+                        onClick={() => setConfirmEffacement(false)}
+                        className="px-3 py-1.5 max-md:min-h-tap rounded-lg border border-border text-text-sec text-[12px] font-medium hover:text-text transition-colors"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <button
+                      onClick={handleRevenirDemo}
+                      title="Vos données restent mémorisées : vous pourrez revenir dessus"
+                      className="px-3 py-1.5 max-md:min-h-tap rounded-lg border border-border bg-surface text-text-sec text-[12px] font-medium hover:text-text transition-colors"
+                    >
+                      Revenir à la démo
+                    </button>
+                    <button
+                      onClick={() => setConfirmEffacement(true)}
+                      className="px-3 py-1.5 max-md:min-h-tap rounded-lg border border-border bg-surface text-text-sec text-[12px] font-medium hover:text-red transition-colors"
+                    >
+                      Effacer mes données
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+          ) : personnelDispo ? (
+            <div className="flex items-start gap-2 px-3.5 py-2.5 bg-indigo/[0.08] border border-indigo/25 rounded-lg mb-5 text-[13px] text-text-sec">
+              <FileSpreadsheet size={16} className="shrink-0 mt-0.5 text-indigo-text" />
+              <div className="flex-1 min-w-0">
+                <p>
+                  Le dashboard affiche la <strong className="text-text">démonstration</strong>.
+                  Un fichier que vous avez importé est mémorisé sur cet appareil.
+                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <button
+                    onClick={handleAfficherMesDonnees}
+                    className="px-3 py-1.5 max-md:min-h-tap rounded-lg border border-indigo/40 bg-indigo/[0.08] text-indigo-text text-[12px] font-medium hover:bg-indigo/[0.15] transition-colors"
+                  >
+                    Afficher mes données
+                  </button>
+                  <button
+                    onClick={handleEffacer}
+                    className="px-3 py-1.5 max-md:min-h-tap rounded-lg border border-border bg-surface text-text-sec text-[12px] font-medium hover:text-red transition-colors"
+                  >
+                    Effacer mes données
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           {/* Zone drag & drop */}
           <div
@@ -488,8 +582,8 @@ export function DataUploader() {
           {/* Modele de fichier source (lot B.1) */}
           <div className="flex flex-wrap items-center justify-between gap-2 mt-3 px-3.5 py-2.5 bg-border/20 border border-border rounded-lg">
             <p className="text-[12px] text-text-sec leading-relaxed">
-              Premiere fois ? Telechargez le modele : trois mois d'exemple, les
-              colonnes attendues et un mode d'emploi dans la premiere feuille.
+              Première fois ? Téléchargez le modèle : trois mois d'exemple, les
+              colonnes attendues, et un mode d'emploi dans la première feuille.
             </p>
             <button
               onClick={demanderModele}
@@ -499,7 +593,7 @@ export function DataUploader() {
               {modeleEnCours
                 ? <Loader2 size={15} className="animate-spin" />
                 : <FileDown size={15} />}
-              Telecharger le modele
+              Télécharger le modèle
             </button>
           </div>
 
@@ -519,6 +613,40 @@ export function DataUploader() {
             <>
               <ValidationSummary v={validation} />
               {rapport && <RapportImportVue r={rapport} />}
+              {/*
+                Lot B.6 — la memorisation devient un choix, montre avant
+                d'appliquer. Cochee par defaut : le comportement d'avant reste
+                celui qui se produit si on ne fait rien.
+              */}
+              {pendingData && !applied && (
+                <label className="flex items-start gap-2.5 mt-3 px-3.5 py-2.5 bg-border/20 border border-border rounded-lg cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={garder}
+                    onChange={(e) => setGarder(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-indigo shrink-0"
+                  />
+                  <span className="text-[12px] text-text-sec leading-relaxed">
+                    <span className="text-text font-medium">Garder ces données sur cet appareil.</span>{" "}
+                    Elles restent dans ce navigateur — rien n'est envoyé nulle part.
+                    Décochez sur un ordinateur partagé : le tableau de bord
+                    reviendra à la démonstration dès la fermeture de l'onglet.
+                  </span>
+                </label>
+              )}
+              {applied && !garder && (
+                <div
+                  role="status"
+                  className="flex items-start gap-2 mt-3 px-3.5 py-2.5 bg-border/20 border border-border rounded-lg text-[13px] text-text-sec"
+                >
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                  <span>
+                    Ces données ne sont pas conservées, comme vous l'avez demandé.
+                    À la fermeture de l'onglet, le tableau de bord reviendra à la
+                    démonstration.
+                  </span>
+                </div>
+              )}
               {applied && (
                 <div className="flex items-center gap-2 mt-3 px-3.5 py-2.5 bg-green/[0.08] border border-green/20 rounded-lg text-[13px] text-green">
                   <Check size={16} />
@@ -530,18 +658,18 @@ export function DataUploader() {
                 stockage desactive, quota depasse. L'avaler laisserait croire
                 que le fichier sera encore la a la prochaine ouverture.
               */}
-              {applied && memorise === false && (
+              {applied && garder && memorise === false && (
                 <div
                   role="status"
                   className="flex items-start gap-2 mt-3 px-3.5 py-2.5 bg-amber/[0.08] border border-amber/25 rounded-lg text-[13px] text-amber"
                 >
                   <AlertCircle size={16} className="shrink-0 mt-0.5" />
                   <span>
-                    Ces donnees ne sont pas memorisees : votre navigateur a
-                    refuse l ecriture.{" "}
+                    Ces données ne sont pas mémorisées : votre navigateur a
+                    refusé l'écriture.{" "}
                     <span className="text-text-sec">
-                      Elles restent affichees jusqu a la fermeture de l onglet,
-                      puis il faudra reimporter le fichier.
+                      Elles restent affichées jusqu'à la fermeture de l'onglet ;
+                      il faudra ensuite réimporter le fichier.
                     </span>
                   </span>
                 </div>

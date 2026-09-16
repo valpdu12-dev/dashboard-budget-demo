@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useExcelWorker } from "@/hooks/useExcelWorker";
 import { useDataStore } from "@/stores/useDataStore";
+import { CLE } from "@/services/jeuDonnees";
+import { lireProfil } from "@/services/profil";
 import { resetDataStore } from "../helpers/storeReset";
 import type { RawTransactionsJSON, SalaryData } from "@/types";
 
@@ -204,5 +206,59 @@ describe("useExcelWorker — cleanup", () => {
     const w = workerInstance;
     unmount();
     expect(w?.terminate).toHaveBeenCalled();
+  });
+});
+
+/**
+ * Mémorisation sur choix explicite — lot B.6.
+ *
+ * La case « Garder ces données sur cet appareil » est cochée par défaut :
+ * `apply()` sans second argument écrit, comme avant ce lot.
+ */
+describe("useExcelWorker — apply() et mémorisation (lot B.6)", () => {
+  function lireJusquAuResultat() {
+    const rendu = renderHook(() => useExcelWorker());
+    act(() => { rendu.result.current.parse(new ArrayBuffer(4)); });
+    act(() => {
+      workerInstance?.simulateMessage({
+        type: "result",
+        transactions: MOCK_RAW,
+        salary: MOCK_SALARY,
+        validation: MOCK_VALIDATION,
+      });
+    });
+    return rendu;
+  }
+
+  beforeEach(() => localStorage.clear());
+
+  it("mémorise par défaut, et note le profil « personnel »", () => {
+    const { result } = lireJusquAuResultat();
+    act(() => { result.current.apply("Budget.xlsx"); });
+
+    expect(localStorage.getItem(CLE)).not.toBeNull();
+    expect(lireProfil()).toBe("personnel");
+    expect(result.current.memorise).toBe(true);
+  });
+
+  it("n'écrit rien quand la case est décochée", () => {
+    const { result } = lireJusquAuResultat();
+    act(() => { result.current.apply("Budget.xlsx", false); });
+
+    // Les données sont affichées…
+    expect(useDataStore.getState().origin).toBe("upload");
+    // …et rien n'est resté sur l'appareil.
+    expect(localStorage.getItem(CLE)).toBeNull();
+    expect(result.current.memorise).toBeNull();
+  });
+
+  it("oublie un jeu mémorisé plus ancien quand la case est décochée", () => {
+    // Sinon la prochaine ouverture rendrait l'ANCIEN fichier, à la place de
+    // celui qu'on vient d'appliquer — sans que rien ne le dise.
+    localStorage.setItem(CLE, JSON.stringify({ version: 2, vieux: true }));
+    const { result } = lireJusquAuResultat();
+    act(() => { result.current.apply("Budget.xlsx", false); });
+
+    expect(localStorage.getItem(CLE)).toBeNull();
   });
 });

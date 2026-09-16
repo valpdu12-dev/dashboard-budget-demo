@@ -15,7 +15,8 @@
 // l'application fonctionne sans : au pire, les modifications ne survivent
 // pas à la fermeture de l'onglet.
 
-const CLE = "budget.objectifs.v1";
+/** Clé des objectifs modifiés à la main — reprise par l'inventaire de `profil.ts`. */
+export const CLE_OBJECTIFS = "budget.objectifs.v1";
 
 /** Objectifs modifiés par la personne : sous-catégorie → montant cible. */
 export type ObjectifsLocaux = Record<string, number>;
@@ -23,7 +24,7 @@ export type ObjectifsLocaux = Record<string, number>;
 /** Lit les objectifs mémorisés. Retourne un objet vide si rien ou si erreur. */
 export function lireObjectifsLocaux(): ObjectifsLocaux {
   try {
-    const brut = localStorage.getItem(CLE);
+    const brut = localStorage.getItem(CLE_OBJECTIFS);
     if (!brut) return {};
     const objet = JSON.parse(brut) as unknown;
     if (!objet || typeof objet !== "object" || Array.isArray(objet)) return {};
@@ -45,7 +46,7 @@ export function enregistrerObjectifLocal(cat2: string, cible: number): boolean {
   try {
     const actuels = lireObjectifsLocaux();
     actuels[cat2] = cible;
-    localStorage.setItem(CLE, JSON.stringify(actuels));
+    localStorage.setItem(CLE_OBJECTIFS, JSON.stringify(actuels));
     return true;
   } catch (err) {
     console.warn("[Budget] Objectif non mémorisé (stockage indisponible).", err);
@@ -56,7 +57,7 @@ export function enregistrerObjectifLocal(cat2: string, cible: number): boolean {
 /** Efface tout ce que la personne a modifié, et revient aux valeurs livrées. */
 export function effacerObjectifsLocaux(): void {
   try {
-    localStorage.removeItem(CLE);
+    localStorage.removeItem(CLE_OBJECTIFS);
   } catch (err) {
     console.warn("[Budget] Objectifs locaux non effacés.", err);
   }

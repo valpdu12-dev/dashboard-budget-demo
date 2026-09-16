@@ -5,6 +5,7 @@ import { Wallet, ArrowLeftRight, SlidersHorizontal } from "lucide-react";
 import { useFilterStore } from "@/stores/useFilterStore";
 import { PERIOD_OPTIONS } from "@/config/constants";
 import { UploadButton } from "@/components/upload/DataUploader";
+import { ProfilBascule } from "@/components/layout/ProfilBascule";
 import { Chip } from "@/components/ui/Chip";
 import { useResponsive } from "@/hooks/useResponsive";
 import type { Cat1Filter } from "@/types";
@@ -108,6 +109,7 @@ export function Header() {
               )}
             </button>
           )}
+          <ProfilBascule />
           <UploadButton />
         </div>
       </div>
