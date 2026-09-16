@@ -144,6 +144,7 @@ const BUILD_AUTORISE = [
   { motif: /^manifest\.webmanifest$/, quoi: "manifeste PWA" },
   { motif: /^sw\.js$/, quoi: "service worker" },
   { motif: /^_redirects$/, quoi: "repli SPA de l'hébergeur" },
+  { motif: /^_headers$/, quoi: "en-têtes de sécurité de l'hébergeur (produits par le build)" },
   { motif: /^icons\/icon-(192|512)\.svg$/, quoi: "icônes PWA" },
   { motif: /^assets\/[\w.-]+\.(js|css)$/, quoi: "bundle Vite" },
   { motif: /^assets\/[\w.-]+\.woff2$/, quoi: "police embarquée" },
@@ -364,6 +365,51 @@ if (existsSync(VENDOR)) {
     if (!binaires.includes(nom)) {
       echecs.push(`[vendor] EMPREINTES.txt déclare ${nom}, qui n'existe plus dans vendor/.`);
     }
+  }
+}
+
+// ── 3ter. Politique de sécurité du contenu — lot B.7 ────────────────────
+//
+// Le site reçoit le classeur de la personne. « Rien ne sort du navigateur »
+// est une phrase affichée à l'écran : la politique de sécurité du contenu est
+// ce qui la rend vérifiable. Publier un build qui l'aurait perdue — un plugin
+// désactivé, une configuration remaniée — la transformerait en promesse.
+//
+// Les deux sorties sont produites par le build depuis `src/config/csp.ts`. On
+// contrôle ici qu'elles sont bien là, et qu'aucune n'a été relâchée.
+
+if (existsSync(DIST)) {
+  const html = lireTexte(join(DIST, "index.html")) ?? "";
+  const entetes = lireTexte(join(DIST, "_headers"));
+
+  const meta = html.match(
+    /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)"/i
+  );
+  if (!meta) {
+    echecs.push(
+      "[CSP] dist/index.html ne porte aucune politique de sécurité du contenu."
+    );
+  }
+  if (entetes === null) {
+    echecs.push("[CSP] dist/_headers est absent : l'hébergeur ne servira aucun en-tête.");
+  }
+
+  const politiques = [meta?.[1], entetes].filter((p) => typeof p === "string");
+  for (const politique of politiques) {
+    for (const exigee of ["default-src 'self'", "script-src 'self'", "connect-src 'self'"]) {
+      if (!politique.includes(exigee)) {
+        echecs.push(`[CSP] directive attendue absente : ${exigee}.`);
+      }
+    }
+    // `'unsafe-inline'` est toléré sur les styles seulement (Recharts pose ses
+    // dimensions en attribut style). Sur les scripts, il viderait la politique
+    // de son sens.
+    if (/script-src[^;]*unsafe-(inline|eval)/.test(politique)) {
+      echecs.push("[CSP] script-src autorise du code en ligne ou eval.");
+    }
+  }
+  if (politiques.length > 0) {
+    notes.push("CSP : politique présente dans index.html et dans _headers");
   }
 }
 
