@@ -7,7 +7,7 @@
 **➜ Voir la démonstration : https://dashboard-budget-demo.pages.dev/**
 
 Version publique et statique d'un tableau de bord de finances personnelles.
-React 18, TypeScript, Vite, Tailwind, Zustand, Recharts. 623 tests.
+React 18, TypeScript, Vite, Tailwind, Zustand, Recharts. 669 tests.
 
 ![Page Comptes](docs/captures/desktop-01-comptes.png)
 
@@ -240,7 +240,7 @@ la valeur manque, et non un tiret muet.
 
 | | |
 |---|---|
-| Tests | **623**, 53 fichiers |
+| Tests | **669**, 57 fichiers |
 | Chaîne complète | lint → types → tests → build → contrôle de publication |
 | Durée | environ 90 s |
 | CI | tout ce qui précède, plus gitleaks et un contrôle de fraîcheur des données |
@@ -277,6 +277,38 @@ donc un angle mort, comblé par une règle maison.
 Les neuf écrans, en 1440 px et en 412 px, sont dans
 [`docs/captures/`](docs/captures/). Toutes les captures sont prises sur cette
 démonstration, avec ses données.
+
+---
+
+## Importer votre propre fichier
+
+La démonstration accepte **votre** classeur. Bouton **Importer .xlsx**, puis
+**Télécharger le modèle** : trois mois d'exemple, les colonnes attendues et un
+mode d'emploi dans la première feuille.
+
+- Le guide, dans l'ordre où l'on s'en sert :
+  [`docs/GUIDE_FICHIER_SOURCE.md`](docs/GUIDE_FICHIER_SOURCE.md)
+- Le contrat exact du format :
+  [`docs/FORMAT_FICHIER_SOURCE.md`](docs/FORMAT_FICHIER_SOURCE.md)
+
+Un aperçu s'affiche **avant** d'appliquer quoi que ce soit : lignes acceptées,
+lignes refusées avec leur feuille et leur ligne, comptes inconnus nommés,
+dépenses sans catégorie chiffrées.
+
+### Ce que deviennent vos données
+
+Le classeur est lu dans votre navigateur, par un *worker*. Il n'est envoyé
+nulle part — et ce n'est pas qu'une promesse : la page est servie avec une
+politique de sécurité du contenu en `connect-src 'self'`, écrite dans
+[`src/config/csp.ts`](src/config/csp.ts). Le navigateur refuse lui-même toute
+destination extérieure, y compris si une dépendance en introduisait une.
+
+Avant d'appliquer, une case demande si vous voulez **garder ces données sur cet
+appareil** — cochée par défaut, à décocher sur un poste partagé. Ensuite, une
+pastille dit ce qui est affiché, **Démo** ou **Mes données**, et bascule de
+l'un à l'autre sans rien effacer. « Effacer mes données » est un geste à part,
+confirmé, qui ne laisse aucun résidu : fichier importé, objectifs modifiés et
+choix d'affichage partent ensemble.
 
 ---
 
@@ -340,7 +372,9 @@ Aucun fichier `.env` : ni API, ni jeton, ni secret.
 | **B.3** | Validation de l'import : lignes acceptées / rejetées, situées, aperçu avant application | ✅ |
 | **B.4** | Paie et prêt optionnels, navigation conditionnelle | ✅ |
 | **B.5** | Un jeu = un tout, version de schéma, couverture déclarée | ✅ |
-| **B.6–B.8** | Profils, confidentialité, recette | à venir |
+| **B.6** | Profils Démo / Mes données, mémorisation sur choix explicite, effacement sans résidu | ✅ |
+| **B.7** | Politique de sécurité du contenu, en-têtes, guide du fichier source | ✅ |
+| **B.8** | Recette et publication | en cours |
 | **C** | Paramétrage complet par le fichier source | à venir |
 | **D** | Recette de diffusion | à venir |
 
@@ -352,11 +386,15 @@ Elles sont écrites parce qu'elles existent, pas parce qu'elles sont
 confortables.
 
 **Les comptes ne viennent pas encore du fichier.** Ils sont déclarés dans
-`src/config/accounts.ts`. Surtout, les **règles de solde sont écrites compte
-par compte** : ajouter un compte ne lui donne pas de solde — il vaudra zéro,
-sera absent du graphique **et du total**, sans erreur ni message. C'est la
-limite la plus dangereuse de cet état, parce qu'elle est silencieuse. Détail
-dans [`docs/LIMITES_PARAMETRAGE.md`](docs/LIMITES_PARAMETRAGE.md).
+`src/config/accounts.ts`, et les **règles de solde sont écrites compte par
+compte** : un compte importé sous un autre nom n'a pas de solde de départ.
+
+Ce n'est plus silencieux, et c'est tout ce qui a changé au lot B : le compte
+est **nommé** dans l'aperçu d'import, l'écran Comptes dit que son point de
+départ est inconnu, et il affiche à la place la **variation cumulée** — crédits
+moins débits depuis la première transaction — qui, elle, ne suppose rien. Un
+solde manquant reste « non initialisé », jamais zéro. Détail dans
+[`docs/LIMITES_PARAMETRAGE.md`](docs/LIMITES_PARAMETRAGE.md).
 
 **La couverture temporelle n'est inférée que si la source ne déclare rien.**
 Un fichier qui donne ses dates de relevé est cru sur parole, et ses mois de
