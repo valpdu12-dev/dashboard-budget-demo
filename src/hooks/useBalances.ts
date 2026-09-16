@@ -38,6 +38,19 @@ interface BalancesResult {
   comptesNonInitialises: string[];
   /** Vrai quand AUCUN compte n'a de solde de départ : rien n'est calculable. */
   aucunSoldeConnu: boolean;
+  /** Tous les comptes qui apparaissent dans les données, du plus actif au moins actif. */
+  comptesPresents: string[];
+  /**
+   * Variation CUMULÉE par compte et par mois — lot B.5bis.
+   *
+   * Sans solde de départ, un solde est hors d'atteinte : on ignore le point
+   * de départ. La variation, elle, se calcule sans rien supposer : crédits
+   * moins débits, cumulés depuis la première transaction.
+   *
+   * C'est ce que l'écran montre à la place d'une page vide. Le mot compte :
+   * une variation n'est pas un solde, et l'écran ne les confond jamais.
+   */
+  variationsByMonth: Record<string, Record<string, number>>;
 }
 
 export function useBalances(
@@ -136,6 +149,34 @@ export function useBalances(
     return result;
   }, [txByMonth, allMonths, initBalances, comptesInitialises]);
 
+  // ── Variation cumulée, générique, sans aucune règle par compte ────────
+  const comptesPresents = useMemo(() => {
+    const poids = new Map<string, number>();
+    for (const t of transactions) {
+      poids.set(t.compte, (poids.get(t.compte) ?? 0) + t.montant);
+    }
+    return [...poids.keys()].sort(
+      (a, b) => (poids.get(b) ?? 0) - (poids.get(a) ?? 0) || a.localeCompare(b)
+    );
+  }, [transactions]);
+
+  const variationsByMonth = useMemo(() => {
+    const result: Record<string, Record<string, number>> = {};
+    const cumul: Record<string, number> = {};
+    for (const c of comptesPresents) cumul[c] = 0;
+
+    for (const mk of allMonths) {
+      for (const t of txByMonth.get(mk) ?? []) {
+        if (!(t.compte in cumul)) continue;
+        cumul[t.compte] += t.dc === "Crédit" ? t.montant : -t.montant;
+      }
+      const instantane: Record<string, number> = { ...cumul };
+      instantane.Total = comptesPresents.reduce((s2, c) => s2 + cumul[c], 0);
+      result[mk] = instantane;
+    }
+    return result;
+  }, [txByMonth, allMonths, comptesPresents]);
+
   // ── Étape 3 : Soldes du dernier mois (= soldes actuels) ───────────────
   const currentBalances = useMemo(() => {
     if (!allMonths.length) {
@@ -168,6 +209,8 @@ export function useBalances(
   }, [balancesByMonth]);
 
   return {
+    comptesPresents,
+    variationsByMonth,
     comptesNonInitialises,
     aucunSoldeConnu: comptesInitialises.length === 0,
     balancesByMonth,

@@ -93,11 +93,12 @@ export default function PretImmobilier() {
         >
           <AlertTriangle size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
           <span>
-            Votre source ne declare pas les parametres du pret. Les montants de
-            cette page sont calcules sur des valeurs par defaut{" "}
+            Votre source ne déclare pas les paramètres du prêt. Les montants de
+            cette page sont calculés sur des valeurs par défaut{" "}
             <span className="text-text-sec">
-              — ils ne decrivent pas votre pret. Renseignez montant, mensualite
-              et nombre d echeances dans la feuille Parametres de votre fichier.
+              : ils ne décrivent pas votre prêt. Renseignez le montant, la
+              mensualité et le nombre d'échéances dans la feuille
+              « Paramètres » de votre fichier.
             </span>
           </span>
         </div>

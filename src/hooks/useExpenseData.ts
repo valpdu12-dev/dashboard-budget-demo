@@ -8,8 +8,8 @@ import { useMemo } from "react";
 import { useFilteredData } from "@/hooks/useFilteredData";
 import { useFilterStore } from "@/stores/useFilterStore";
 import { useDataStore } from "@/stores/useDataStore";
-import { toOrganisme } from "@/utils/organisme";
-import { ORGANISMES, TRANSFER_TYPES } from "@/config/constants";
+import { toOrganisme, organismesPresents } from "@/utils/organisme";
+import { TRANSFER_TYPES } from "@/config/constants";
 import { mkLabel } from "@/utils/formatters";
 
 
@@ -72,6 +72,14 @@ export function useExpenseData() {
   const { selCat2, selType, selOrg } = useFilterStore();
   const { transactions: allTransactions } = useDataStore();
 
+  // Les organismes à tracer viennent des DONNÉES, pas d'une liste figée.
+  // Calculés sur le jeu complet : une série ne doit pas apparaître et
+  // disparaître au gré du filtre de période.
+  const organismes = useMemo(
+    () => organismesPresents(allTransactions),
+    [allTransactions]
+  );
+
   // ── 1. Évolution mensuelle par organisme (LineChart) ──────────────
   // Note : ne filtre PAS par selOrg (chaque organisme = une série)
   const expMonthlyLines = useMemo<MonthlyLineRow[]>(() => {
@@ -82,24 +90,24 @@ export function useExpenseData() {
     const rows = allMonthsInRange.map((mk) => {
       const mTx = tx.filter((t) => t.monthKey === mk && t.dc === "Débit");
       const row: MonthlyLineRow = { name: mkLabel(mk), mk, Total: 0 };
-      ORGANISMES.forEach((org) => {
+      organismes.forEach((org) => {
         row[org] = Math.round(
           mTx
             .filter((t) => toOrganisme(t.compte) === org)
             .reduce((s, t) => s + t.montant, 0)
         );
       });
-      row.Total = ORGANISMES.reduce((s, o) => s + ((row[o] as number) || 0), 0);
+      row.Total = organismes.reduce((s, o) => s + ((row[o] as number) || 0), 0);
       return row;
     });
     // Ajouter prev_* pour comparaison N-1 dans les tooltips
     for (let i = 1; i < rows.length; i++) {
       const prev = rows[i - 1];
-      ORGANISMES.forEach((org) => { rows[i][`prev_${org}`] = prev[org]; });
+      organismes.forEach((org) => { rows[i][`prev_${org}`] = prev[org]; });
       rows[i]["prev_Total"] = prev.Total;
     }
     return rows;
-  }, [allMonthsInRange, baseTx, selCat2, selType]);
+  }, [allMonthsInRange, baseTx, selCat2, selType, organismes]);
 
   // ── 2. Répartition par Cat2 (Donut) ───────────────────────────────
   const expByCat2 = useMemo<Cat2Slice[]>(() => {
@@ -287,6 +295,7 @@ export function useExpenseData() {
   );
 
   return {
+    organismes,
     expMonthlyLines,
     expByCat2,
     expByType,

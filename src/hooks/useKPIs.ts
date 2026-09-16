@@ -28,7 +28,7 @@ export function useKPIs(
         netMonth: 0,
         lastSal: null, prevSal: null,
         fixe: 0, occ: 0,
-        tauxEpargne: 0,
+        tauxEpargne: null,
       };
     }
 
@@ -83,8 +83,11 @@ export function useKPIs(
       .reduce((s, t) => s + t.montant, 0);
 
     // ─── Taux d'épargne ──────────────────────────────────────────
+    // `null`, jamais 0 : sans salaire connu, le taux n'est pas calculable.
+    // Constaté le 16/09/2026 sur un jeu importé sans feuille de paie —
+    // l'écran affichait « 0,0 % », c'est-à-dire « vous n'épargnez rien ».
     const tauxEpargne =
-      lastSal && lastSal.net > 0 ? (lastSal.net - depCur) / lastSal.net : 0;
+      lastSal && lastSal.net > 0 ? (lastSal.net - depCur) / lastSal.net : null;
 
     return {
       curBal,

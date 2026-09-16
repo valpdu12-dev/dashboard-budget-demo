@@ -139,7 +139,19 @@ function computeCat1Fallback(type: string, label: string): string {
   if (!label || CAT1_EXCLUDE.has(type)) return "";
   if (CURRENT_TYPES.has(type)) return "Dépense Courante";
   if (FIXED_TYPES.has(type)) return "Dépense Fixe";
-  return "Dépense Occasionnelle";
+
+  // Un type INCONNU ne reçoit plus de classe par défaut.
+  //
+  // Ces trois tables portent le vocabulaire de la démonstration. Sur un
+  // classeur tiers, tout type qui n'y figure pas tombait sur « Dépense
+  // Occasionnelle » — une classification INVENTÉE. Mesuré le 16/09/2026 sur
+  // le classeur réel : 39 lignes d'épargne classées en dépense occasionnelle,
+  // là où le parseur de référence laissait la case vide. L'indicateur
+  // « Fixe / Occasionnelle » en était faussé.
+  //
+  // Vide veut dire « cette ligne n'est pas une dépense classée », ce qui est
+  // exactement ce qu'on sait d'elle. Le lot C lira la classe du fichier.
+  return "";
 }
 
 function computeDCFallback(type: string): string {
@@ -198,7 +210,17 @@ function xlDateToISO(raw: Date | number | string | null): string | null {
  */
 function cleanStr(v: unknown): string {
   if (v == null) return "";
-  return String(v).trim().replace(/\xa0/g, "");
+  // Les suites d'espaces sont réduites à UNE. Mesuré le 16/09/2026 sur le
+  // classeur réel : une cellule de type portait « Jeux Vidéo /  … » avec DEUX
+  // espaces. Le parseur Python les réduisait, ce worker les gardait — et les
+  // deux applications affichaient alors DEUX types là où il n'y en a qu'un.
+  // `scripts/check-import-equivalence.mjs` comptait 88 lignes discordantes
+  // sur 1 933 pour cette seule raison.
+  //
+  // ⚠️ Ce n'est PAS un retour en arrière sur la correction du 11/08 : les
+  // espaces ordinaires SIMPLES restent intacts, sans quoi les tables
+  // CREDIT_TYPES, HALF_COMPTES et CAT1_EXCLUDE ne correspondraient plus.
+  return String(v).replace(/\xa0/g, "").trim().replace(/\s+/g, " ");
 }
 
 /** Envoie un message de progression au thread principal */
@@ -601,7 +623,8 @@ self.onmessage = (event: MessageEvent) => {
       throw new Error(
         `Feuille "Fiche de Paie" absente. ` +
         `Feuilles trouvées : ${wb.SheetNames.join(", ")}. ` +
-        `Assurez-vous d'uploader le fichier "Budget_XXXX.xlsx" complet.`
+        `Le nom du fichier est sans importance, mais ce classeur doit porter ` +
+        `à la fois une feuille "Transactions AAAA" et une feuille "Fiche de Paie".`
       );
     }
 

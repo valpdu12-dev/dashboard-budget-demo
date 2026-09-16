@@ -74,7 +74,7 @@ function renderDonutLabel({
 
 // ─── Page Comptes ───────────────────────────────────────────────────────
 export default function Comptes() {
-  const { config, salary, status } = useDataStore();
+  const { config, salary, status, budgets } = useDataStore();
   const { allMonths, allMonthsInRange, currentMonth, prevMonth, baseTx } = useFilteredData();
 
   const initBalances = config?.init ?? {};
@@ -82,7 +82,7 @@ export default function Comptes() {
 
   const {
     balancesByMonth, currentBalances, balanceChartData,
-    comptesNonInitialises, aucunSoldeConnu,
+    comptesNonInitialises, aucunSoldeConnu, comptesPresents, variationsByMonth,
   } = useBalances(
     useDataStore.getState().transactions,
     allMonths,
@@ -104,6 +104,13 @@ export default function Comptes() {
   // Badge alertes budget (QW4) — postes en dépassement (warning + over)
   const { kpis: budgetKpis } = useBudgetData();
 
+  // Aucun objectif défini n'est PAS « aucun dépassement ». Constaté le
+  // 16/09/2026 sur un fichier importé : sans le moindre plafond, la carte
+  // annonçait « Aucun dépassement » en vert — une bonne nouvelle inventée,
+  // exactement le défaut que la règle du « tiret plutôt qu'un 100 % » avait
+  // chassé ailleurs.
+  const aucunObjectif = (budgets?.budgets?.length ?? 0) === 0;
+
   // Données du graphe soldes + comparatif N-1 (prev_Total) pour le tooltip (QW2)
   const lineData = useMemo(
     () =>
@@ -114,6 +121,17 @@ export default function Comptes() {
           : row;
       }),
     [balanceChartData, allMonthsInRange, balancesByMonth],
+  );
+
+  // Variations cumulées, pour la période affichée.
+  const variationChartData = useMemo(
+    () =>
+      allMonthsInRange.map((mk) => {
+        const ligne: Record<string, number | string> = { monthKey: mk };
+        for (const c of comptesPresents) ligne[c] = Math.round(variationsByMonth[mk]?.[c] ?? 0);
+        return ligne;
+      }),
+    [allMonthsInRange, comptesPresents, variationsByMonth]
   );
 
   // Projection fin de mois (QW3) — extrapolation linéaire sur le mois en cours
@@ -143,6 +161,19 @@ export default function Comptes() {
       <div className="flex flex-col gap-6">
         <PageHeader title="Comptes" subtitle="Vue d'ensemble de vos soldes et flux" />
 
+        <SkeletonKPIGrid count={11} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <SkeletonChart height={chartHeight(380)} />
+          <SkeletonDonut size={300} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Comptes" subtitle="Vue d'ensemble de vos soldes et flux" />
+
       {/*
         Lot B.5 — un compte sans solde de départ déclaré n'est pas à zéro : on
         ignore son point de départ. Le compter pour 0 dans le total revenait à
@@ -157,28 +188,16 @@ export default function Comptes() {
           <AlertTriangle size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
           <span>
             {aucunSoldeConnu
-              ? "Aucun solde de depart n est declare par votre source : les soldes ne sont pas calculables."
-              : `Solde de depart non declare pour ${comptesNonInitialises.join(", ")}.`}{" "}
+              ? "Aucun solde de départ n'est déclaré par votre source : les soldes ne sont pas calculables."
+              : `Solde de départ non déclaré pour ${comptesNonInitialises.join(", ")}.`}{" "}
             <span className="text-text-sec">
-              Ces comptes sont exclus des soldes et du total — ils ne valent pas
-              zero, leur point de depart est inconnu. Renseignez-le dans la
-              feuille Parametres de votre fichier.
+              {aucunSoldeConnu
+                ? "Cette page montre donc la VARIATION cumulée de chaque compte — crédits moins débits depuis la première transaction. Une variation n'est pas un solde : le point de départ reste inconnu. Déclarez-le dans la feuille « Paramètres » de votre fichier pour obtenir de vrais soldes."
+                : "Ces comptes sont exclus des soldes et du total : ils ne valent pas zéro, leur point de départ est inconnu. Renseignez-le dans la feuille « Paramètres » de votre fichier."}
             </span>
           </span>
         </div>
       )}
-        <SkeletonKPIGrid count={11} />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <SkeletonChart height={chartHeight(380)} />
-          <SkeletonDonut size={300} />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Comptes" subtitle="Vue d'ensemble de vos soldes et flux" />
 
       {/* ═══ Bandeau KPI (11 cards) ════════════════════════════════════════ */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 stagger-grid">
@@ -186,16 +205,27 @@ export default function Comptes() {
           <KPICard label="Solde Total" value={soldeTotalCur} prev={soldeTotalPrev} color="#6366F1" icon={<Wallet size={14} />} />
         )}
 
-        {COMPTES_AVEC_SOLDE_CONNU.map((compte) => (
-          <KPICard
-            key={compte}
-            label={compte}
-            value={kpis.curBal[compte] || 0}
-            prev={kpis.prevBal[compte] || 0}
-            color={couleurCompte(compte)}
-            icon={COMPTE_ICONS[compte] ?? ICONE_PAR_DEFAUT}
-          />
-        ))}
+        {aucunSoldeConnu
+          ? comptesPresents.map((compte) => (
+              <KPICard
+                key={compte}
+                label={`${compte} · variation`}
+                value={variationsByMonth[currentMonth ?? ""]?.[compte] ?? 0}
+                prev={variationsByMonth[prevMonth ?? ""]?.[compte]}
+                color={couleurCompte(compte)}
+                icon={COMPTE_ICONS[compte] ?? ICONE_PAR_DEFAUT}
+              />
+            ))
+          : COMPTES_AVEC_SOLDE_CONNU.map((compte) => (
+              <KPICard
+                key={compte}
+                label={compte}
+                value={kpis.curBal[compte] || 0}
+                prev={kpis.prevBal[compte] || 0}
+                color={couleurCompte(compte)}
+                icon={COMPTE_ICONS[compte] ?? ICONE_PAR_DEFAUT}
+              />
+            ))}
 
         <KPICard label="Dépenses mois" value={kpis.depCur} prev={kpis.depPrev} color="#EF4444" icon={<TrendingDown size={14} />} />
         <KPICard label="Recettes mois" value={kpis.recCur} prev={kpis.recPrev} color="#10B981" icon={<TrendingUp size={14} />} />
@@ -212,7 +242,13 @@ export default function Comptes() {
           icon={<Banknote size={14} />}
         />
 
-        <KPICard label="Taux épargne" value={kpis.tauxEpargne} format="pct" color={kpis.tauxEpargne >= 0 ? "#10B981" : "#EF4444"} icon={<PiggyBank size={14} />} />
+        <KPICard
+          label="Taux épargne"
+          value={kpis.tauxEpargne ?? undefined}
+          format="pct"
+          color={kpis.tauxEpargne === null ? undefined : kpis.tauxEpargne >= 0 ? "#10B981" : "#EF4444"}
+          icon={<PiggyBank size={14} />}
+        />
 
         <KPICard
           label="Fixe / Occasionnelle"
@@ -265,7 +301,7 @@ export default function Comptes() {
         >
           <div
             className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
-              budgetKpis.overrunCount === null
+              aucunObjectif || budgetKpis.overrunCount === null
                 ? "bg-surface text-text-sec"
                 : budgetKpis.overrunCount > 0
                   ? "bg-red/15 text-red"
@@ -281,12 +317,14 @@ export default function Comptes() {
             <span
               className="text-xl font-title font-bold tabular-nums"
               style={{
-                color: budgetKpis.overrunCount === null
+                color: aucunObjectif || budgetKpis.overrunCount === null
                   ? undefined
                   : budgetKpis.overrunCount > 0 ? "#EF4444" : "#10B981",
               }}
             >
-              {budgetKpis.overrunCount === null
+              {aucunObjectif
+                ? "Aucun objectif défini"
+                : budgetKpis.overrunCount === null
                 ? "Indisponible"
                 : budgetKpis.overrunCount > 0
                   ? `${budgetKpis.overrunCount} poste${budgetKpis.overrunCount > 1 ? "s" : ""} en dépassement`
@@ -301,8 +339,29 @@ export default function Comptes() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="card chart-enter">
           <div className="text-sm font-medium text-text mb-4">
-            Évolution mensuelle des soldes
+            {aucunSoldeConnu
+              ? "Évolution mensuelle des variations cumulées"
+              : "Évolution mensuelle des soldes"}
           </div>
+          {/*
+            Sans aucun solde de départ, la courbe n'a rien à tracer : elle
+            affichait une grille vide graduée de 2 à 4 €, ce qui ressemble à
+            un bug plutôt qu'à une absence.
+          */}
+          {aucunSoldeConnu ? (
+            <ResponsiveContainer width="100%" height={chartHeight(380)}>
+              <LineChart data={variationChartData}>
+                <CartesianGrid stroke="#1F2937" strokeDasharray="3 3" />
+                <XAxis dataKey="monthKey" tick={{ fill: "#6B7280", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(mk: string) => mkLabel(mk)} />
+                <YAxis tick={{ fill: "#6B7280", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => fmtShort(v)} />
+                <Tooltip content={<ChartTooltip formatter={(v) => fmt(v)} />} />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
+                {comptesPresents.map((compte) => (
+                  <Line key={compte} type="monotone" dataKey={compte} stroke={couleurCompte(compte)} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
           <ResponsiveContainer width="100%" height={chartHeight(380)}>
             <LineChart data={lineData}>
               <CartesianGrid stroke="#1F2937" strokeDasharray="3 3" />
@@ -316,6 +375,7 @@ export default function Comptes() {
               <Line type="monotone" dataKey="Total" stroke={couleurCompte("Total")} strokeWidth={2.5} strokeDasharray="6 3" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
             </LineChart>
           </ResponsiveContainer>
+          )}
         </div>
 
         <div className="card flex flex-col items-center">

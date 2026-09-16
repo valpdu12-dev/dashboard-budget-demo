@@ -4,7 +4,6 @@
 // recopiés ici.
 
 import {
-  COMPTES,
   COMPTES_AVEC_SOLDE,
   ORGANISMES_UTILISES,
   COMPTE_VERS_ORGANISME,
@@ -44,11 +43,18 @@ export const COMPTES_REELS = COMPTES_AVEC_SOLDE;
 export const ORGANISMES = ORGANISMES_UTILISES;
 
 /** Mapping compte → organisme (pour `toOrganisme`). Dérivé de `accounts.ts`. */
+/**
+ * Compte → organisme, pour les comptes CONNUS de l'application.
+ *
+ * ⚠️ Rien d'autre n'est ajouté ici. Une entrée « Sortie Epargne » rattachait
+ * autrefois ce libellé à l'organisme du compte principal — celui de la
+ * DÉMONSTRATION. Sur un fichier importé qui emploie le même libellé, la
+ * légende affichait donc « Banque A », un nom qui n'appartient pas à la
+ * personne. Constaté le 16/09/2026. Un compte inconnu est désormais traité
+ * comme tel par `toOrganisme`.
+ */
 export const COMPTE_TO_ORGANISME: Record<string, string> = {
   ...COMPTE_VERS_ORGANISME,
-  // Le type « Sortie Epargne » arrive dans la colonne compte de certaines
-  // lignes ; il est rattaché à l'organisme du compte principal.
-  "Sortie Epargne": COMPTES[0].organisme,
 };
 
 /** Options de période pour le filtre global */

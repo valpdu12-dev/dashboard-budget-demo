@@ -145,7 +145,12 @@ export interface KPIs {
   prevSal: SalaryMonth | null;
   fixe: number;
   occ: number;
-  tauxEpargne: number;
+  /**
+   * Épargne du mois rapportée au salaire net. `null` quand il n'y a pas de
+   * paie : sans revenu connu, le taux n'est pas calculable — et 0 % voudrait
+   * dire « vous n'épargnez rien », ce qui est une affirmation, pas une absence.
+   */
+  tauxEpargne: number | null;
 }
 
 /** Insight (hausse/baisse) */

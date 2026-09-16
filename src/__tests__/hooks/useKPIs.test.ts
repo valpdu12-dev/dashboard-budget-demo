@@ -14,7 +14,9 @@ describe("useKPIs — sans données", () => {
     expect(result.current.recCur).toBe(0);
     expect(result.current.netMonth).toBe(0);
     expect(result.current.lastSal).toBeNull();
-    expect(result.current.tauxEpargne).toBe(0);
+    // `null` et non 0 : sans mois courant, rien n'est calculable. Un 0 %
+    // affirmerait que la personne n'épargne rien.
+    expect(result.current.tauxEpargne).toBeNull();
   });
 });
 
@@ -118,5 +120,17 @@ describe("useKPIs — ratio fixe/occasionnel", () => {
     );
     expect(result.current.fixe).toBe(800);
     expect(result.current.occ).toBe(200); // 150 + 50
+  });
+});
+
+describe("taux d'épargne — sans feuille de paie", () => {
+  it("rend null plutôt que 0 %", () => {
+    // Constaté le 16/09/2026 sur un fichier importé sans paie : l'écran
+    // annonçait « 0,0 % », une affirmation fausse là où il n'y a rien à dire.
+    const tx = [makeTx({ date: "2026-01-05", montant: 100, dc: "Débit" })];
+    const { result } = renderHook(() =>
+      useKPIs(tx, {}, [], "2026-01", null)
+    );
+    expect(result.current.tauxEpargne).toBeNull();
   });
 });

@@ -292,3 +292,44 @@ describe("parseExcel.worker — défaut B : lecture des dates", () => {
     expect(String(decode(res).date).slice(0, 7)).toBe("2026-02");
   });
 });
+
+// ── Défauts trouvés le 16/09/2026 sur le classeur RÉEL ───────────────────
+//
+// Les deux tuyaux de lecture du projet — ce worker et le parseur Python —
+// divergeaient sur 88 lignes de 1 933, soit 4,6 %. Mesuré par
+// `scripts/check-import-equivalence.mjs`, l'instrument écrit pour ça.
+
+describe("parseExcel.worker — alignement sur le parseur de référence", () => {
+  it("réduit une suite d'espaces à une seule, comme la référence", () => {
+    // Une cellule de type du classeur réel portait « Jeux Vidéo /  … » avec
+    // DEUX espaces. Le worker les gardait, le parseur Python les réduisait :
+    // les deux applications affichaient DEUX types là où il n'y en a qu'un.
+    const res = run([txRow({
+      label: "Achat", compte: "Banque A - Courant", type: "Loisirs /  Jeux",
+      date: serial(2025, 10, 1), reel: 30,
+    })]);
+    expect(decode(res).type).toBe("Loisirs / Jeux");
+  });
+
+  it("n'invente PAS de classe pour un type inconnu", () => {
+    // Les tables FIXED_TYPES / CURRENT_TYPES / CAT1_EXCLUDE portent le
+    // vocabulaire de la démonstration. Tout type d'un classeur tiers tombait
+    // donc sur « Dépense Occasionnelle » — une classification inventée.
+    // Mesuré : 39 lignes d'épargne comptées comme dépenses occasionnelles.
+    const res = run([txRow({
+      label: "Virement épargne", compte: "Banque A - Courant",
+      type: "Epargne chez un organisme inconnu", date: serial(2025, 10, 1), reel: 500,
+    })]);
+    expect(decode(res).cat1).toBe("");
+  });
+
+  it("classe toujours correctement un type qu'il connaît", () => {
+    // Contre-épreuve : la correction ci-dessus ne doit pas désarmer le repli
+    // là où il a un sens.
+    const res = run([txRow({
+      label: "Plein", compte: "Banque A - Courant", type: "Essence",
+      date: serial(2025, 10, 1), reel: 60,
+    })]);
+    expect(decode(res).cat1).toBe("Dépense Courante");
+  });
+});

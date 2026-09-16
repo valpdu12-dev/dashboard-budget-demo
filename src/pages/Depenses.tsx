@@ -38,7 +38,6 @@ import { useInfobulleTactile } from "@/hooks/useInfobulleTactile";
 import { BandeauMoisNonComparables } from "@/components/ui/BandeauMoisNonComparables";
 
 import { fmt, fmtShort, fmtDate, mkLabel, pctChange, partDuTotal } from "@/utils/formatters";
-import { ORGANISMES } from "@/config/constants";
 import { CAT2_COLORS, DONUT_COLORS, TYPE_COLORS, couleurOrganisme } from "@/config/colors";
 
 /**
@@ -283,6 +282,7 @@ export default function Depenses() {
     compNvsN1,
     compNvsN1Years,
     compNvsN1Mois,
+    organismes,
   } = useExpenseData();
 
   // ── Part de chaque catégorie, pour la légende du donut ─────────────────
@@ -464,12 +464,12 @@ export default function Depenses() {
                 wrapperStyle={{ fontSize: 12, cursor: "pointer" }}
                 onClick={(e) => {
                   const org = e.value as string;
-                  if ((ORGANISMES as readonly string[]).includes(org)) {
+                  if (organismes.includes(org)) {
                     setSelOrg(selOrg === org ? null : org);
                   }
                 }}
               />
-              {ORGANISMES.map((org) => (
+              {organismes.map((org) => (
                 <Line
                   key={org}
                   type="monotone"
