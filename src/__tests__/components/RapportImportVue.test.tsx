@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { RapportImportVue } from "@/components/upload/DataUploader";
 import type { RapportImport } from "@/services/lectureClasseur";
+import { configVide } from "@/types/budgetConfig";
 
 /**
  * L'aperçu avant application.
@@ -14,7 +15,7 @@ import type { RapportImport } from "@/services/lectureClasseur";
 const base: RapportImport = {
   transactions: [],
   paie: [],
-  parametres: { versionFormat: null, couverture: null, pret: null, soldes: {} },
+  parametres: { versionFormat: null, couverture: null, pret: null, soldes: {}, config: configVide() },
   anomalies: [],
   anomaliesNonListees: 0,
   compteurs: { lignesLues: 3, acceptees: 2, rejetees: 1, ignorees: 0, avertissements: 1 },
@@ -66,18 +67,16 @@ describe("aperçu du rapport d'import", () => {
     expect(screen.getByText(/12 autres anomalies comptées mais non listées/)).toBeInTheDocument();
   });
 
-  it("prévient quand la feuille Paramètres a été lue sans être reprise", () => {
-    // Tant que le jeu n'est pas remplacé d'un bloc, soldes, bornes et prêt sont
-    // lus sans être appliqués. Le taire serait exactement le silence que ce
-    // lot combat.
+  it("dit ce que la feuille Paramètres a livré, chiffré", () => {
     render(
       <RapportImportVue r={{ ...base, parametres: { ...base.parametres, pret: { montant: 1, mensualite: 1, echeances: 1 } } }} />
     );
-    expect(screen.getByText(/pas encore repris par le tableau de bord/)).toBeInTheDocument();
+    expect(screen.getByText(/un prêt déclaré/)).toBeInTheDocument();
+    expect(screen.getByText(/aucun solde de départ/)).toBeInTheDocument();
   });
 
   it("ne dit rien des paramètres quand il n'y en a pas", () => {
     render(<RapportImportVue r={base} />);
-    expect(screen.queryByText(/pas encore repris/)).toBeNull();
+    expect(screen.queryByText(/bien été lue/)).toBeNull();
   });
 });

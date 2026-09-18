@@ -11,6 +11,7 @@
 import { useDataStore } from "@/stores/useDataStore";
 import { lireObjectifsLocaux } from "@/services/budgetsLocaux";
 import { construireJeuStatique, lireJeuMemorise } from "@/services/jeuDonnees";
+import { useUIStore } from "@/stores/useUIStore";
 import { lireProfil } from "@/services/profil";
 import type { BudgetTarget, Config, RawTransactionsJSON, SalaryData } from "@/types";
 
@@ -110,7 +111,13 @@ export async function loadDashboardData(): Promise<void> {
   // Lot B.6 — il n'est lu QUE si le profil affiché est « personnel ». Sur le
   // profil « démo », le jeu de la personne reste écrit sur l'appareil mais
   // n'est pas posé : revenir à la démonstration n'efface plus rien.
-  const memorise = lireProfil() === "personnel" ? lireJeuMemorise() : null;
+  const lecture = lireProfil() === "personnel"
+    ? lireJeuMemorise()
+    : { jeu: null, avis: null };
+  const memorise = lecture.jeu;
+  // L'avis est posé même quand il n'y a pas de jeu : un refus de relecture est
+  // précisément le cas où la personne doit être prévenue.
+  useUIStore.getState().setAvisStockage(lecture.avis);
   setLoading();
   try {
     const data = await chargerFichiers();

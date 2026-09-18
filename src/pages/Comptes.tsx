@@ -15,7 +15,7 @@ import {
 } from "recharts";
 import {
   Wallet, TrendingDown, TrendingUp, Scale, Banknote,
-  PiggyBank, CreditCard, BadgeEuro, BarChart3,
+  PiggyBank, BarChart3,
   CalendarClock, AlertTriangle,
 } from "lucide-react";
 
@@ -34,8 +34,7 @@ import { useChartSize } from "@/hooks/useChartSize";
 
 import { fmt, fmtShort, mkLabel } from "@/utils/formatters";
 import { projectMonthEnd, daysInMonthOf, lastTxDayOfMonth } from "@/utils/projection";
-import { COMPTES_REELS } from "@/config/constants";
-import { couleurCompte } from "@/config/colors";
+import { useCouleurs } from "@/hooks/useCouleurs";
 
 /** monthKey "YYYY-MM" → même mois l'année précédente. */
 function prevYearKey(mk: string): string {
@@ -44,17 +43,21 @@ function prevYearKey(mk: string): string {
 }
 
 /**
- * Icône par compte. Table de préférence, pas de contrainte : un compte absent
- * reçoit l'icône générique ci-dessous plutôt qu'un trou dans la carte.
+ * L'icône d'une carte de compte — LA MÊME pour tous.
+ *
+ * ⚠️ Lot C.5. Une table associait une icône à chaque compte de l'auteur : une
+ * carte bancaire pour le courant, une tirelire pour un joint, un ticket pour
+ * les titres-restaurant. Jolie, et fausse dès qu'on change de fichier.
+ *
+ * Deux voies étaient possibles : une icône tirée au hasard mais STABLE, comme
+ * pour les couleurs ; ou la même pour tous. La première a été écartée — une
+ * tirelire posée par un hachage sur un compte courant AFFIRME quelque chose
+ * de faux, alors qu'une couleur ne dit rien. Une icône porte du sens, une
+ * couleur ne fait que distinguer.
+ *
+ * C'est donc la couleur, elle, déclarée, qui distingue les comptes.
  */
-const ICONE_PAR_DEFAUT = <Wallet size={14} />;
-const COMPTE_ICONS: Record<string, React.ReactNode> = {
-  "Banque A - Courant":       <CreditCard size={14} />,
-  "Banque B - Compte joint":       <Banknote size={14} />,
-  "Banque C - Compte joint": <PiggyBank size={14} />,
-  "Titres-restaurant":     <BadgeEuro size={14} />,
-  "Banque B - Courant":            <Wallet size={14} />,
-};
+const ICONE_COMPTE = <Wallet size={14} />;
 
 // ─── Donut outer label ──────────────────────────────────────────────────
 function renderDonutLabel({
@@ -75,6 +78,7 @@ function renderDonutLabel({
 // ─── Page Comptes ───────────────────────────────────────────────────────
 export default function Comptes() {
   const { config, salary, status, budgets } = useDataStore();
+  const couleurs = useCouleurs();
   const { allMonths, allMonthsInRange, currentMonth, prevMonth, baseTx } = useFilteredData();
 
   const initBalances = config?.init ?? {};
@@ -83,6 +87,7 @@ export default function Comptes() {
   const {
     balancesByMonth, currentBalances, balanceChartData,
     comptesNonInitialises, aucunSoldeConnu, comptesPresents, variationsByMonth,
+    comptesAvecSolde,
   } = useBalances(
     useDataStore.getState().transactions,
     allMonths,
@@ -92,9 +97,13 @@ export default function Comptes() {
   const kpis = useKPIs(baseTx, balancesByMonth, salaryMonths, currentMonth, prevMonth);
 
   // Les comptes effectivement affichables : ceux dont on connaît le départ.
+  // Lot C.4 — ces comptes viennent de la configuration déclarée, ou des
+  // données quand rien n'est déclaré. Plus de `COMPTES_REELS` : une liste
+  // figée ne montrait que les comptes de l'auteur, et un compte importé sous
+  // un autre nom n'était pas « à zéro », il était HORS DE LA BOUCLE.
   const COMPTES_AVEC_SOLDE_CONNU = useMemo(
-    () => COMPTES_REELS.filter((c) => !comptesNonInitialises.includes(c)),
-    [comptesNonInitialises]
+    () => comptesAvecSolde.filter((c) => !comptesNonInitialises.includes(c)),
+    [comptesAvecSolde, comptesNonInitialises]
   );
 
   // Lot 1.2 — dimensions de graphique pilotées par le palier d'affichage.
@@ -143,10 +152,10 @@ export default function Comptes() {
   }, [baseTx, currentMonth, kpis.depCur, kpis.recCur]);
 
   const donutData = useMemo(() => {
-    return COMPTES_REELS
+    return comptesAvecSolde
       .map((name) => ({ name, value: Math.max(0, Math.round(currentBalances[name] || 0)) }))
       .filter((d) => d.value > 0);
-  }, [currentBalances]);
+  }, [comptesAvecSolde, currentBalances]);
 
   const donutTotal = useMemo(
     () => donutData.reduce((s, d) => s + d.value, 0),
@@ -212,8 +221,8 @@ export default function Comptes() {
                 label={`${compte} · variation`}
                 value={variationsByMonth[currentMonth ?? ""]?.[compte] ?? 0}
                 prev={variationsByMonth[prevMonth ?? ""]?.[compte]}
-                color={couleurCompte(compte)}
-                icon={COMPTE_ICONS[compte] ?? ICONE_PAR_DEFAUT}
+                color={couleurs.compte(compte)}
+                icon={ICONE_COMPTE}
               />
             ))
           : COMPTES_AVEC_SOLDE_CONNU.map((compte) => (
@@ -222,8 +231,8 @@ export default function Comptes() {
                 label={compte}
                 value={kpis.curBal[compte] || 0}
                 prev={kpis.prevBal[compte] || 0}
-                color={couleurCompte(compte)}
-                icon={COMPTE_ICONS[compte] ?? ICONE_PAR_DEFAUT}
+                color={couleurs.compte(compte)}
+                icon={ICONE_COMPTE}
               />
             ))}
 
@@ -357,7 +366,7 @@ export default function Comptes() {
                 <Tooltip content={<ChartTooltip formatter={(v) => fmt(v)} />} />
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
                 {comptesPresents.map((compte) => (
-                  <Line key={compte} type="monotone" dataKey={compte} stroke={couleurCompte(compte)} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
+                  <Line key={compte} type="monotone" dataKey={compte} stroke={couleurs.compte(compte)} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
                 ))}
               </LineChart>
             </ResponsiveContainer>
@@ -370,9 +379,9 @@ export default function Comptes() {
               <Tooltip content={<ChartTooltip formatter={(v) => fmt(v)} />} />
               <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
               {COMPTES_AVEC_SOLDE_CONNU.map((compte) => (
-                <Line key={compte} type="monotone" dataKey={compte} stroke={couleurCompte(compte)} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
+                <Line key={compte} type="monotone" dataKey={compte} stroke={couleurs.compte(compte)} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
               ))}
-              <Line type="monotone" dataKey="Total" stroke={couleurCompte("Total")} strokeWidth={2.5} strokeDasharray="6 3" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
+              <Line type="monotone" dataKey="Total" stroke={couleurs.compte("Total")} strokeWidth={2.5} strokeDasharray="6 3" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
             </LineChart>
           </ResponsiveContainer>
           )}
@@ -401,7 +410,7 @@ export default function Comptes() {
                     <PieChart tabIndex={-1}>
                       <Pie rootTabIndex={-1} data={donutData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={donut.inner} outerRadius={donut.outer} label={donut.showRadialLabels ? renderDonutLabel : false} labelLine={false} style={{ cursor: "default" }}>
                         {donutData.map((d) => (
-                          <Cell key={d.name} fill={couleurCompte(d.name)} />
+                          <Cell key={d.name} fill={couleurs.compte(d.name)} />
                         ))}
                       </Pie>
                       <Tooltip content={<ChartTooltip formatter={(v) => fmt(v)} />} />
@@ -430,7 +439,7 @@ export default function Comptes() {
                     <li key={d.name} className="flex items-center gap-1.5 text-xs text-text-sec">
                       <span
                         className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
-                        style={{ backgroundColor: couleurCompte(d.name) }}
+                        style={{ backgroundColor: couleurs.compte(d.name) }}
                         aria-hidden="true"
                       />
                       {d.name} ({donutTotal ? Math.round((d.value / donutTotal) * 100) : 0} %)

@@ -2,6 +2,7 @@
 import { Outlet } from "react-router-dom";
 import { Header } from "./Header";
 import { BandeauDemo } from "@/components/ui/BandeauDemo";
+import { BandeauStockage } from "@/components/ui/BandeauStockage";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { SubNav } from "./SubNav";
@@ -16,6 +17,10 @@ export function AppShell() {
       {/* En premier, avant l'en-tête : la nature du site se lit avant son
           contenu, pas après l'avoir parcouru. */}
       <BandeauDemo />
+      {/* Lot C.6 — ce que la relecture du stockage a à dire. Avant l'en-tête,
+          pour la même raison que le bandeau de démonstration : on apprend ce
+          qu'on regarde avant de le regarder, pas après. */}
+      <BandeauStockage />
       <Header />
       <div className="flex flex-1 overflow-hidden">
         {!isMobile && <Sidebar />}

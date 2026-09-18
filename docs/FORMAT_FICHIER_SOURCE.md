@@ -1,6 +1,6 @@
-# Format du fichier source — v1
+# Format du fichier source — v2
 
-*Lot B, étape B.0. Écrit AVANT le code, validé avant d'être implémenté.*
+*Lot B, étape B.0 pour la v1. Étendu au lot C.6 pour la v2 (journal, §9).*
 
 Ce document décrit le classeur qu'une personne autre que l'auteur peut préparer
 pour alimenter le tableau de bord. Il fait contrat : ce qui est écrit ici est ce
@@ -9,6 +9,12 @@ que le lecteur acceptera, et rien d'autre ne sera deviné en silence.
 Le format de l'auteur — en-têtes en ligne 18, colonnes lues par position,
 feuille « Transactions AAAA » — continue de fonctionner, sous forme
 d'**adaptateur** (§7). Il n'est pas le format public.
+
+**La v2 n'invalide aucun fichier v1.** Elle ajoute une colonne à
+`Transactions` et des colonnes à `Paramètres`. Un fichier écrit pour la v1 se
+lit sans être retouché, et donne les mêmes chiffres : c'est la contrainte que
+le §8.1 s'était donnée — une v2 se reconnaît **par une colonne nouvelle, jamais
+par une colonne détournée**.
 
 ---
 
@@ -42,7 +48,7 @@ qui n'écrit que des formules, non.
 |---|---|---|
 | `Transactions` | **oui** | Les mouvements |
 | `Paie` | non | Les bulletins de salaire, un par mois |
-| `Paramètres` | non, mais recommandée | Soldes de départ, dates de relevé, prêt |
+| `Paramètres` | non, mais recommandée | Vos comptes, vos types, vos catégories, vos soldes, les dates de relevé, le prêt |
 
 **Toute autre feuille est ignorée**, sans erreur : une feuille de notes, un
 brouillon, un mode d'emploi. Le classeur modèle en porte une, nommée
@@ -68,7 +74,8 @@ En-tête en ligne 1, données à partir de la ligne 2.
 | `Date` | **oui** | Date du mouvement |
 | `Compte` | **oui** | Nom du compte, texte libre |
 | `Type` | **oui** | Nature du mouvement, texte libre |
-| `Montant` | **oui** | Nombre **positif**, montant imputé (voir §3.4) |
+| `Montant` | **oui**, sauf si `Montant brut` | Nombre **positif**, montant déjà imputé (§3.4) |
+| `Montant brut` | non | Nombre **positif**, montant avant partage (§3.4) — **v2** |
 | `Sens` | **oui** | `Débit` ou `Crédit` |
 | `Classe` | oui pour une **dépense** | `Dépense Fixe`, `Dépense Courante` ou `Dépense Occasionnelle` — vide sinon (§3.3) |
 | `Catégorie` | non, mais avertie | Poste de budget — c'est le niveau des objectifs (§3.7) |
@@ -96,7 +103,10 @@ insécables, et le symbole `€` sont retirés avant lecture. Arrondi à deux
 décimales.
 
 Un montant vide, négatif, ou illisible **rejette la ligne**. Il ne devient
-jamais 0.
+jamais 0. Le message nomme la colonne fautive — `Montant` ou `Montant brut`.
+
+Aucune des deux colonnes n'est présente : le classeur est **refusé**, en disant
+laquelle écrire. Les deux sont présentes : la règle est au §3.4.
 
 ### 3.3 Sens et classe
 
@@ -112,7 +122,13 @@ laisse ces lignes sans classe.
 
 Conséquence : une `Classe` vide sur un débit ne déclenche ni rejet ni
 avertissement. On ne peut pas distinguer « j'ai oublié » de « ce n'en est pas
-une » sans connaître la nature des types, ce qui est le travail du lot C.
+une » sans connaître la nature des types.
+
+**En v2, c'est le tableau `Types` qui la porte** (§5.3) : une `Nature` dit que
+le mouvement n'est pas une dépense, une `Classe par défaut` dit laquelle il est
+quand la ligne ne le précise pas. L'aperçu chiffre ce qui reste muet : « 4 de
+vos types ne portent aucune nature ». Il ne les refuse pas — un type sans
+nature est un mouvement ordinaire, et c'est le cas le plus courant.
 
 `Classe` n'a de sens que pour un débit. Sur un crédit, elle est **ignorée, et
 l'aperçu le dit** : « la classe a été ignorée sur 4 lignes de recette ». Un salaire
@@ -125,13 +141,33 @@ lecteur inutilisable par quelqu'un d'autre : un type inconnu devient « Débit �
 et « Dépense Occasionnelle », en silence. Dans le format public, c'est le
 fichier qui le déclare.
 
-### 3.4 Le montant est le montant **imputé**
+### 3.4 `Montant`, `Montant brut`, et le taux de participation
 
-Si une dépense de 80 € est partagée à moitié, le fichier porte **40**.
+Deux colonnes, deux régimes. **Le régime se lit sur la présence de la colonne,
+il n'est jamais deviné.**
 
-L'outil ne sait pas encore appliquer un taux de participation : c'est le lot C.
-Écrire 80 en attendant que l'outil divise donnerait un budget faux, sans aucun
-message.
+| Colonne remplie | Ce que l'outil fait |
+|---|---|
+| `Montant` seul | il le prend tel quel — c'est le montant **déjà imputé** |
+| `Montant brut` | il lui applique le **taux de participation** du compte (§5.2) |
+
+Une dépense de 80 € partagée à moitié s'écrit donc de deux façons, au choix :
+`Montant` = 40, ou `Montant brut` = 80 sur un compte déclaré à 50 %. Les deux
+donnent 40.
+
+`Montant brut` rempli, `Montant` **n'est pas lu** — même s'il porte une valeur.
+Aucune des deux ne l'emporte par surprise : la colonne écrite gagne, et c'est
+tout.
+
+Un compte sans taux déclaré impute **100 %** du brut. Un compte absent du
+tableau des comptes impute 100 % **et il est nommé** dans l'aperçu : un taux
+oublié ne se distingue pas d'un taux de 100 % une fois le chiffre affiché.
+
+Le résultat est arrondi au centime, **une seule fois**, à cet endroit.
+
+L'aperçu d'import annonce le nombre de lignes partagées. C'est une
+**information**, pas un avertissement : un aperçu qui alerte sur ce qui
+fonctionne apprend à ignorer ses alertes.
 
 ### 3.5 Lignes ignorées
 
@@ -206,8 +242,32 @@ format, lui, continue de les alimenter.
 
 ## 5. Feuille `Paramètres`
 
-Deux petits tableaux. Chacun est **repéré par sa cellule d'en-tête**, où qu'elle
-se trouve sur la feuille : la position exacte n'est pas imposée.
+**Cinq tableaux**, tous facultatifs. Chacun est **repéré par sa cellule
+d'en-tête**, où qu'elle se trouve sur la feuille : la position exacte n'est pas
+imposée.
+
+| Tableau | Cellule qui l'ouvre | Ce qu'il déclare |
+|---|---|---|
+| Réglages | `Paramètre` | dates de relevé, prêt, version |
+| Comptes | `Compte` | vos comptes, leurs soldes, leurs règles |
+| Types | `Type` | ce que chaque type fait aux calculs — **v2** |
+| Catégories | `Catégorie` | les postes de budget, et leur couleur — **v2** |
+| Employeurs | `Employeur` | les employeurs de la feuille `Paie` — **v2** |
+
+**Il n'y a qu'un seul tableau des comptes.** Celui de la v1 est ce tableau,
+élargi de six colonnes. Un fichier v1 en est le cas particulier à deux
+colonnes.
+
+**Deux tableaux côte à côte se séparent par une colonne vide.** La ligne
+d'en-tête s'arrête à la première cellule vide à sa droite ; sans colonne vide
+entre eux, le premier avalerait les colonnes du second.
+
+**Deux tableaux l'un sous l'autre se séparent tout seuls** : un tableau
+s'arrête à la cellule qui en ouvre un autre. Mesuré en écrivant les tests du
+lot C.2 — sans cette règle, un tableau `Employeur` posé sous le tableau
+`Compte` produisait un compte nommé « Employeur ». Sans erreur, évidemment.
+
+**Une colonne inconnue est ignorée sans bruit**, comme dans `Transactions`.
 
 ### 5.1 Tableau « Paramètre / Valeur »
 
@@ -215,7 +275,8 @@ En-têtes : `Paramètre` et `Valeur`.
 
 | Paramètre | Valeur attendue | Obligatoire |
 |---|---|---|
-| `Version du format` | `1` | non — absent = v1 |
+| `Version du format` | `1` ou `2` | non — absent = lu comme une v1 |
+| `Compte crédité par les sorties d'épargne` | nom d'un compte | non — **v2** |
 | `Début de relevé` | date | non |
 | `Fin de relevé` | date | non |
 | `Prêt — montant` | nombre | non |
@@ -239,46 +300,153 @@ disparaît. Un montant réel accolé à une mensualité par défaut produirait u
 La première échéance est facultative. Absente, elle est déduite de la première
 transaction portant un type de prêt.
 
-### 5.2 Tableau « Compte / Solde de départ »
+**Compte crédité par les sorties d'épargne.** Quand un type de nature
+`sortie-epargne` sort de l'argent d'un livret, cet argent arrive quelque part.
+Cette ligne dit où. Absente, la sortie diminue l'épargne **sans créditer aucun
+compte** — et l'écran le dit, plutôt que de choisir un compte à votre place.
 
-En-têtes : `Compte` et `Solde de départ`.
+### 5.2 Tableau « Compte »
 
-Un compte par ligne, le solde à la **date de début de relevé**. Si aucune date
-n'est déclarée, le solde vaut « avant la première transaction ».
+En-tête ouvrant : `Compte`. Un compte par ligne.
 
-Un compte absent de ce tableau est « **non initialisé** » — jamais 0. Les deux
-choses ne se ressemblent pas à l'écran, et c'est voulu.
+| Colonne | Obligatoire | Contenu attendu |
+|---|---|---|
+| `Compte` | **oui** | Le nom, tel qu'il est écrit dans `Transactions` |
+| `Solde de départ` | non | Nombre. Absent = « non initialisé », **jamais 0** |
+| `Organisme` | non | Banque ou établissement — regroupe les comptes à l'écran |
+| `Participation` | non | Taux appliqué à `Montant brut` (§3.4). Absent = 100 % |
+| `Compte lié` | non | Le compte d'où l'argent part réellement |
+| `Sens répercuté` | non | `Débit`, `Crédit` ou `Les deux` |
+| `Porte un solde` | non | `oui` / `non`. Absent = oui |
+| `Couleur` | non | `#RRGGBB`. Absente = couleur de repli stable |
 
-### 5.3 Comptes inconnus
+Le solde est celui de la **date de début de relevé**. Si aucune date n'est
+déclarée, c'est le solde « avant la première transaction ».
 
-L'application connaît aujourd'hui une liste fixe de comptes
-(`src/config/accounts.ts`), et ses **règles de solde sont écrites compte par
-compte**. Un compte nommé autrement est lu, ses transactions sont comptées dans
-les dépenses — mais il **n'aura pas de solde** : absent du graphique, absent du
-total du patrimoine.
+**`Participation`** s'écrit `50 %`, `50%`, `0,5` ou `0.5`. Un taux hors de
+l'intervalle 0–100 % est refusé, en nommant la ligne.
 
-L'import est accepté quand même, et l'aperçu **nomme** chaque compte inconnu en
-disant exactement cela. Refuser l'import rendrait le format inutilisable avant
-le lot C ; l'accepter en silence donnerait un patrimoine faux. La troisième voie
-est de l'accepter en le disant.
+**`Compte lié` et `Sens répercuté` remplacent les règles écrites compte par
+compte.** Un compte partagé, une cagnotte commune, une carte adossée à un
+autre compte : l'argent y transite mais sort d'ailleurs. `Compte lié` nomme
+cet ailleurs ; `Sens répercuté` dit ce qui y est reporté — les débits, les
+crédits, ou les deux. Sans `Compte lié`, rien n'est répercuté.
 
-C'est la limite la plus importante de cette v1. Elle est levée au lot C.
+Un `Compte lié` qui ne figure pas dans le tableau est **refusé**, en le
+nommant : une chaîne qui pointe dans le vide ferait disparaître de l'argent.
+
+**`Porte un solde` à `non`** désigne un compte qu'on suit sans en tenir le
+solde — une carte de titres-restaurant, un compte de passage. Ses transactions
+comptent dans les dépenses ; il n'entre pas dans le patrimoine, et son absence
+du graphique devient un choix déclaré au lieu d'un trou.
+
+### 5.3 Tableau « Type »
+
+En-tête ouvrant : `Type`. Un type par ligne. **Nouveau en v2.**
+
+| Colonne | Obligatoire | Contenu attendu |
+|---|---|---|
+| `Type` | **oui** | Le libellé, tel qu'il est écrit dans `Transactions` |
+| `Nature` | non | Une ou plusieurs natures, séparées par des virgules |
+| `Classe par défaut` | non | `Dépense Fixe`, `Courante` ou `Occasionnelle` |
+
+**La nature dit ce que le mouvement fait aux calculs.** Six valeurs, et la
+liste est close — chacune correspond à un calcul écrit dans le code. Une
+nature déclarable mais sans effet serait un champ mort.
+
+| Nature | Ce qu'elle fait |
+|---|---|
+| `epargne` | l'argent entre sur un livret : ce n'est pas une dépense |
+| `sortie-epargne` | l'argent sort d'un livret |
+| `transfert-interne` | mouvement entre vos propres comptes : ni recette ni dépense |
+| `apport-exterieur` | l'argent vient de l'extérieur |
+| `pret-capital` | remboursement de capital : échéancier du prêt |
+| `pret-interets` | intérêts du prêt |
+
+**Un type peut en porter plusieurs**, et c'est une nécessité mesurée : un
+virement vers un livret est à la fois un transfert interne et une entrée
+d'épargne ; un remboursement de capital est à la fois une entrée d'épargne et
+une échéance de prêt.
+
+Trois couples sont refusés, parce qu'ils se contredisent : `epargne` avec
+`sortie-epargne`, `apport-exterieur` avec `transfert-interne`, `pret-capital`
+avec `pret-interets`. Le message dit lequel, et pourquoi.
+
+Une nature inconnue est **refusée**, avec la liste des six. Elle n'est jamais
+ignorée en silence : un mot mal orthographié changerait les chiffres sans rien
+dire.
+
+**Un type absent de ce tableau est un mouvement ordinaire** — une recette ou
+une dépense, selon son `Sens`. C'est le cas le plus courant, et il ne mérite
+ni ligne ni avertissement. L'aperçu se contente de chiffrer : « 4 de vos types
+ne portent aucune nature ».
+
+### 5.4 Tableau « Catégorie »
+
+En-tête ouvrant : `Catégorie`. **Nouveau en v2.**
+
+| Colonne | Obligatoire | Contenu attendu |
+|---|---|---|
+| `Catégorie` | **oui** | Le poste de budget, tel qu'écrit dans `Transactions` |
+| `Couleur` | non | `#RRGGBB`. Absente = couleur de repli stable |
+
+Ce tableau ne sert qu'à **fixer les couleurs**. Une catégorie qui n'y figure
+pas reste parfaitement utilisable : elle prend une couleur de repli, stable
+d'un rendu à l'autre.
+
+### 5.5 Tableau « Employeur »
+
+En-tête ouvrant : `Employeur`. **Nouveau en v2.**
+
+Une colonne, un employeur par ligne. Il déclare l'ordre et l'existence des
+employeurs de la feuille `Paie`. Comme pour les catégories, un employeur
+absent du tableau fonctionne quand même.
+
+### 5.6 Comptes inconnus
+
+Un compte présent dans `Transactions` mais absent du tableau `Compte` est
+**lu**, ses transactions comptent dans les dépenses, et il reçoit une couleur.
+Il n'a pas de solde de départ : il est « non initialisé », jamais 0.
+
+L'import est accepté, et l'aperçu **nomme** chaque compte inconnu.
+
+⚠️ **Ce paragraphe disait autre chose en v1.** Il disait que l'application
+connaissait une liste fixe de comptes et que ses règles de solde étaient
+écrites compte par compte, si bien qu'un compte nommé autrement n'apparaissait
+ni dans le graphique ni dans le total du patrimoine. **Cette limite est levée
+au lot C** : il n'y a plus de liste de comptes dans le code, et les règles de
+solde sont devenues deux notions générales — `Participation` et `Compte lié`
+(§5.2).
 
 ---
 
-## 6. Ce que le format v1 ne fait pas
+## 6. Ce que le format v2 ne fait pas
 
-- **Il ne déclare pas les comptes, les types, les catégories ni les couleurs.**
-  C'est le lot C. La feuille `Paramètres` v1 ne porte que des soldes, des dates
-  et un prêt.
-- **Il ne porte pas de taux de participation.** Le montant écrit est le montant
-  imputé (§3.4).
-- **Il ne déclare pas les types de transfert interne.** La liste des virements
-  neutres reste celle de l'application. Pour un fichier tiers, un virement entre
-  ses propres comptes sera compté comme une recette et une dépense. Limite
-  connue, à lever au lot C.
+Les trois premières limites de la v1 sont levées : les comptes, les types, les
+catégories et les couleurs se déclarent (§5), le taux de participation
+s'applique (§3.4), et les transferts internes se déclarent par leur nature
+(§5.3). Restent :
+
 - **Il ne gère pas plusieurs devises.** Les montants sont en euros.
 - **Il n'accepte pas de CSV.**
+- **Il ne déclare pas de nouvelles classes de dépense.** Les trois — Fixe,
+  Courante, Occasionnelle — sont l'ossature de deux écrans. Seule
+  l'**affectation** d'un type à une classe se déclare.
+- **Il ne déclare pas de nouvelles natures.** Les six du §5.3 correspondent
+  chacune à un calcul écrit. Une septième, déclarable mais sans effet, serait
+  un champ mort.
+- **Il ne déclare pas l'ordre ni le nom des écrans.**
+- **Il ne se modifie pas depuis l'application.** L'écran Paramètres montre ce
+  que le fichier déclare ; il ne l'écrit pas. La source reste le classeur.
+
+Et ce que la v2 aurait pu ajouter, mais n'ajoute pas :
+
+- **Pas de colonne `Couleur` dans le tableau `Type`.** Les couleurs de types
+  viennent du repli stable, qui donne déjà des teintes distinctes et
+  constantes. Une colonne que personne ne remplit est une colonne morte — la
+  même raison qui a fait retirer les champs inutilisés du lot C.
+- **Pas de `Montant brut` sur la feuille `Paie`.** Aucun bulletin mesuré n'en
+  avait l'usage.
 
 ---
 
@@ -314,6 +482,9 @@ mémoire dans les tests. C'est le verrou de non-régression du lot B.
   Une v2 qui changerait le sens d'une colonne devra donc se reconnaître autrement
   — par une colonne nouvelle, pas par une colonne détournée. C'est une contrainte
   acceptée maintenant pour éviter une ligne de plus à remplir aujourd'hui.
+  **Tenue au lot C.6** : la v2 n'a détourné aucune colonne. `Montant` garde
+  exactement le sens qu'il avait, et le partage passe par `Montant brut`, qui
+  n'existait pas.
 
 ### 8.2 Tranchés le 16/09/2026, sur mesure
 
@@ -355,3 +526,4 @@ un échec constaté, jamais.
 |---|---|---|
 | v1 | 16/09/2026 | Première rédaction, avant implémentation. Les cinq points ouverts tranchés le jour même (§8) — aucun ne reste en suspens. |
 | v1.1 | 16/09/2026 | Deux manques trouvés en fabriquant le modèle (B.1) : la `Classe` vide des débits qui ne sont pas des dépenses (§3.3), et le sort des feuilles non reconnues (§2). |
+| **v2** | **17/09/2026** | **Lot C.** Le fichier déclare son paramétrage. `Transactions` gagne **`Montant brut`** et le taux de participation (§3.4). `Paramètres` passe de deux à **cinq tableaux** (§5) : `Compte` élargi à huit colonnes, plus `Type`, `Catégorie` et `Employeur`. La limite « comptes inconnus sans solde » est **levée** (§5.6). Aucune colonne existante n'a changé de sens : **un fichier v1 se lit sans être retouché et donne les mêmes chiffres**, vérifié par le rapprochement à zéro écart des étapes C.3 à C.6. |

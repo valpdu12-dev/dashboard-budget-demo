@@ -98,70 +98,30 @@ interface Validation {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONSTANTES — LOGIQUE MÉTIER (fallback si valeurs mises en cache absentes)
+// LES REPLIS SUPPRIMÉS — lot C
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Types classés "Dépense Fixe" dans la formule Excel cat1 */
-const FIXED_TYPES = new Set([
-  "Impôt sur Revenu", "Autres (Amendes, …)", "Assurance prêt",
-  "Assurance habitation", "Assurance auto", "Frais de Copropriété",
-  "Electricité", "Internet et Forfait téléphone", "Frais Bancaires",
-  "Intérêt du prêt", "Abonnement transport",
-]);
-
-/** Types classés "Dépense Courante" dans la formule Excel cat1 */
-const CURRENT_TYPES = new Set([
-  "courses", "cantine", "Essence", "Médecin", "Pharmacie", "Vêtement courant",
-]);
-
-/** Types générant un Crédit dans la formule Excel dc (XLOOKUP) */
-const CREDIT_TYPES = new Set([
-  "Salaire", "Ticket Restaurant", "Dépense Budget", "Virement extérieur",
-  "Transfert Banque A vers Banque C", "Transfert Banque A vers Banque B",
-]);
-
-/** Types exclus de cat1 (pas de classification Fixe/Occasionnel/Courant) */
-const CAT1_EXCLUDE = new Set(["", "Salaire", "Épargne Banque A", "Virement extérieur"]);
-
-/** Comptes dont le montant est divisé par 2 (formule ROUND/IF col F) */
-// ⚠️ « Banque B - Courant » n'y figure PAS : son montant n'est pas divisé.
-const HALF_COMPTES = new Set([
-  "Banque A - Part commune",
-  "Appli partagée - Part commune",
-  "Banque B - Compte joint",
-]);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FONCTIONS FALLBACK — réimplémentation des formules Excel
-// ─────────────────────────────────────────────────────────────────────────────
-
-function computeCat1Fallback(type: string, label: string): string {
-  if (!label || CAT1_EXCLUDE.has(type)) return "";
-  if (CURRENT_TYPES.has(type)) return "Dépense Courante";
-  if (FIXED_TYPES.has(type)) return "Dépense Fixe";
-
-  // Un type INCONNU ne reçoit plus de classe par défaut.
-  //
-  // Ces trois tables portent le vocabulaire de la démonstration. Sur un
-  // classeur tiers, tout type qui n'y figure pas tombait sur « Dépense
-  // Occasionnelle » — une classification INVENTÉE. Mesuré le 16/09/2026 sur
-  // le classeur réel : 39 lignes d'épargne classées en dépense occasionnelle,
-  // là où le parseur de référence laissait la case vide. L'indicateur
-  // « Fixe / Occasionnelle » en était faussé.
-  //
-  // Vide veut dire « cette ligne n'est pas une dépense classée », ce qui est
-  // exactement ce qu'on sait d'elle. Le lot C lira la classe du fichier.
-  return "";
-}
-
-function computeDCFallback(type: string): string {
-  return CREDIT_TYPES.has(type) ? "Crédit" : "Débit";
-}
-
-function computeMontantReelFallback(compte: string, montant: number): number {
-  const v = HALF_COMPTES.has(compte) ? montant / 2 : montant;
-  return Math.round(v * 100) / 100;
-}
+// ⚠️ LOT C.4/C.5 — LES QUATRE LISTES DE REPLI ONT ÉTÉ SUPPRIMÉES.
+//
+// `FIXED_TYPES`, `CURRENT_TYPES`, `CREDIT_TYPES`, `CAT1_EXCLUDE` et
+// `HALF_COMPTES` réimplémentaient les formules Excel du classeur de l'auteur,
+// au cas où les colonnes calculées seraient absentes.
+//
+// MESURÉ le 17/09/2026 sur les deux classeurs réels — 3 943 lignes :
+//
+//   repli du montant réel (colonne F)  :   0 fois
+//   repli du sens (colonne S)          :   0 fois
+//   colonne classe (G) vide            : 231 fois
+//     → dont une classe effectivement posée par le repli :  0 fois
+//
+// Aucune de ces listes n'a jamais changé une valeur. Excel met en cache le
+// résultat de ses formules : la colonne calculée est toujours là. Le repli
+// était une précaution qui portait, en échange, le vocabulaire complet de
+// l'auteur dans le code de l'application.
+//
+// Ce qui les remplace : quand une valeur calculée manque, la LIGNE EST
+// REFUSÉE, avec son emplacement. C'est déjà la règle du format public pour un
+// montant illisible — « on ne devine jamais » vaut aussi pour l'adaptateur.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UTILITAIRES
@@ -284,6 +244,11 @@ function parseTransactionsSheet(wb: XLSX.WorkBook): RawTransaction[] {
   let previsionnelles = 0;
   const totalRows = rows.length - 1;
 
+  // Lot C — les lignes dont une valeur calculée manque sont refusées, et
+  // dites. Elles étaient auparavant complétées par les formules de l'auteur,
+  // réimplémentées dans le code.
+  const refusees: string[] = [];
+
   for (let i = 1; i < rows.length; i++) {
     // Progression toutes les 500 lignes
     if (i % 500 === 0) {
@@ -314,22 +279,23 @@ function parseTransactionsSheet(wb: XLSX.WorkBook): RawTransaction[] {
     const date = xlDateToISO(r[3] as Date | number | string | null);
     if (!date) continue;
 
-    // Col F (5) : montant réel (valeur mise en cache de la formule)
-    // Fallback sur col E (4) si absente
-    let montant = 0;
+    // Col F (5) : montant réel, valeur mise en cache de la formule.
+    //
+    // ⚠️ Plus de repli sur la colonne E avec division par deux : la ligne est
+    // REFUSÉE si la valeur calculée manque. Mesuré sur 3 943 lignes réelles,
+    // ce cas ne s'est jamais produit — Excel met ses formules en cache.
     const cachedMR = r[5];
-    if (typeof cachedMR === "number" && !isNaN(cachedMR)) {
-      montant = Math.round(cachedMR * 100) / 100;
-    } else {
-      const rawM = r[4];
-      if (typeof rawM === "number" && !isNaN(rawM)) {
-        montant = computeMontantReelFallback(compte, rawM);
-      }
+    if (!(typeof cachedMR === "number" && !isNaN(cachedMR))) {
+      refusees.push(`ligne ${i + 18} — montant calculé (colonne F) absent`);
+      continue;
     }
+    const montant = Math.round(cachedMR * 100) / 100;
 
-    // Col G (6) : cat1 (valeur mise en cache de la formule IF/OR)
+    // Col G (6) : cat1, valeur mise en cache de la formule IF/OR.
+    // Vide veut dire « cette ligne n'est pas une dépense classée », ce qui est
+    // exactement ce qu'on sait d'elle. Aucune classe n'est inventée.
     const cachedCat1 = cleanStr(r[6]);
-    const cat1 = (cachedCat1 && cachedCat1 !== "x") ? cachedCat1 : computeCat1Fallback(type, label);
+    const cat1 = cachedCat1 === "x" ? "" : cachedCat1;
 
     // Col H (7) : cat2
     let cat2 = cleanStr(r[7]);
@@ -351,7 +317,11 @@ function parseTransactionsSheet(wb: XLSX.WorkBook): RawTransaction[] {
     // Col S (18) : dc (valeur mise en cache du XLOOKUP). Le code lisait
     // auparavant N (13), qui est la Ville.
     const cachedDC = cleanStr(r[18]);
-    const dc = (cachedDC === "Débit" || cachedDC === "Crédit") ? cachedDC : computeDCFallback(type);
+    if (cachedDC !== "Débit" && cachedDC !== "Crédit") {
+      refusees.push(`ligne ${i + 18} — sens (colonne S) illisible : « ${cachedDC || "vide"} »`);
+      continue;
+    }
+    const dc = cachedDC;
 
     data.push({ label, compte, type, date, montant, cat1, cat2, cat3, cat4, ville, dc });
   }
@@ -365,6 +335,15 @@ function parseTransactionsSheet(wb: XLSX.WorkBook): RawTransaction[] {
 
   if (previsionnelles) {
     progress(`${previsionnelles} ligne(s) prévisionnelle(s) ignorée(s)`, 40);
+  }
+  if (refusees.length) {
+    // Refuser en silence serait pire que de mal calculer : la personne
+    // croirait son fichier lu en entier.
+    progress(
+      `${refusees.length} ligne(s) refusée(s) — ${refusees.slice(0, 3).join(" ; ")}` +
+      (refusees.length > 3 ? " ; …" : ""),
+      40
+    );
   }
 
   return data;

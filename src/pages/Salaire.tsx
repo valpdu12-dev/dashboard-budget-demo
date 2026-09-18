@@ -26,7 +26,11 @@ import { useFilterSync } from "@/hooks/useFilterSync";
 import { useChartSize } from "@/hooks/useChartSize";
 
 import { fmt, fmtShort, mkLabel, pctChange } from "@/utils/formatters";
-import { couleurEmployeur } from "@/config/colors";
+import { couleurStable, DONUT_COLORS } from "@/config/colors";
+
+// Lot C.5 — les employeurs n'ont plus de table de couleurs : le repli stable
+// donne toujours une couleur, et toujours la même pour un nom donné.
+const couleurEmployeurStable = (nom: string) => couleurStable(nom, DONUT_COLORS);
 
 // ─── AreaChart Tooltip (affiche % du brut par poste) ─────────────────────
 function AreaTooltip({ active, payload, label }: {
@@ -104,7 +108,7 @@ export default function Salaire() {
             key={ent}
             label={ent}
             active={selEntreprise === ent}
-            color={couleurEmployeur(ent)}
+            color={couleurEmployeurStable(ent)}
             onClick={() => setSelEntreprise(selEntreprise === ent ? null : ent)}
           />
         ))}
@@ -120,7 +124,7 @@ export default function Salaire() {
         <div className="card">
           <div className="flex items-center gap-2 text-sm font-semibold text-text mb-3">
             {selEntreprise && (
-              <span className="w-2.5 h-2.5 rounded-full" style={{ background: couleurEmployeur(selEntreprise) }} />
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: couleurEmployeurStable(selEntreprise) }} />
             )}
             {entKPIs.label}
             <span className="text-text-sec font-normal text-xs">— {entKPIs.months} mois</span>
@@ -154,7 +158,7 @@ export default function Salaire() {
             <Line type="monotone" dataKey="Net" stroke="#10B981" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
             <Line type="monotone" dataKey="Brut" stroke="#6366F1" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} opacity={0.6} />
             {!selEntreprise && entrepriseChanges.map((ch, i) => (
-              <ReferenceLine key={i} x={ch.mk} stroke={couleurEmployeur(ch.entreprise)} strokeDasharray="4 3" strokeWidth={1.5}>
+              <ReferenceLine key={i} x={ch.mk} stroke={couleurEmployeurStable(ch.entreprise)} strokeDasharray="4 3" strokeWidth={1.5}>
                 {/* Lot 1.6 — point ouvert n° 20. `fontSize` était à 10 : ce
                     seul nœud faisait manquer la cible n° 4 de l'audit
                     (« police minimale ≥ 11 px ») sur toute la page Salaire, en
@@ -162,7 +166,7 @@ export default function Salaire() {
                     1.2 avait traité les `tick={{fontSize}}` et les
                     `wrapperStyle`, mais pas les `<Label>` — forme syntaxique
                     différente, occurrence unique. */}
-                <Label value={ch.entreprise} position="top" fill={couleurEmployeur(ch.entreprise)} fontSize={11} />
+                <Label value={ch.entreprise} position="top" fill={couleurEmployeurStable(ch.entreprise)} fontSize={11} />
               </ReferenceLine>
             ))}
           </LineChart>

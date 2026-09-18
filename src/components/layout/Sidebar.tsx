@@ -4,16 +4,17 @@ import {
   BarChart3, TrendingDown, TrendingUp, PiggyBank, Lightbulb,
   type LucideIcon,
 } from "lucide-react";
-import { NAV_TABS } from "@/config/constants";
+import { useOngletsVisibles } from "@/hooks/useOngletsVisibles";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   BarChart3, TrendingDown, TrendingUp, PiggyBank, Lightbulb,
 };
 
 export function Sidebar() {
+  const onglets = useOngletsVisibles();
   return (
     <nav className="w-52 bg-surface border-r border-border flex flex-col py-4 shrink-0">
-      {NAV_TABS.map((tab) => {
+      {onglets.map((tab) => {
         const Icon = ICON_MAP[tab.icon];
         return (
           <NavLink

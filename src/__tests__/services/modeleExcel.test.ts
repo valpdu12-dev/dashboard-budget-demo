@@ -5,10 +5,11 @@ import {
   TRANSACTIONS_MODELE,
   PAIE_MODELE,
   SOLDES_MODELE,
+  COMPTES_MODELE,
   BORNES_MODELE,
   PRET_MODELE,
 } from "@/services/modeleExcel";
-import { COMPTE_LIBELLES, COMPTES_AVEC_SOLDE } from "@/config/accounts";
+import { COMPTE_LIBELLES, COMPTES_AVEC_SOLDE } from "../helpers/comptesDemo";
 
 /**
  * Le modèle est le premier fichier que verra quelqu'un d'autre que l'auteur.
@@ -30,7 +31,7 @@ function feuille(nom: string): unknown[][] {
 }
 
 const EN_TETE_TX = [
-  "Date", "Compte", "Type", "Montant", "Sens", "Classe",
+  "Date", "Compte", "Type", "Montant", "Montant brut", "Sens", "Classe",
   "Catégorie", "Sous-catégorie", "Détail", "Libellé", "Ville", "Prévisionnel",
 ];
 const CLASSES_VALIDES = ["Dépense Fixe", "Dépense Courante", "Dépense Occasionnelle", ""];
@@ -52,6 +53,14 @@ describe("modèle Excel — structure du classeur", () => {
   });
 });
 
+// ⚠️ Lot C.6 — les colonnes sont nommées, pas numérotées à la main.
+//
+// « Montant brut » s'est inséré en position 4 (format v2, décision D1), et
+// tout ce qui suivait a décalé d'un cran. Les tests lisaient des indices
+// écrits en dur : ils cassaient tous, pour la bonne raison, mais il a fallu
+// les corriger un par un. Les constantes ci-dessous évitent que ça recommence.
+const DATE = 0, COMPTE = 1, SENS = 5, CLASSE = 6, PREV = 12;
+
 describe("modèle Excel — feuille Transactions", () => {
   const lignes = feuille("Transactions").slice(1);
 
@@ -70,25 +79,25 @@ describe("modèle Excel — feuille Transactions", () => {
 
   it("n'écrit que « Débit » ou « Crédit » dans la colonne Sens", () => {
     for (const [i, l] of lignes.entries()) {
-      expect(["Débit", "Crédit"], `ligne ${i + 2}`).toContain(l[4]);
+      expect(["Débit", "Crédit"], `ligne ${i + 2}`).toContain(l[SENS]);
     }
   });
 
   it("n'écrit que des classes valides, ou rien", () => {
     for (const [i, l] of lignes.entries()) {
-      expect(CLASSES_VALIDES, `ligne ${i + 2}`).toContain(l[5]);
+      expect(CLASSES_VALIDES, `ligne ${i + 2}`).toContain(l[CLASSE]);
     }
   });
 
   it("laisse la classe vide sur toutes les recettes", () => {
-    const credits = lignes.filter((l) => l[4] === "Crédit");
+    const credits = lignes.filter((l) => l[SENS] === "Crédit");
     expect(credits.length).toBeGreaterThan(0);
-    for (const l of credits) expect(l[5]).toBe("");
+    for (const l of credits) expect(l[CLASSE]).toBe("");
   });
 
   it("écrit toutes les dates en JJ/MM/AAAA", () => {
     for (const [i, l] of lignes.entries()) {
-      expect(String(l[0]), `ligne ${i + 2}`).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
+      expect(String(l[DATE]), `ligne ${i + 2}`).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
     }
   });
 
@@ -97,12 +106,12 @@ describe("modèle Excel — feuille Transactions", () => {
     // inconnu n'a pas de solde. Le modèle ne doit pas être le premier à
     // tomber dans ce trou. Voir docs/LIMITES_PARAMETRAGE.md.
     for (const [i, l] of lignes.entries()) {
-      expect(COMPTE_LIBELLES, `ligne ${i + 2}`).toContain(l[1]);
+      expect(COMPTE_LIBELLES, `ligne ${i + 2}`).toContain(l[COMPTE]);
     }
   });
 
   it("marque une seule ligne prévisionnelle, et elle est hors des bornes", () => {
-    const prev = lignes.filter((l) => String(l[11]).toLowerCase() === "x");
+    const prev = lignes.filter((l) => String(l[PREV]).toLowerCase() === "x");
     expect(prev).toHaveLength(1);
     expect(prev[0][0]).toBe("05/04/2026");
   });
@@ -111,17 +120,17 @@ describe("modèle Excel — feuille Transactions", () => {
     const enISO = (fr: string) => fr.split("/").reverse().join("-");
     const debut = enISO(BORNES_MODELE.debut);
     const fin = enISO(BORNES_MODELE.fin);
-    for (const l of lignes.filter((x) => String(x[11]).toLowerCase() !== "x")) {
-      const d = enISO(String(l[0]));
-      expect(d >= debut && d <= fin, `date ${l[0]} hors bornes`).toBe(true);
+    for (const l of lignes.filter((x) => String(x[PREV]).toLowerCase() !== "x")) {
+      const d = enISO(String(l[DATE]));
+      expect(d >= debut && d <= fin, `date ${l[DATE]} hors bornes`).toBe(true);
     }
   });
 
   it("couvre les trois mois du relevé, sans trou", () => {
     const mois = new Set(
       lignes
-        .filter((l) => String(l[11]).toLowerCase() !== "x")
-        .map((l) => String(l[0]).slice(3))
+        .filter((l) => String(l[PREV]).toLowerCase() !== "x")
+        .map((l) => String(l[DATE]).slice(3))
     );
     expect([...mois].sort()).toEqual(["01/2026", "02/2026", "03/2026"]);
   });
@@ -131,7 +140,7 @@ describe("modèle Excel — feuille Paie", () => {
   const lignes = feuille("Paie").slice(1);
 
   it("donne un bulletin par mois du relevé", () => {
-    expect(lignes.map((l) => l[0])).toEqual(["2026-01", "2026-02", "2026-03"]);
+    expect(lignes.map((l) => l[DATE])).toEqual(["2026-01", "2026-02", "2026-03"]);
   });
 
   it("écrit un net conforme à la formule de l'application", () => {
@@ -188,11 +197,29 @@ describe("modèle Excel — feuille Paramètres", () => {
     expect(p["Prêt — première échéance"]).toBe(PRET_MODELE.premiereEcheance);
   });
 
-  it("déclare un solde de départ pour chaque compte qui en porte un", () => {
-    const soldes = tableau("Compte");
-    expect(soldes.map(([c]) => c).sort()).toEqual([...COMPTES_AVEC_SOLDE].sort());
-    expect(soldes.map(([, v]) => v)).toEqual(SOLDES_MODELE.map(([, v]) => v));
-    for (const [, v] of soldes) expect(typeof v).toBe("number");
+  it("déclare TOUS ses comptes, y compris ceux qui ne portent pas de solde", () => {
+    // Lot C.2. Le modèle portait des transactions sur « Banque A - Part
+    // commune » sans le déclarer ici. Tant que la référence était la liste
+    // figée de l'application, personne ne le voyait. C'est ce trou-là que ce
+    // test ferme : tout compte utilisé par une transaction est déclaré.
+    const lignes = tableau("Compte");
+    expect(lignes.map(([c]) => c).sort()).toEqual(
+      COMPTES_MODELE.map((c) => c.libelle).sort()
+    );
+  });
+
+  it("déclare un solde de départ pour chaque compte qui en porte un, et rien pour les autres", () => {
+    const lignes = tableau("Compte");
+    const avecSolde = lignes.filter(([, v]) => typeof v === "number");
+    expect(avecSolde.map(([c]) => c).sort()).toEqual([...COMPTES_AVEC_SOLDE].sort());
+    expect(avecSolde.map(([, v]) => v)).toEqual(SOLDES_MODELE.map(([, v]) => v));
+
+    // Un solde absent est « non initialisé », jamais 0. La cellule est vide.
+    const sansSolde = lignes.filter(([, v]) => typeof v !== "number");
+    expect(sansSolde.map(([c]) => c)).toEqual(
+      COMPTES_MODELE.filter((c) => c.solde === null).map((c) => c.libelle)
+    );
+    for (const [, v] of sansSolde) expect(String(v ?? "")).toBe("");
   });
 });
 

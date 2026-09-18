@@ -1,220 +1,23 @@
-// ── Hook de calcul des soldes (optimisé V2 : groupBy Map au lieu de filter) ──
+// ── Hook de calcul des soldes — le branchement, rien de plus ─────────────
 //
-// Logique Banque A - Courant multi-comptes (V1 fidèle) :
-//   Banque A - Courant      Crédit → + sur Banque A - Courant
-//   Banque A - Courant      Débit  → - sur Banque A - Courant
-//   Sortie Epargne                 (tout dc) → + sur Banque A - Courant
-//   Appli partagée - Part commune        Débit  → - sur Banque A - Courant
-//   Banque A - Part commune Débit  → - sur Banque A - Courant
-//   Banque B - Compte joint       Crédit (sauf Virement extérieur) → - sur Banque A - Courant
-//   Banque C - Compte joint Crédit (sauf Virement extérieur) → - sur Banque A - Courant
-//
-// Comptes à solde propre (Banque B - Compte joint, Banque C - Compte
-// joint, Titres-restaurant, Banque B - Courant) : Crédit → +, Débit → -
-//
-// ⚠️ Comparaison par ÉGALITÉ STRICTE uniquement : deux comptes commencent par
-// « Banque B » et deux par « Banque A ». Aucun startsWith / includes.
-//
-// FIX PERF : V1 faisait transactions.filter(t => t.monthKey === mk) dans une
-// boucle forEach(allMonths) → O(n×m). V2 pré-indexe dans un Map → O(n) + O(m).
+// Lot C.3 pour la séparation, lot C.4 pour les règles : le calcul ne connaît
+// plus aucun nom de compte, il reçoit ce que la source déclare.
 
 import { useMemo } from "react";
 import type { Transaction } from "@/types";
-import { COMPTES_REELS } from "@/config/constants";
+import { calculerSoldes, type SoldesCalcules } from "@/calculs/calculSoldes";
+import { useRegles } from "@/hooks/useRegles";
 
-interface BalancesResult {
-  balancesByMonth: Record<string, Record<string, number>>;
-  currentBalances: Record<string, number>;
-  balanceChartData: (monthsInRange: string[]) => Array<Record<string, number | string>>;
-  /**
-   * Comptes sans solde de départ déclaré — lot B.5.
-   *
-   * Un compte non initialisé n'est PAS à zéro : on ne connaît simplement pas
-   * son point de départ. Le compter pour 0 dans le total du patrimoine
-   * revenait à afficher la somme des mouvements en la présentant comme une
-   * fortune. Ces comptes sortent donc des soldes et du total, et l'écran les
-   * nomme.
-   */
-  comptesNonInitialises: string[];
-  /** Vrai quand AUCUN compte n'a de solde de départ : rien n'est calculable. */
-  aucunSoldeConnu: boolean;
-  /** Tous les comptes qui apparaissent dans les données, du plus actif au moins actif. */
-  comptesPresents: string[];
-  /**
-   * Variation CUMULÉE par compte et par mois — lot B.5bis.
-   *
-   * Sans solde de départ, un solde est hors d'atteinte : on ignore le point
-   * de départ. La variation, elle, se calcule sans rien supposer : crédits
-   * moins débits, cumulés depuis la première transaction.
-   *
-   * C'est ce que l'écran montre à la place d'une page vide. Le mot compte :
-   * une variation n'est pas un solde, et l'écran ne les confond jamais.
-   */
-  variationsByMonth: Record<string, Record<string, number>>;
-}
+export type { SoldesCalcules };
 
 export function useBalances(
   transactions: Transaction[],
   allMonths: string[],
   initBalances: Record<string, number>
-): BalancesResult {
-
-  // ── Étape 1 : Pré-indexer les transactions par monthKey (1 seul pass) ──
-  const txByMonth = useMemo(() => {
-    const map = new Map<string, Transaction[]>();
-    for (const t of transactions) {
-      const arr = map.get(t.monthKey);
-      if (arr) arr.push(t);
-      else map.set(t.monthKey, [t]);
-    }
-    return map;
-  }, [transactions]);
-
-  // ── Les comptes dont la source déclare un solde de départ ─────────────
-  const comptesInitialises = useMemo(
-    () => COMPTES_REELS.filter((c) => typeof initBalances[c] === "number"),
-    [initBalances]
+): SoldesCalcules {
+  const regles = useRegles();
+  return useMemo(
+    () => calculerSoldes(transactions, allMonths, initBalances, regles),
+    [transactions, allMonths, initBalances, regles]
   );
-  const comptesNonInitialises = useMemo(
-    () => COMPTES_REELS.filter((c) => typeof initBalances[c] !== "number"),
-    [initBalances]
-  );
-
-  // ── Étape 2 : Calcul des soldes cumulatifs mois par mois ──────────────
-  const balancesByMonth = useMemo(() => {
-    const result: Record<string, Record<string, number>> = {};
-    const running: Record<string, number> = {};
-
-    // Initialisation des soldes de départ
-    for (const compte of COMPTES_REELS) {
-      running[compte] = initBalances[compte] ?? 0;
-    }
-
-    for (const mk of allMonths) {
-      const monthTx = txByMonth.get(mk) ?? []; // O(1) au lieu de O(n)
-
-      for (const t of monthTx) {
-        const m = t.montant;
-
-        // ─── Règle Banque A - Courant (multi-comptes) ──────
-        if (t.compte === "Banque A - Courant") {
-          if (t.dc === "Crédit") running["Banque A - Courant"] += m;
-          else running["Banque A - Courant"] -= m;
-        }
-        if (t.compte === "Sortie Epargne") {
-          running["Banque A - Courant"] += m;
-        }
-        if (t.compte === "Appli partagée - Part commune" && t.dc === "Débit") {
-          running["Banque A - Courant"] -= m;
-        }
-        if (t.compte === "Banque A - Part commune" && t.dc === "Débit") {
-          running["Banque A - Courant"] -= m;
-        }
-        if (t.compte === "Banque B - Compte joint" && t.dc === "Crédit" && t.type !== "Virement extérieur") {
-          running["Banque A - Courant"] -= m;
-        }
-        if (t.compte === "Banque C - Compte joint" && t.dc === "Crédit" && t.type !== "Virement extérieur") {
-          running["Banque A - Courant"] -= m;
-        }
-
-        // ─── Règles simples : comptes à solde propre ──────────────
-        if (t.compte === "Banque B - Compte joint") {
-          if (t.dc === "Crédit") running["Banque B - Compte joint"] += m;
-          else running["Banque B - Compte joint"] -= m;
-        }
-        if (t.compte === "Banque C - Compte joint") {
-          if (t.dc === "Crédit") running["Banque C - Compte joint"] += m;
-          else running["Banque C - Compte joint"] -= m;
-        }
-        if (t.compte === "Titres-restaurant") {
-          if (t.dc === "Crédit") running["Titres-restaurant"] += m;
-          else running["Titres-restaurant"] -= m;
-        }
-        if (t.compte === "Banque B - Courant") {
-          if (t.dc === "Crédit") running["Banque B - Courant"] += m;
-          else running["Banque B - Courant"] -= m;
-        }
-      }
-
-      // Snapshot du mois. Seuls les comptes dont on connaît le point de
-      // départ y figurent — et donc dans le total.
-      const instantane: Record<string, number> = {};
-      for (const c of comptesInitialises) instantane[c] = running[c];
-      if (comptesInitialises.length > 0) {
-        instantane.Total = comptesInitialises.reduce((somme, c) => somme + running[c], 0);
-      }
-      result[mk] = instantane;
-    }
-
-    return result;
-  }, [txByMonth, allMonths, initBalances, comptesInitialises]);
-
-  // ── Variation cumulée, générique, sans aucune règle par compte ────────
-  const comptesPresents = useMemo(() => {
-    const poids = new Map<string, number>();
-    for (const t of transactions) {
-      poids.set(t.compte, (poids.get(t.compte) ?? 0) + t.montant);
-    }
-    return [...poids.keys()].sort(
-      (a, b) => (poids.get(b) ?? 0) - (poids.get(a) ?? 0) || a.localeCompare(b)
-    );
-  }, [transactions]);
-
-  const variationsByMonth = useMemo(() => {
-    const result: Record<string, Record<string, number>> = {};
-    const cumul: Record<string, number> = {};
-    for (const c of comptesPresents) cumul[c] = 0;
-
-    for (const mk of allMonths) {
-      for (const t of txByMonth.get(mk) ?? []) {
-        if (!(t.compte in cumul)) continue;
-        cumul[t.compte] += t.dc === "Crédit" ? t.montant : -t.montant;
-      }
-      const instantane: Record<string, number> = { ...cumul };
-      instantane.Total = comptesPresents.reduce((s2, c) => s2 + cumul[c], 0);
-      result[mk] = instantane;
-    }
-    return result;
-  }, [txByMonth, allMonths, comptesPresents]);
-
-  // ── Étape 3 : Soldes du dernier mois (= soldes actuels) ───────────────
-  const currentBalances = useMemo(() => {
-    if (!allMonths.length) {
-      // Sans transactions, les soldes valent leur point de départ déclaré —
-      // et rien du tout pour les comptes qui n'en déclarent pas.
-      const depart: Record<string, number> = {};
-      for (const c of comptesInitialises) depart[c] = initBalances[c];
-      if (comptesInitialises.length > 0) {
-        depart.Total = comptesInitialises.reduce((s2, c) => s2 + initBalances[c], 0);
-      }
-      return depart;
-    }
-    return balancesByMonth[allMonths[allMonths.length - 1]] ?? {};
-  }, [balancesByMonth, allMonths, comptesInitialises, initBalances]);
-
-  // ── Étape 4 : Données pour le LineChart (mémoïsé via useMemo) ─────────
-  // V1 renvoyait une fonction brute recréée à chaque render.
-  // V2 : on retourne une fonction stable mais les données internes sont mémoïsées.
-  const balanceChartData = useMemo(() => {
-    return (monthsInRange: string[]) =>
-      monthsInRange.map((mk) => ({
-        monthKey: mk,
-        "Banque A - Courant": Math.round(balancesByMonth[mk]?.["Banque A - Courant"] ?? 0),
-        "Banque B - Compte joint": Math.round(balancesByMonth[mk]?.["Banque B - Compte joint"] ?? 0),
-        "Banque C - Compte joint": Math.round(balancesByMonth[mk]?.["Banque C - Compte joint"] ?? 0),
-        "Titres-restaurant": Math.round(balancesByMonth[mk]?.["Titres-restaurant"] ?? 0),
-        "Banque B - Courant": Math.round(balancesByMonth[mk]?.["Banque B - Courant"] ?? 0),
-        Total: Math.round(balancesByMonth[mk]?.["Total"] ?? 0),
-      }));
-  }, [balancesByMonth]);
-
-  return {
-    comptesPresents,
-    variationsByMonth,
-    comptesNonInitialises,
-    aucunSoldeConnu: comptesInitialises.length === 0,
-    balancesByMonth,
-    currentBalances,
-    balanceChartData,
-  };
 }

@@ -29,7 +29,7 @@ import type { BudgetCat2Row } from "@/hooks/useBudgetData";
 import { BandeauMoisNonComparables } from "@/components/ui/BandeauMoisNonComparables";
 
 import { fmt, fmtShort, mkLabel } from "@/utils/formatters";
-import { CAT2_COLORS, DONUT_COLORS } from "@/config/colors";
+import { useCouleurs } from "@/hooks/useCouleurs";
 
 // ─── Status badge ───────────────────────────────────────────────────────
 
@@ -163,6 +163,7 @@ function BudgetInput({
 // ─── Page principale ────────────────────────────────────────────────────
 
 export default function BudgetMensuel() {
+  const couleurs = useCouleurs();
   const { status } = useDataStore();
   const { rows, kpis, topRows, isLoading, updateBudget, comparableMonths } = useBudgetData();
   const { allMonths } = useFilteredData();
@@ -260,7 +261,7 @@ export default function BudgetMensuel() {
                       <span className="flex items-center justify-end gap-2">
                         <span
                           className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ background: CAT2_COLORS[r.cat2] || "#64748b" }}
+                          style={{ background: couleurs.categorie(r.cat2) }}
                         />
                         <span className="text-text font-medium">{r.cat2 || "—"}</span>
                       </span>
@@ -334,7 +335,7 @@ export default function BudgetMensuel() {
                     <span className="flex items-center gap-2">
                       <span
                         className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ background: CAT2_COLORS[r.cat2] || "#64748b" }}
+                        style={{ background: couleurs.categorie(r.cat2) }}
                       />
                       <span className="text-text font-medium">{r.cat2 || "—"}</span>
                     </span>
@@ -414,7 +415,7 @@ export default function BudgetMensuel() {
                 radius={[4, 4, 0, 0]}
               >
                 {chartData.map((e, i) => {
-                  const color = CAT2_COLORS[e.fullName] || DONUT_COLORS[i % DONUT_COLORS.length];
+                  const color = couleurs.categorie(e.fullName);
                   return <Cell key={i} fill={color} />;
                 })}
               </Bar>
@@ -444,7 +445,7 @@ export default function BudgetMensuel() {
                 <div className="flex items-center gap-2">
                   <span
                     className="w-2 h-2 rounded-full"
-                    style={{ background: CAT2_COLORS[r.cat2] || "#64748b" }}
+                    style={{ background: couleurs.categorie(r.cat2) }}
                   />
                   <span className="text-xs font-medium text-text">{r.cat2}</span>
                 </div>
@@ -478,9 +479,9 @@ export default function BudgetMensuel() {
                     <SparkLine
                       type="monotone"
                       dataKey="actual"
-                      stroke={CAT2_COLORS[r.cat2] || "#6366f1"}
+                      stroke={couleurs.categorie(r.cat2)}
                       strokeWidth={2}
-                      dot={{ r: 2, strokeWidth: 0, fill: CAT2_COLORS[r.cat2] || "#6366f1" }}
+                      dot={{ r: 2, strokeWidth: 0, fill: couleurs.categorie(r.cat2) }}
                     />
                     {r.target !== null && (
                       <SparkLine

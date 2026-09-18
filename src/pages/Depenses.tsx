@@ -38,7 +38,8 @@ import { useInfobulleTactile } from "@/hooks/useInfobulleTactile";
 import { BandeauMoisNonComparables } from "@/components/ui/BandeauMoisNonComparables";
 
 import { fmt, fmtShort, fmtDate, mkLabel, pctChange, partDuTotal } from "@/utils/formatters";
-import { CAT2_COLORS, DONUT_COLORS, TYPE_COLORS, couleurOrganisme } from "@/config/colors";
+import { TYPE_COLORS } from "@/config/colors";
+import { useCouleurs, type Couleurs } from "@/hooks/useCouleurs";
 
 /**
  * Coupe un libelle trop long en deux lignes equilibrees, au plus proche
@@ -156,7 +157,10 @@ function CumulTooltip({
 }
 
 // ─── Colonnes du DataTable ──────────────────────────────────────────────
-const TABLE_COLUMNS = [
+// ⚠️ Lot C.5 — une FABRIQUE, plus une constante de module. La pastille de
+// catégorie porte la couleur DÉCLARÉE par la source ; une constante figée au
+// chargement du module ne pourrait pas la connaître.
+const colonnesDetail = (couleurs: Couleurs) => [
   {
     key: "date" as const,
     label: "Date",
@@ -197,7 +201,7 @@ const TABLE_COLUMNS = [
       <span className="flex items-center gap-1.5">
         <span
           className="inline-block w-2 h-2 rounded-full shrink-0"
-          style={{ background: CAT2_COLORS[String(v)] || "#64748b" }}
+          style={{ background: couleurs.categorie(String(v)) }}
         />
         <span className="text-text">{String(v || "—")}</span>
       </span>
@@ -231,6 +235,7 @@ const TABLE_COLUMNS = [
 
 // ─── Page Dépenses ──────────────────────────────────────────────────────
 export default function Depenses() {
+  const couleurs = useCouleurs();
   const { status } = useDataStore();
   useFilterSync({ month: "selMonth", cat2: "selCat2", type: "selType", org: "selOrg" });
 
@@ -474,10 +479,10 @@ export default function Depenses() {
                   key={org}
                   type="monotone"
                   dataKey={org}
-                  stroke={couleurOrganisme(org)}
+                  stroke={couleurs.organisme(org)}
                   strokeWidth={selOrg && selOrg !== org ? 1 : 2.5}
                   strokeOpacity={selOrg && selOrg !== org ? 0.25 : 1}
-                  dot={{ r: selOrg === org ? 4 : 2.5, strokeWidth: 0, fill: couleurOrganisme(org) }}
+                  dot={{ r: selOrg === org ? 4 : 2.5, strokeWidth: 0, fill: couleurs.organisme(org) }}
                   activeDot={{ r: 5, stroke: "#fff", strokeWidth: 2 }}
                   style={{ cursor: "pointer" }}
                 />
@@ -485,7 +490,7 @@ export default function Depenses() {
               <Line
                 type="monotone"
                 dataKey="Total"
-                stroke={couleurOrganisme("Total")}
+                stroke={couleurs.organisme("Total")}
                 strokeWidth={2}
                 strokeDasharray="5 5"
                 dot={false}
@@ -550,7 +555,7 @@ export default function Depenses() {
                   {expByCat2.map((e, i) => (
                     <Cell
                       key={i}
-                      fill={CAT2_COLORS[e.name] || DONUT_COLORS[i % DONUT_COLORS.length]}
+                      fill={couleurs.categorie(e.name)}
                       stroke={selCat2 === e.name ? "#fff" : "none"}
                       strokeWidth={selCat2 === e.name ? 3 : 0}
                     />
@@ -613,7 +618,7 @@ export default function Depenses() {
                  (point n° 18) — assumé : cette légende porte à la fois la
                  lecture des montants et le filtrage. */
               <ul className="flex flex-col mt-3 w-full">
-                {expByCat2.map((e, i) => {
+                {expByCat2.map((e) => {
                   const actif = selCat2 === e.name;
                   return (
                     <li key={e.name} className="min-w-0">
@@ -627,7 +632,7 @@ export default function Depenses() {
                       >
                         <span
                           className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
-                          style={{ backgroundColor: CAT2_COLORS[e.name] || DONUT_COLORS[i % DONUT_COLORS.length] }}
+                          style={{ backgroundColor: couleurs.categorie(e.name) }}
                           aria-hidden="true"
                         />
                         <span className={actif ? "text-text" : "text-text-sec"}>{e.name}</span>
@@ -701,7 +706,7 @@ export default function Depenses() {
       {/* Table détail des dépenses (paginée — FIX V1) */}
       <DataTable
         data={detailRows as unknown as Record<string, unknown>[]}
-        columns={TABLE_COLUMNS}
+        columns={colonnesDetail(couleurs)}
         pageSize={25}
         title={"Détail des dépenses" + (hasFilters ? " (filtré)" : "")}
         emptyMessage="Aucune dépense trouvée"

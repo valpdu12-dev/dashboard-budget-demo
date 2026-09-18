@@ -12,7 +12,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { decodeTransactions, extractAllMonths } from "@/utils/decode";
 import { moisComparables } from "@/utils/couverture";
-import { COMPTES_AVEC_SOLDE } from "@/config/accounts";
+import { COMPTES_AVEC_SOLDE } from "../helpers/comptesDemo";
 import type { RawTransactionsJSON, Config, SalaryData } from "@/types";
 
 const lire = <T,>(nom: string): T =>

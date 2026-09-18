@@ -221,15 +221,33 @@ describe("avertissements — accepté, mais dit", () => {
     expect(alertes(r)[0].message).toContain("Budget mensuel");
   });
 
-  it("accepte un compte inconnu, en disant qu'il n'aura pas de solde", () => {
+  // ⚠️ Lot C.4 — cet avertissement a changé de sens, puis de portée.
+  //
+  // Au lot B, il disait qu'un compte hors de la liste écrite dans le code
+  // n'aurait PAS de solde. C'était vrai tant que `useBalances` appliquait des
+  // règles nommées compte par compte. Ça ne l'est plus : un compte non
+  // déclaré a un solde, calculé sur ses propres mouvements.
+  //
+  // Il ne reste donc qu'une seule référence — le tableau `Comptes` — et, sans
+  // tableau, plus d'avertissement par compte : l'aperçu d'import dit une fois
+  // que le fichier ne déclare aucune configuration.
+  it("ne dit plus rien par compte quand le fichier ne déclare aucun compte", () => {
     const r = lireClasseurPublic(classeur({
       Transactions: [EN_TETE, ligneOK({ Compte: "Ma banque à moi" })],
     }));
     expect(r.transactions).toHaveLength(1);
+    expect(alertes(r)).toEqual([]);
+  });
+
+  it("nomme un compte absent du tableau Comptes, quand ce tableau existe", () => {
+    const r = lireClasseurPublic(classeur({
+      Transactions: [EN_TETE, ligneOK({ Compte: "Ma banque à moi" })],
+      "Paramètres": [["Compte", "Solde de départ"], ["Banque A - Courant", 100]],
+    }));
     const a = alertes(r)[0];
     expect(a.colonne).toBe("Compte");
     expect(a.message).toContain("Ma banque à moi");
-    expect(a.message).toContain("PAS de solde");
+    expect(a.message).toContain("tableau Comptes");
   });
 
   it("met de côté une ligne prévisionnelle sans la compter comme un rejet", () => {

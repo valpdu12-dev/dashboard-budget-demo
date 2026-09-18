@@ -1,52 +1,15 @@
 // ── Palettes de couleurs (migrées depuis V1 helpers.js) ──────────────────
 
-export const CAT2_COLORS: Record<string, string> = {
-  "Alimentation": "#e67e22",
-  "Assurances": "#8e44ad",
-  "Autre": "#95a5a6",
-  "Banque": "#34495e",
-  "Comptes Bancaires": "#7f8c8d",
-  "Habillement": "#e84393",
-  "Immobilier": "#2980b9",
-  "Impots": "#c0392b",
-  "Loisir": "#27ae60",
-  "Santé": "#00cec9",
-  "Transport": "#f39c12",
-};
-
-export const COMPTE_COLORS: Record<string, string> = {
-  "Banque A - Courant": "#2563eb",
-  "Banque B - Compte joint": "#059669",
-  "Banque C - Compte joint": "#d97706",
-  "Titres-restaurant": "#dc2626",
-  "Banque B - Courant": "#0891b2",
-  "Total": "#6366f1",
-};
-
-export const ORG_COLORS: Record<string, string> = {
-  "Banque A": "#2563eb",
-  "Banque C": "#d97706",
-  "Banque B": "#059669",
-  "Titres-restaurant": "#dc2626",
-  "Total": "#a78bfa",
-};
-
-export const ENT_COLORS: Record<string, string> = {
-  "Employeur A": "#22c55e",
-  "Employeur B": "#3b82f6",
-  "Employeur C": "#f59e0b",
-  "Employeur D": "#ef4444",
-  "Employeur E": "#8b5cf6",
-};
-
-export const EPARGNE_COLORS: Record<string, string> = {
-  "Crédit Immobilier": "#3b82f6",
-  "Épargne Banque C": "#f59e0b",
-  "Épargne Banque A": "#22c55e",
-  "Épargne Banque B": "#06b6d4",
-  "Assurance-vie": "#8b5cf6",
-  "Cagnotte partagée": "#ec4899",
-};
+// ⚠️ LOT C.5 — QUATRE TABLES ONT ÉTÉ SUPPRIMÉES D'ICI :
+//
+//   `COMPTE_COLORS`, `ORG_COLORS`, `ENT_COLORS`, `EPARGNE_COLORS` — une
+//   couleur par libellé, et ces libellés étaient ceux de l'auteur. Elles ne
+//   servaient qu'au jeu de démonstration ; tout autre fichier tombait déjà
+//   sur `couleurStable` depuis le lot A.2.
+//
+// Les couleurs viennent maintenant de `hooks/useCouleurs.ts` : ce que la
+// source déclare, sinon le repli stable. `CAT2_COLORS` est partie aussi — les
+// postes de budget déclarent leur couleur dans le fichier.
 
 export const DONUT_COLORS = [
   "#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6",
@@ -85,18 +48,7 @@ export function couleurStable(
   return palette[Math.abs(h) % palette.length];
 }
 
-/** Couleur d'un compte — table connue, sinon repli stable. */
-export const couleurCompte = (nom: string): string =>
-  COMPTE_COLORS[nom] ?? couleurStable(nom);
-
-/** Couleur d'un organisme — table connue, sinon repli stable. */
-export const couleurOrganisme = (nom: string): string =>
-  ORG_COLORS[nom] ?? couleurStable(nom);
-
-/** Couleur d'un employeur — table connue, sinon repli stable. */
-export const couleurEmployeur = (nom: string): string =>
-  ENT_COLORS[nom] ?? couleurStable(nom);
-
-/** Couleur d'un support d'épargne — table connue, sinon repli stable. */
-export const couleurEpargne = (nom: string): string =>
-  EPARGNE_COLORS[nom] ?? couleurStable(nom);
+// Les quatre fonctions `couleurCompte`, `couleurOrganisme`, `couleurEmployeur`
+// et `couleurEpargne` vivaient ici. Elles consultaient d'abord une table de
+// libellés. Elles sont remplacées par `hooks/useCouleurs.ts`, qui consulte
+// d'abord la CONFIGURATION DÉCLARÉE.

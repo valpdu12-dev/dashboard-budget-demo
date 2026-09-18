@@ -1,5 +1,7 @@
 // ── Types principaux du Dashboard Budget — Démo ─────────────────────────
 
+import type { BudgetConfig } from "@/types/budgetConfig";
+
 /**
  * D'ou vient le jeu de donnees actuellement affiche.
  *
@@ -26,8 +28,8 @@ export const LIBELLE_ORIGINE: Record<DataOrigin, string> = {
 
 /** Transaction décodée (après decodeTransactions) */
 export interface Transaction {
-  compte: string;         // "Banque A - Courant", "Banque B - Compte joint", etc.
-  type: string;           // "CB", "Virement", "Prélèvement", etc.
+  compte: string;         // Libellé du compte, tel que le fichier source l'écrit
+  type: string;           // Libellé du type, tel que le fichier source l'écrit
   date: string;           // "2025-01-15"
   montant: number;        // Montant positif (valeur absolue)
   cat1: string;           // "Dépense Fixe", "Dépense Courante", "Dépense Occasionnelle"
@@ -100,17 +102,33 @@ export interface SalaryData {
   inflationByCategory?: InflationData[]; // Détail sectoriel (2024-2025 uniquement)
 }
 
-/** Configuration initiale (soldes de départ + métadonnées) */
+/**
+ * Configuration initiale (soldes de départ + métadonnées).
+ *
+ * ⚠️ Lot C.1, décision D4. Quatre champs ont été retirés d'ici : `transfers`,
+ * `comptes`, `comptesLiesPrincipal` et `colors`. Aucun n'était lu nulle part —
+ * seul `__tests__/helpers/factories.ts` les REMPLISSAIT, ce qui entretenait
+ * l'illusion. Un champ qui ressemble à du paramétrage et ne paramètre rien est
+ * la forme la plus discrète du mensonge que ce chantier chasse.
+ *
+ * Ce que ces champs promettaient vit désormais dans `BudgetConfig`
+ * (`types/budgetConfig.ts`), qui est lu, validé et testé.
+ */
 export interface Config {
   init: Record<string, number>;
-  transfers?: string[];
-  comptes?: string[];
-  comptesLiesPrincipal?: string[];
-  colors?: {
-    cat2?: Record<string, string>;
-    comptes?: Record<string, string>;
-    entreprises?: Record<string, string>;
-  };
+  /**
+   * Lot C.2 — ce que la feuille `Paramètres` a déclaré, validé.
+   *
+   * Absent quand la source ne déclare rien : un fichier au format v1, le jeu
+   * de démonstration, ou un jeu mémorisé avant le lot C. L'écran Paramètres
+   * le DIT alors, au lieu d'afficher une configuration vide comme si elle
+   * avait été lue.
+   *
+   * ⚠️ Facultatif, contrairement aux quatre champs que D4 vient de retirer —
+   * et pour la raison exacte qui les condamnait : celui-ci est LU. L'écran
+   * Paramètres s'en sert, et le C.4 s'en servira pour les calculs.
+   */
+  parametrage?: BudgetConfig;
   /**
    * Paramètres du prêt immobilier. Absent = pas de prêt déclaré par la
    * source ; `useMortgageData` retombe alors sur ses constantes.
@@ -175,8 +193,8 @@ export interface Recurring {
  *
  * C'était une liste figée de quatre valeurs — celles du jeu de données de
  * l'auteur. Un cinquième organisme ne compilait pas. Le libellé est désormais
- * libre : la liste effectivement affichée vient de `config/accounts.ts`, et
- * demain du fichier source (lot C).
+ * libre : la liste effectivement affichée vient du fichier source, depuis le
+ * lot C.4.
  */
 export type Organisme = string;
 

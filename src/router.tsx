@@ -18,6 +18,7 @@ const SalaireInflation = lazy(() => import("@/pages/SalaireInflation"));
 const Epargne          = lazy(() => import("@/pages/Epargne"));
 const PretImmobilier   = lazy(() => import("@/pages/PretImmobilier"));
 const Insights         = lazy(() => import("@/pages/Insights"));
+const Parametres       = lazy(() => import("@/pages/Parametres"));
 
 /**
  * Route conditionnelle — lot B.4.
@@ -35,16 +36,28 @@ const Insights         = lazy(() => import("@/pages/Insights"));
  */
 export function RouteSiRubrique({
   rubrique,
+  versSi,
   children,
 }: {
-  rubrique: "paie" | "pret";
+  rubrique: "paie" | "pret" | "epargne";
+  /**
+   * Où aller quand la rubrique manque, si ce n'est pas l'accueil.
+   *
+   * ⚠️ Lot C.5. `/patrimoine` est la page d'accueil de son onglet. Sans
+   * épargne, elle renvoyait à `/` — et quelqu'un qui a un prêt mais pas
+   * d'épargne voyait l'onglet Patrimoine le ramener à l'accueil à chaque
+   * clic, sans un mot. Il est désormais conduit à l'écran qui, lui, a
+   * quelque chose à montrer.
+   */
+  versSi?: { rubrique: "paie" | "pret" | "epargne"; chemin: string };
   children: ReactNode;
 }) {
   const status = useDataStore((s) => s.status);
   const rubriques = useRubriques();
 
   if (status === "success" && !rubriques[rubrique]) {
-    return <Navigate to="/" replace />;
+    const repli = versSi && rubriques[versSi.rubrique] ? versSi.chemin : "/";
+    return <Navigate to={repli} replace />;
   }
   return <>{children}</>;
 }
@@ -72,13 +85,28 @@ export function AppRouter() {
           />
 
           {/* Patrimoine : épargne + prêt */}
-          <Route path="patrimoine"      element={<Epargne />} />
+          <Route
+            path="patrimoine"
+            element={
+              <RouteSiRubrique
+                rubrique="epargne"
+                versSi={{ rubrique: "pret", chemin: "/patrimoine/pret" }}
+              >
+                <Epargne />
+              </RouteSiRubrique>
+            }
+          />
           <Route
             path="patrimoine/pret"
             element={<RouteSiRubrique rubrique="pret"><PretImmobilier /></RouteSiRubrique>}
           />
 
           <Route path="insights" element={<Insights />} />
+
+          {/* Lot C.2 — ce que l'outil a lu dans le fichier source. Hors
+              navigation principale : ce n'est pas un écran de chiffres, c'est
+              un écran de vérification. Il s'atteint depuis l'en-tête. */}
+          <Route path="parametres" element={<Parametres />} />
           <Route path="*"        element={<Comptes />} />
         </Route>
       </Routes>

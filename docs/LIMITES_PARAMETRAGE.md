@@ -1,6 +1,27 @@
-# Limites du paramétrage — état au lot A
+# Limites du paramétrage — état au lot A, **levées au lot C**
 
-*Écrit au lot A.2. À relire au lot C, qui est censé lever ces limites.*
+*Écrit au lot A.2. Relu et clos au lot C.6, le 17/09/2026.*
+
+---
+
+## ⚠️ Lisez d'abord ceci
+
+**Ce document décrit un état qui n'existe plus.** Il est conservé parce qu'il
+nomme précisément ce qui n'allait pas, et que c'est la meilleure façon de
+vérifier que le lot C a bien tenu sa promesse.
+
+| Limite de l'état A | Statut | Où c'est traité |
+|---|---|---|
+| Les comptes viennent de `src/config/accounts.ts`, pas du fichier | **levée** | tableau `Compte`, `FORMAT_FICHIER_SOURCE.md` §5.2 |
+| Les règles de solde sont écrites compte par compte | **levée** | `Participation` et `Compte lié`, §5.2 |
+| Un compte ajouté n'a pas de solde, en silence | **levée** | « non initialisé », jamais 0 |
+| Les types de transfert sont une liste de libellés en dur | **levée** | `Nature`, §5.3 |
+| Les couleurs viennent de tables figées | **levée** | colonne `Couleur`, sinon repli stable |
+
+**`src/config/accounts.ts` n'existe plus.** Il a été supprimé au lot C.5, une
+fois son dernier lecteur disparu. Les mentions qui suivent sont historiques.
+
+---
 
 ## Ce que le lot A a fait
 
@@ -66,6 +87,12 @@ des tables de couleurs.
 
 ## Résumé en une phrase
 
-L'application **encaisse** aujourd'hui plus de comptes, d'organismes et
-d'employeurs sans rien casser à l'affichage ; elle ne sait toujours pas
-**calculer un solde** pour un compte qu'elle ne connaît pas.
+*Au lot A :* l'application **encaissait** plus de comptes, d'organismes et
+d'employeurs sans rien casser à l'affichage ; elle ne savait pas **calculer un
+solde** pour un compte qu'elle ne connaissait pas.
+
+*Au lot C :* elle ne connaît plus aucun compte d'avance — elle lit ceux que le
+fichier déclare, et calcule leur solde avec les mêmes deux notions pour tous.
+
+Suite du document : `CONTRAT_PARAMETRAGE.md` pour les règles,
+`FORMAT_FICHIER_SOURCE.md` §5 pour ce qui s'écrit dans le classeur.

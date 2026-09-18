@@ -1,7 +1,15 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useBalances } from "@/hooks/useBalances";
-import { makeTx } from "../helpers/factories";
+import { makeTx, makeConfig, makeSalaryData } from "../helpers/factories";
+import { useDataStore } from "@/stores/useDataStore";
+import { poserReglesDemo } from "../helpers/poserRegles";
+
+// Les règles viennent du store depuis le lot C.4 : ce test déclare celles de
+// la démonstration, dont il vérifie précisément le comportement.
+beforeEach(() => {
+  poserReglesDemo();
+});
 import type { Transaction } from "@/types";
 
 // ── Helpers ─────────────────────────────────────────────────────────────
@@ -62,10 +70,45 @@ describe("useBalances — règles Banque A - Courant", () => {
     expect(result.current.balancesByMonth["2025-01"]["Banque A - Courant"]).toBe(5000 - 300);
   });
 
-  it("Sortie Epargne → +montant sur Banque A - Courant (quel que soit dc)", () => {
-    const tx = [makeTx({ compte: "Sortie Epargne", dc: "Crédit", montant: 500, monthKey: "2025-01" })];
+  // ── Lot C.4, décision D2 ────────────────────────────────────────────
+  //
+  // Avant : le LIBELLÉ DE COMPTE « Sortie Epargne » déclenchait le crédit.
+  // Ce compte n'existait nulle part — ni solde, ni couleur, ni icône.
+  // Après : c'est le TYPE qui porte la nature `sortie-epargne`, et le compte
+  // crédité est déclaré une fois pour toutes dans `Paramètres`.
+  it("une ligne de nature sortie-epargne crédite le compte DÉCLARÉ", () => {
+    const tx = [makeTx({
+      compte: "Sortie Epargne", type: "Sortie Epargne",
+      dc: "Crédit", montant: 500, monthKey: "2025-01",
+    })];
     const { result } = renderHook(() => useBalances(tx, ["2025-01"], INIT_ZERO));
     expect(result.current.balancesByMonth["2025-01"]["Banque A - Courant"]).toBe(500);
+  });
+
+  it("le LIBELLÉ DE COMPTE seul ne crédite plus rien — le pseudo-compte est retiré", () => {
+    const tx = [makeTx({
+      compte: "Sortie Epargne", type: "courses",
+      dc: "Crédit", montant: 500, monthKey: "2025-01",
+    })];
+    const { result } = renderHook(() => useBalances(tx, ["2025-01"], INIT_ZERO));
+    expect(result.current.balancesByMonth["2025-01"]["Banque A - Courant"]).toBe(0);
+  });
+
+  it("sans compte déclaré pour les recevoir, la sortie n'est créditée nulle part — et c'est chiffré", () => {
+    const tx = [makeTx({
+      compte: "Sortie Epargne", type: "Sortie Epargne",
+      dc: "Crédit", montant: 500, monthKey: "2025-01",
+    })];
+    // On retire la déclaration du compte crédité, et rien d'autre.
+    const config = makeConfig();
+    useDataStore.getState().setData([], makeSalaryData([]), {
+      ...config,
+      parametrage: { ...config.parametrage!, compteCreditSortiesEpargne: null },
+    }, "static");
+
+    const { result } = renderHook(() => useBalances(tx, ["2025-01"], INIT_ZERO));
+    expect(result.current.balancesByMonth["2025-01"]["Banque A - Courant"]).toBe(0);
+    expect(result.current.sortiesNonCreditees).toEqual({ lignes: 1, montant: 500 });
   });
 
   it("Appli partagée - Part commune Débit → -montant sur Banque A - Courant", () => {
@@ -250,7 +293,7 @@ describe("useBalances — scénario intégré", () => {
       // → Banque A - Courant = 5000+2500-800-600 = 6100, Bourso = 2000+600 = 2600
       // Février : Titres-restaurant rechargé, sortie épargne
       makeTx({ compte: "Titres-restaurant", dc: "Crédit", montant: 180, monthKey: "2025-02" }),
-      makeTx({ compte: "Sortie Epargne", dc: "Débit", montant: 300, monthKey: "2025-02" }),
+      makeTx({ compte: "Sortie Epargne", type: "Sortie Epargne", dc: "Débit", montant: 300, monthKey: "2025-02" }),
       // → Banque A - Courant = 6100+300 = 6400, Titres-restaurant = 100+180 = 280
     ];
 

@@ -4,18 +4,19 @@ import {
   BarChart3, TrendingDown, TrendingUp, PiggyBank, Lightbulb,
   type LucideIcon,
 } from "lucide-react";
-import { NAV_TABS } from "@/config/constants";
+import { useOngletsVisibles } from "@/hooks/useOngletsVisibles";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   BarChart3, TrendingDown, TrendingUp, PiggyBank, Lightbulb,
 };
 
 export function BottomNav() {
+  const onglets = useOngletsVisibles();
   return (
     // pb-safe-b : retrait sous la barre de gestes Android / l'encoche iOS.
     // Vaut 0 sur un navigateur de bureau, la nav reste donc collée en bas.
     <nav className="flex fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border pb-safe-b">
-      {NAV_TABS.map((tab) => {
+      {onglets.map((tab) => {
         const Icon = ICON_MAP[tab.icon];
         return (
           <NavLink

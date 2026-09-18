@@ -1,8 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render as renderBrut, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 import { Header } from "@/components/layout/Header";
 import { useFilterStore } from "@/stores/useFilterStore";
+
+/**
+ * L'en-tête porte depuis le lot C.2 un lien vers l'écran Paramètres. Un
+ * `NavLink` hors routeur lève — d'où ce rendu enveloppé, qui ne change rien
+ * à ce que ces tests vérifient.
+ */
+const render = (ui: React.ReactElement) =>
+  renderBrut(<MemoryRouter>{ui}</MemoryRouter>);
 
 /** Samsung Galaxy A56 — sous le palier `isSmall` (430 px). */
 const A56 = 412;

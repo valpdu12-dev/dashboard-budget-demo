@@ -82,17 +82,35 @@ function makeSalarySheet(): XLSX.WorkSheet {
  * ⚠️ Le parser lisait auparavant la Ville en 11 (L) et le Débit/Crédit en
  * 13 (N). Ce helper reproduisait la MÊME erreur, si bien que le décalage
  * restait invisible : les tests passaient pour une mauvaise raison.
+ *
+ * ⚠️ LOT C — `reel` (F) et `dc` (S) SONT MAINTENANT REMPLIS PAR DÉFAUT.
+ *
+ * Ce helper les laissait vides, et le lecteur les reconstituait avec les
+ * formules Excel de l'auteur, réimplémentées dans le code. Ces replis ont été
+ * supprimés : mesuré sur 3 943 lignes des classeurs réels, ils n'ont jamais
+ * servi une seule fois — Excel met en cache le résultat de ses formules, la
+ * colonne calculée est toujours là.
+ *
+ * Le classeur de test ressemble donc désormais à un VRAI classeur. Un test
+ * qui veut vérifier le refus d'une ligne incomplète passe `reel: null` ou
+ * `dc: null` explicitement.
  */
 function txRow(o: {
   label: string; compte: string; type: string; date: number;
-  brut?: number; reel?: number | null; dc?: string | null;
+  brut?: number; reel?: number | null; dc?: string | null; cat1?: string | null;
   pays?: string | null; ville?: string | null; previsionnel?: string | null;
 }): unknown[] {
   const r: unknown[] = new Array(20).fill(null);
   r[0] = o.label; r[1] = o.compte; r[2] = o.type; r[3] = o.date;
-  r[4] = o.brut ?? null; r[5] = o.reel ?? null;
+  r[4] = o.brut ?? null;
+  // Colonne F : le montant réel. Absent du paramètre, il vaut le montant brut
+  // — c'est ce que la formule produit quand le compte n'est pas partagé.
+  r[5] = "reel" in o ? o.reel : (o.brut ?? null);
+  r[6] = o.cat1 ?? null;
   r[10] = o.previsionnel ?? null;
-  r[12] = o.pays ?? null; r[13] = o.ville ?? null; r[18] = o.dc ?? null;
+  r[12] = o.pays ?? null; r[13] = o.ville ?? null;
+  // Colonne S : le sens. Absent du paramètre, « Débit » — le cas courant.
+  r[18] = "dc" in o ? o.dc : "Débit";
   return r;
 }
 
@@ -181,12 +199,21 @@ describe("parseExcel.worker — défaut A : normalisation des chaînes", () => {
     expect(decode(res).label).toBe("Courses Supermarché Centre");
   });
 
-  it("classe en Crédit un type de CREDIT_TYPES quand la formule n'est pas en cache", () => {
-    // Régression directe du défaut A : "Ticket Restaurant" amputé de son espace
-    // ne correspondait plus à CREDIT_TYPES, et retombait en "Débit".
-    const res = run([txRow({
+  it("REFUSE la ligne quand le sens (colonne S) n'est pas en cache", () => {
+    // Lot C. Le sens était auparavant reconstitué depuis `CREDIT_TYPES`, une
+    // liste de six libellés de l'auteur. Mesuré sur 3 943 lignes réelles : ce
+    // repli n'a jamais servi. Il est supprimé, et la ligne est refusée — on ne
+    // devine pas de quel côté l'argent est allé.
+    expect(() => run([txRow({
       label: "Titres-restaurant Mars", compte: "Titres-restaurant", type: "Ticket Restaurant",
       date: serial(2025, 10, 1), reel: 180, dc: null,
+    })])).toThrow(/Aucune transaction valide/);
+  });
+
+  it("lit le sens tel que le classeur le donne, sans le retoucher", () => {
+    const res = run([txRow({
+      label: "Titres-restaurant Mars", compte: "Titres-restaurant", type: "Ticket Restaurant",
+      date: serial(2025, 10, 1), reel: 180, dc: "Crédit",
     })]);
     expect(decode(res).dc).toBe("Crédit");
   });
@@ -255,11 +282,23 @@ describe("parseExcel.worker — défaut A : normalisation des chaînes", () => {
     expect(tx.dc).toBe("Débit");
   });
 
-  it("applique la division par deux aux comptes de HALF_COMPTES", () => {
-    // "Banque A - Part commune" devenait "CAVal/Gae" : la règle ne s'appliquait jamais.
-    const res = run([txRow({
+  it("REFUSE la ligne quand le montant calculé (colonne F) est absent", () => {
+    // Lot C. La division par deux venait de `HALF_COMPTES`, trois comptes
+    // nommés dans le code. Mesuré sur 3 943 lignes réelles : ce repli n'a
+    // jamais servi. Il est supprimé, et la ligne est refusée — un montant
+    // deviné est exactement ce que ce chantier supprime.
+    expect(() => run([txRow({
       label: "Restaurant partagé", compte: "Banque A - Part commune", type: "Restaurant",
       date: serial(2025, 10, 1), brut: 100, reel: null,
+    })])).toThrow(/Aucune transaction valide/);
+  });
+
+  it("lit le montant calculé tel que le classeur le donne", () => {
+    // C'est la formule du classeur qui applique le taux de partage — et son
+    // résultat est en colonne F, toujours.
+    const res = run([txRow({
+      label: "Restaurant partagé", compte: "Banque A - Part commune", type: "Restaurant",
+      date: serial(2025, 10, 1), brut: 100, reel: 50,
     })]);
     expect(decode(res).montant).toBe(50);
   });
@@ -323,13 +362,22 @@ describe("parseExcel.worker — alignement sur le parseur de référence", () =>
     expect(decode(res).cat1).toBe("");
   });
 
-  it("classe toujours correctement un type qu'il connaît", () => {
-    // Contre-épreuve : la correction ci-dessus ne doit pas désarmer le repli
-    // là où il a un sens.
-    const res = run([txRow({
+  it("prend la classe du classeur, et n'en invente aucune", () => {
+    // Lot C. La classe était reconstituée depuis deux listes de libellés de
+    // l'auteur quand la colonne G était vide. Mesuré sur 3 943 lignes réelles :
+    // la colonne est vide 231 fois, et le repli n'a JAMAIS posé de classe. Il
+    // est supprimé. Une classe vide veut dire « cette ligne n'est pas une
+    // dépense classée » — c'est exactement ce qu'on sait d'elle.
+    const avec = run([txRow({
+      label: "Plein", compte: "Banque A - Courant", type: "Essence",
+      date: serial(2025, 10, 1), reel: 60, cat1: "Dépense Courante",
+    })]);
+    expect(decode(avec).cat1).toBe("Dépense Courante");
+
+    const sans = run([txRow({
       label: "Plein", compte: "Banque A - Courant", type: "Essence",
       date: serial(2025, 10, 1), reel: 60,
     })]);
-    expect(decode(res).cat1).toBe("Dépense Courante");
+    expect(decode(sans).cat1).toBe("");
   });
 });

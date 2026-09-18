@@ -13,7 +13,7 @@ export function SubNav() {
   // Segment de tête de l'URL : "/revenus/salaire" -> "revenus"
   const tabId = pathname.split("/")[1] as SubNavKey;
   const toutes = SUB_NAV_CONFIG[tabId] as readonly {
-    label: string; path: string; end?: boolean; rubrique?: "paie" | "pret";
+    label: string; path: string; end?: boolean; rubrique?: "paie" | "pret" | "epargne";
   }[] | undefined;
 
   // Lot B.4 : une pill dont la rubrique n'existe pas dans le jeu complet est

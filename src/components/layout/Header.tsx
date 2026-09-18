@@ -1,7 +1,8 @@
 // -- Header sticky avec filtres globaux --
 
 import { useState, useEffect } from "react";
-import { Wallet, ArrowLeftRight, SlidersHorizontal } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import { Wallet, ArrowLeftRight, SlidersHorizontal, Settings } from "lucide-react";
 import { useFilterStore } from "@/stores/useFilterStore";
 import { PERIOD_OPTIONS } from "@/config/constants";
 import { UploadButton } from "@/components/upload/DataUploader";
@@ -110,6 +111,22 @@ export function Header() {
             </button>
           )}
           <ProfilBascule />
+          {/* Lot C.2 — accès à ce que l'outil a lu du fichier source. Hors
+              navigation principale : ce n'est pas un écran de chiffres. */}
+          <NavLink
+            to="/parametres"
+            title="Paramètres lus dans le fichier source"
+            aria-label="Paramètres lus dans le fichier source"
+            className={({ isActive }) =>
+              `inline-flex items-center justify-center min-h-tap min-w-tap rounded-full border transition-all ${
+                isActive
+                  ? "border-indigo bg-indigo/20 text-text"
+                  : "border-border bg-surface text-text-sec hover:text-text"
+              }`
+            }
+          >
+            <Settings size={16} />
+          </NavLink>
           <UploadButton />
         </div>
       </div>

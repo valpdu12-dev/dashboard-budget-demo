@@ -2,6 +2,8 @@
 
 Chaque hook isole le calcul et la dérivation des données d'une page ou d'une fonction transverse (extraits des `useMemo` inline de V1). Ils consomment les stores et renvoient des données prêtes à afficher.
 
+⚠️ **Lot C.3.** Sept d'entre eux ne calculent plus rien : le calcul vit dans `src/calculs/`, en fonction pure, et le hook n'est que le branchement sur les stores. Voir `src/calculs/INDEX.md` — la liste de ce qui a été déplacé, et de ce qui ne l'a pas été.
+
 ## Hooks transverses
 
 | Fichier | Rôle |

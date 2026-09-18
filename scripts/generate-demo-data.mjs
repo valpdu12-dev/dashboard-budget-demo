@@ -552,6 +552,109 @@ const references = {
 
 // ═══════════════════════════════════════════════════════════════════════
 // 8. CONFIGURATION, SOLDES, OBJECTIFS
+
+// ═══════════════════════════════════════════════════════════════════════
+// LA CONFIGURATION DE LA DÉMONSTRATION (lot C.4)
+// ═══════════════════════════════════════════════════════════════════════
+
+/** Identifiant interne : le libellé, sans casse ni accents. */
+const idDe = (libelle) =>
+  libelle.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+
+const compte = (libelle, o) => ({
+  id: idDe(libelle),
+  libelle,
+  organisme: o.organisme ?? null,
+  participation: o.participation ?? 1,
+  compteLie: o.compteLie ? idDe(o.compteLie) : null,
+  sensRepercute: o.sensRepercute ?? null,
+  porteUnSolde: o.porteUnSolde ?? true,
+  couleur: o.couleur,
+  soldeDepart: o.soldeDepart ?? null,
+});
+
+const categorie = (libelle, couleur) => ({ libelle, cle: idDe(libelle), couleur });
+
+const type = (libelle, natures, classeParDefaut = null) => ({
+  libelle,
+  cle: idDe(libelle),
+  natures,
+  classeParDefaut,
+});
+
+function parametrageDemo() {
+  return {
+    estVide: false,
+    comptes: [
+      compte(COMPTE_PRINCIPAL, {
+        organisme: "Banque A", couleur: "#2563eb", soldeDepart: 4200,
+      }),
+      compte(COMPTE_PART_COMMUNE, {
+        organisme: "Banque A", couleur: "#60a5fa", porteUnSolde: false,
+        participation: 0.5, compteLie: COMPTE_PRINCIPAL, sensRepercute: "Débit",
+      }),
+      compte(COMPTE_APPLI, {
+        organisme: "Banque A", couleur: "#93c5fd", porteUnSolde: false,
+        participation: 0.5, compteLie: COMPTE_PRINCIPAL, sensRepercute: "Débit",
+      }),
+      compte(COMPTE_B_COURANT, {
+        organisme: "Banque B", couleur: "#0891b2", soldeDepart: 2600,
+      }),
+      compte(COMPTE_JOINT_B, {
+        organisme: "Banque B", couleur: "#059669", soldeDepart: 1350,
+        participation: 0.5, compteLie: COMPTE_PRINCIPAL, sensRepercute: "Crédit",
+      }),
+      compte(COMPTE_JOINT_C, {
+        organisme: "Banque C", couleur: "#d97706", soldeDepart: 980,
+        compteLie: COMPTE_PRINCIPAL, sensRepercute: "Crédit",
+      }),
+      compte(COMPTE_TR, {
+        organisme: "Titres-restaurant", couleur: "#dc2626", soldeDepart: 145,
+      }),
+    ],
+    types: [
+      // Le remboursement de capital est À LA FOIS une entrée d'épargne et une
+      // échéance de prêt. Deux natures sur un même type : ce n'est pas un
+      // confort, c'est ce qui rend le rapprochement possible (§4.5 du contrat).
+      type("Crédit Immobilier", ["epargne", "pret-capital"]),
+      type("Intérêt du prêt", ["pret-interets"], "Dépense Fixe"),
+      type("Épargne Banque A", ["epargne", "transfert-interne"]),
+      type("Épargne Banque B", ["epargne"]),
+      type("Épargne Banque C", ["epargne"]),
+      type("Assurance-vie", ["epargne"]),
+      type("Cagnotte partagée", ["epargne"]),
+      type("Transfert Banque A vers Banque B", ["transfert-interne"]),
+      type("Transfert Banque A vers Banque C", ["transfert-interne"]),
+      // `Sortie Epargne` était un LIBELLÉ DE COMPTE utilisé comme un type.
+      // C'est un type, et il ne l'est plus qu'ici (D2).
+      type("Sortie Epargne", ["transfert-interne", "sortie-epargne"]),
+      // Neutralise le compte lié : l'argent vient de l'extérieur, pas du
+      // compte principal (D3b). 6 lignes, 1 172,71 € dans ce jeu.
+      type("Virement extérieur", ["apport-exterieur"]),
+    ],
+    // Lot C.5 — les couleurs des postes de budget étaient une table écrite
+    // dans `config/colors.ts`, avec les catégories de l'auteur. Elles sont
+    // déclarées ici, comme le ferait n'importe quel fichier.
+    categories: [
+      categorie("Alimentation", "#e67e22"),
+      categorie("Assurances", "#8e44ad"),
+      categorie("Autre", "#95a5a6"),
+      categorie("Banque", "#34495e"),
+      categorie("Comptes Bancaires", "#7f8c8d"),
+      categorie("Habillement", "#e84393"),
+      categorie("Immobilier", "#2980b9"),
+      categorie("Impots", "#c0392b"),
+      categorie("Loisir", "#27ae60"),
+      categorie("Santé", "#00cec9"),
+      categorie("Transport", "#f39c12"),
+    ],
+    employeurs: [],
+    // Le compte qui reçoit les sorties d'épargne (D2). Sans lui, elles ne
+    // sont créditées à aucun compte — et l'écran le dit.
+    compteCreditSortiesEpargne: idDe(COMPTE_PRINCIPAL),
+  };
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 
 const config = {
@@ -564,13 +667,20 @@ const config = {
     [COMPTE_TR]: 145,
     [COMPTE_B_COURANT]: 2600,
   },
-  transfers: ["Transfert Banque A vers Banque C", "Transfert Banque A vers Banque B"],
-  comptes: [
-    COMPTE_PRINCIPAL, COMPTE_PART_COMMUNE, COMPTE_B_COURANT,
-    COMPTE_JOINT_B, COMPTE_JOINT_C, COMPTE_TR, COMPTE_APPLI,
-  ],
-  comptesLiesPrincipal: [COMPTE_PART_COMMUNE, COMPTE_APPLI],
-  colors: {},
+  // ── Lot C.4 : la configuration, déclarée comme le ferait un fichier ──
+  //
+  // Les quatre champs d'avant — `transfers`, `comptes`, `comptesLiesPrincipal`
+  // et `colors` — ont disparu : aucun n'était lu (D4). Ce qu'ils promettaient
+  // vit désormais ici, dans `parametrage`, qui EST lu.
+  //
+  // ⚠️ Ces valeurs reproduisent EXACTEMENT les règles que le code portait en
+  // dur jusqu'au lot C.3. C'est ce qui permet au rapprochement de rester à
+  // zéro écart. Et c'est aussi le piège annoncé au §C.4 du plan : un
+  // rapprochement vert obtenu en recopiant les anciennes règles ne prouve
+  // rien à lui seul. La preuve est ailleurs — dans le second jeu de test,
+  // `src/__tests__/calculs/secondJeu.test.ts`, dont ni les comptes ni les
+  // taux n'existent ici.
+  parametrage: parametrageDemo(),
   pret: {
     montant: PRET.montant,
     mensualite: PRET.mensualite,

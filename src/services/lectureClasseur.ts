@@ -11,7 +11,7 @@
 // d'aperçu qui le montre, et c'est la personne qui décide d'appliquer.
 
 import * as XLSX from "xlsx";
-import { COMPTE_LIBELLES } from "@/config/accounts";
+import { CLASSES as CLASSES_VOCABULAIRE } from "@/config/vocabulaire";
 import {
   normaliserCle,
   nettoyerTexte,
@@ -20,6 +20,10 @@ import {
   lireMois,
   arrondir,
 } from "@/services/lectureValeurs";
+import { lireConfigBrute } from "@/services/lectureParametres";
+import { validerConfig } from "@/services/validerConfig";
+import type { Anomalie } from "@/types/anomalie";
+import { configVide, type BudgetConfig } from "@/types/budgetConfig";
 
 // ─────────────────────────────────────────────────────────────────────────
 // TYPES
@@ -38,6 +42,14 @@ export interface TransactionLue {
   cat4: string;
   ville: string;
   dc: string;
+  /**
+   * La ligne portait un `Montant brut` — décision D1.
+   *
+   * Le montant ci-dessus est alors le montant AVANT partage : le taux de
+   * participation du compte lui est appliqué dans une seconde passe, une fois
+   * la feuille `Paramètres` lue.
+   */
+  estBrut?: true;
 }
 
 /** Un mois de paie lu. */
@@ -57,17 +69,26 @@ export interface ParametresLus {
   couverture: { debut: string; fin: string } | null;
   pret: { montant: number; mensualite: number; echeances: number; premiereEcheance?: string } | null;
   soldes: Record<string, number>;
+  /**
+   * Lot C.2 — ce que les tableaux `Comptes`, `Types`, `Catégories` et
+   * `Employeurs` déclarent, une fois validé.
+   *
+   * `estVide` vaut vrai quand la feuille ne déclare rien : c'est le cas d'un
+   * fichier au format v1, et ce n'est pas une erreur. Mais l'appelant doit
+   * pouvoir le DIRE plutôt que de laisser croire à une configuration lue.
+   */
+  config: BudgetConfig;
 }
 
-/** Un problème, situé. C'est la brique de tout le rapport. */
-export interface Anomalie {
-  gravite: "rejet" | "avertissement";
-  feuille: string;
-  /** Numéro de ligne tel qu'il apparaît dans le tableur (1 = première ligne). */
-  ligne?: number;
-  colonne?: string;
-  message: string;
-}
+/**
+ * Un problème, situé. C'est la brique de tout le rapport.
+ *
+ * Déclaré dans `types/anomalie.ts` depuis le lot C.1 : la validation de la
+ * configuration en produit aussi, et elle n'a pas à importer ses types du
+ * lecteur de classeur. Ré-exporté ici pour que les appelants existants ne
+ * changent pas d'import.
+ */
+export type { Anomalie };
 
 export interface CompteursImport {
   lignesLues: number;
@@ -96,7 +117,7 @@ export class ErreurClasseur extends Error {}
 // CONSTANTES DU FORMAT
 // ─────────────────────────────────────────────────────────────────────────
 
-const CLASSES = ["Dépense Fixe", "Dépense Courante", "Dépense Occasionnelle"];
+const CLASSES: readonly string[] = CLASSES_VOCABULAIRE;
 const CLASSES_NORM = new Map(CLASSES.map((c) => [normaliserCle(c), c]));
 
 /** Au-delà, les anomalies sont comptées mais plus listées. */
@@ -107,6 +128,7 @@ const COLONNES_TX = {
   compte: "Compte",
   type: "Type",
   montant: "Montant",
+  montantBrut: "Montant brut",
   sens: "Sens",
   classe: "Classe",
   categorie: "Catégorie",
@@ -117,7 +139,7 @@ const COLONNES_TX = {
   previsionnel: "Prévisionnel",
 } as const;
 
-const OBLIGATOIRES_TX = ["date", "compte", "type", "montant", "sens"] as const;
+const OBLIGATOIRES_TX = ["date", "compte", "type", "sens"] as const;
 
 const COLONNES_PAIE = {
   mois: "Mois",
@@ -287,6 +309,17 @@ function lireTransactions(wb: XLSX.WorkBook, col: Collecteur, compteurs: Compteu
           `L'en-tête doit être en ligne 1, les colonnes nommées, l'ordre libre.`
       );
     }
+    // Format v2, décision D1 : il faut l'une des deux colonnes de montant.
+    // `Montant` seul est le format v1, qui continue de fonctionner sans être
+    // retouché ; `Montant brut` seul suffit à un fichier neuf.
+    if (idx.montant === undefined && idx.montantBrut === undefined) {
+      throw new ErreurClasseur(
+        `Feuille « ${nom} » : il faut une colonne « ${COLONNES_TX.montant} » ou ` +
+          `« ${COLONNES_TX.montantBrut} » en ligne 1. La première porte le montant déjà ` +
+          `imputé, la seconde le montant avant partage — l'outil lui applique alors le ` +
+          `taux de participation du compte.`
+      );
+    }
 
     const lire = (r: unknown[], champ: keyof typeof COLONNES_TX) =>
       idx[champ] === undefined ? null : r[idx[champ]];
@@ -307,10 +340,12 @@ function lireTransactions(wb: XLSX.WorkBook, col: Collecteur, compteurs: Compteu
       const brutDate = lire(r, "date");
       const brutCompte = lire(r, "compte");
       const brutMontant = lire(r, "montant");
+      const brutMontantBrut = lire(r, "montantBrut");
       if (
         (brutDate == null || nettoyerTexte(brutDate) === "") &&
         (brutCompte == null || nettoyerTexte(brutCompte) === "") &&
-        (brutMontant == null || nettoyerTexte(brutMontant) === "")
+        (brutMontant == null || nettoyerTexte(brutMontant) === "") &&
+        (brutMontantBrut == null || nettoyerTexte(brutMontantBrut) === "")
       ) {
         compteurs.ignorees++;
         compteurs.lignesLues--;
@@ -336,15 +371,28 @@ function lireTransactions(wb: XLSX.WorkBook, col: Collecteur, compteurs: Compteu
       const type = nettoyerTexte(lire(r, "type"));
       if (!type) { rejet(COLONNES_TX.type, "Type vide."); continue; }
 
-      const montant = lireNombre(brutMontant);
+      // ── Décision D1 : `Montant brut` l'emporte quand il est rempli ─────
+      //
+      // Rempli, l'outil lui applique le taux de participation du compte, dans
+      // une seconde passe — le taux vient de la feuille `Paramètres`, qui
+      // n'est lue qu'après. Vide, `Montant` est pris tel quel : il est déjà
+      // imputé, comme au format v1.
+      //
+      // ⚠️ Jamais de colonne détournée : c'est la présence d'une colonne
+      // NOUVELLE qui distingue les deux régimes, et l'outil n'a donc jamais à
+      // deviner lequel s'applique (§8.1 du format).
+      const aUnBrut = brutMontantBrut != null && nettoyerTexte(brutMontantBrut) !== "";
+      const colonneMontant = aUnBrut ? COLONNES_TX.montantBrut : COLONNES_TX.montant;
+      const brutLu = aUnBrut ? brutMontantBrut : brutMontant;
+      const montant = lireNombre(brutLu);
       if (montant === null) {
-        rejet(COLONNES_TX.montant,
-          `Montant illisible : « ${nettoyerTexte(brutMontant) || "(vide)"} ». ` +
+        rejet(colonneMontant,
+          `Montant illisible : « ${nettoyerTexte(brutLu) || "(vide)"} ». ` +
           `Il n'est PAS remplacé par 0 : la ligne est écartée.`);
         continue;
       }
       if (montant <= 0) {
-        rejet(COLONNES_TX.montant,
+        rejet(colonneMontant,
           `Montant nul ou négatif : ${montant}. Le montant est toujours positif ; ` +
           `c'est la colonne Sens qui dit Débit ou Crédit.`);
         continue;
@@ -391,14 +439,6 @@ function lireTransactions(wb: XLSX.WorkBook, col: Collecteur, compteurs: Compteu
         });
       }
 
-      if (!COMPTE_LIBELLES.includes(compte)) {
-        col.ajouter({
-          gravite: "avertissement", feuille: nom, ligne, colonne: COLONNES_TX.compte,
-          message: `Compte inconnu : « ${compte} ». Ses transactions sont comptées, mais ` +
-                   `il n'aura PAS de solde : absent du graphique et du total du patrimoine.`,
-        });
-      }
-
       const label = nettoyerTexte(lire(r, "libelle"));
       const cle = [date, normaliserCle(compte), normaliserCle(type), montant, normaliserCle(label)].join("|");
       const deja = vues.get(cle);
@@ -412,6 +452,7 @@ function lireTransactions(wb: XLSX.WorkBook, col: Collecteur, compteurs: Compteu
 
       out.push({
         label, compte, type, date, montant, cat1, cat2,
+        ...(aUnBrut ? { estBrut: true as const } : {}),
         cat3: nettoyerTexte(lire(r, "sousCategorie")),
         cat4: nettoyerTexte(lire(r, "detail")),
         ville: nettoyerTexte(lire(r, "ville")),
@@ -546,7 +587,9 @@ function tableauParEnTete(grille: unknown[][], enTete: string): [string, unknown
 
 /** Lit la feuille `Paramètres`, si elle existe. */
 function lireParametres(wb: XLSX.WorkBook, col: Collecteur): ParametresLus {
-  const vide: ParametresLus = { versionFormat: null, couverture: null, pret: null, soldes: {} };
+  const vide: ParametresLus = {
+    versionFormat: null, couverture: null, pret: null, soldes: {}, config: configVide(),
+  };
   const nom = feuilleUnique(wb, "Paramètres");
   if (!nom) return vide;
 
@@ -609,22 +652,109 @@ function lireParametres(wb: XLSX.WorkBook, col: Collecteur): ParametresLus {
     });
   }
 
-  // ── Soldes de départ ─────────────────────────────────────────────────
+  // ── La configuration déclarée (lot C.2) ──────────────────────────────
+  //
+  // Le tableau des soldes de départ du format v1 EST le tableau des comptes,
+  // à deux colonnes. Il n'y en a donc qu'un, et c'est lui qui donne les
+  // soldes — après validation, pas avant. Voir §4.6 du contrat.
+  const brute = lireConfigBrute(grille, nom, lireParam, (a) => col.ajouter(a));
+  const { config, anomalies } = validerConfig(brute);
+  for (const a of anomalies) col.ajouter(a);
+
   const soldes: Record<string, number> = {};
-  for (const [compte, valeur, ligne] of tableauParEnTete(grille, "Compte")) {
-    const n = lireNombre(valeur);
-    if (n === null) {
-      col.ajouter({
-        gravite: "avertissement", feuille: nom, ligne, colonne: "Solde de départ",
-        message: `Solde illisible pour « ${compte} » : le compte restera « non initialisé », ` +
-                 `jamais 0.`,
-      });
-      continue;
-    }
-    soldes[compte] = n;
+  for (const c of config.comptes) {
+    if (c.soldeDepart !== null) soldes[c.libelle] = c.soldeDepart;
   }
 
-  return { versionFormat, couverture, pret, soldes };
+  return { versionFormat, couverture, pret, soldes, config };
+}
+
+/**
+ * Applique le taux de participation aux lignes qui portent un `Montant brut`.
+ *
+ * ⚠️ UNE SECONDE PASSE, et pas un calcul en ligne. Le taux vient du tableau
+ * `Comptes` de la feuille `Paramètres`, qui n'est lue qu'APRÈS les
+ * transactions. Faire l'inverse — lire les paramètres d'abord — aurait
+ * réordonné toutes les anomalies du rapport, dont l'ordre est vérifié par les
+ * tests du lot B.
+ *
+ * Décision D1. Un compte non déclaré n'a pas de taux : son montant brut est
+ * pris tel quel, à 100 %. L'avertissement « compte absent du tableau
+ * Comptes » le dit déjà — inutile de le redire ici.
+ *
+ * ⚠️ AUCUNE ANOMALIE N'EST ÉMISE ICI, et c'est délibéré. Dire « 2 lignes ont
+ * été partagées selon leur taux » est une INFORMATION, pas un avertissement :
+ * rien ne cloche, l'outil a fait ce que le fichier demandait. Le classer en
+ * avertissement aurait fait du classeur modèle un fichier qui en déclenche —
+ * et un modèle qui déclenche des avertissements enseigne à les ignorer.
+ *
+ * L'aperçu d'import le dit à sa place, dans le bloc « Configuration lue ».
+ */
+function appliquerParticipation(transactions: TransactionLue[], config: BudgetConfig): void {
+  const taux = new Map(
+    config.comptes.map((c) => [normaliserCle(c.libelle), c.participation])
+  );
+
+  for (const t of transactions) {
+    if (!t.estBrut) continue;
+    t.montant = arrondir(t.montant * (taux.get(normaliserCle(t.compte)) ?? 1));
+  }
+}
+
+/**
+ * Signale les comptes qui portent des transactions sans être déclarés.
+ *
+ * ⚠️ UN AVERTISSEMENT PAR COMPTE, CHIFFRÉ — pas un par ligne. Avant le lot
+ * C.2, un compte non reconnu produisait un avertissement à CHAQUE ligne : sur
+ * un classeur réel, 306 lignes sur un même compte saturaient le plafond de
+ * 200 anomalies et chassaient de la liste tout le reste. Le message dit
+ * maintenant combien de lignes et combien d'euros sont concernés.
+ *
+ * ⚠️ LOT C.4 — LE SECOND MESSAGE A DISPARU, PARCE QU'IL EST DEVENU FAUX.
+ *
+ * Jusqu'au lot C.3, un compte absent de la liste écrite dans `accounts.ts`
+ * n'avait PAS de solde : `useBalances` appliquait des règles nommées compte
+ * par compte. L'avertissement le disait, et il disait vrai.
+ *
+ * Depuis le C.4, un compte non déclaré a bel et bien un solde — calculé sur
+ * ses propres crédits et débits. Il n'a simplement ni taux, ni compte lié, ni
+ * solde de départ. Garder l'ancien message aurait été pire que se taire : un
+ * avertissement faux apprend à ignorer les avertissements.
+ *
+ * Il ne reste donc qu'une référence : le tableau `Comptes`, quand il existe.
+ * Quand il n'existe pas, l'aperçu d'import le dit déjà une fois, en toutes
+ * lettres — inutile de le répéter compte par compte.
+ */
+function signalerComptesNonDeclares(
+  transactions: TransactionLue[],
+  config: BudgetConfig,
+  feuille: string,
+  col: Collecteur
+): void {
+  if (config.comptes.length === 0) return;
+  const connus = new Set(config.comptes.map((c) => normaliserCle(c.libelle)));
+
+  const inconnus = new Map<string, { lignes: number; montant: number }>();
+  for (const t of transactions) {
+    if (connus.has(normaliserCle(t.compte))) continue;
+    const e = inconnus.get(t.compte) ?? { lignes: 0, montant: 0 };
+    e.lignes++;
+    e.montant = arrondir(e.montant + t.montant);
+    inconnus.set(t.compte, e);
+  }
+
+  for (const [compte, e] of inconnus) {
+    const chiffre = `${e.lignes} ligne${e.lignes > 1 ? "s" : ""}, ${e.montant.toFixed(2)} €`;
+    col.ajouter({
+      gravite: "avertissement",
+      feuille,
+      colonne: COLONNES_TX.compte,
+      message:
+        `« ${compte} » porte des transactions (${chiffre}) mais n'est pas déclaré dans le ` +
+        `tableau Comptes de la feuille Paramètres. Il n'aura ni taux de participation, ` +
+        `ni compte lié, ni solde de départ.`,
+    });
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -647,6 +777,15 @@ export function lireClasseurPublic(wb: XLSX.WorkBook): RapportImport {
   const { transactions, feuilles } = lireTransactions(wb, col, compteurs);
   const paie = lirePaie(wb, col, compteurs);
   const parametres = lireParametres(wb, col);
+
+  // ⚠️ APRÈS la lecture des paramètres, elle aussi : le taux de participation
+  // vient du tableau `Comptes` (D1).
+  appliquerParticipation(transactions, parametres.config);
+
+  // ⚠️ APRÈS la lecture des paramètres, et pas pendant celle des
+  // transactions : c'est le tableau `Comptes` qui dit désormais quels comptes
+  // sont déclarés, et il n'est connu qu'ici.
+  signalerComptesNonDeclares(transactions, parametres.config, feuilles[0] ?? "Transactions", col);
 
   compteurs.avertissements = col.avertissements;
 

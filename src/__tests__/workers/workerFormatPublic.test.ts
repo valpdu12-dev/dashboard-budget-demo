@@ -94,11 +94,16 @@ describe("worker — non-régression de l'ancien format", () => {
     // rapport ligne à ligne. Le distinguer par ce champ évite que l'écran
     // d'aperçu affiche « 0 rejet » pour un chemin qui ne compte rien.
     const wb = XLSX.utils.book_new();
+    // ⚠️ Lot C — la colonne S (Débit/Crédit) doit être remplie : le repli qui
+    // la reconstituait depuis une liste de libellés a été supprimé.
     const entete = ["Transaction", "Compte", "Type Dépense", "Date", "Montant", "Montant réel"];
     const vides = Array.from({ length: 17 }, () => []);
+    const ligne = new Array(20).fill(null);
+    ligne[0] = "Courses"; ligne[1] = "Banque A - Courant"; ligne[2] = "courses";
+    ligne[3] = 46023; ligne[4] = 20; ligne[5] = 20; ligne[18] = "Débit";
     XLSX.utils.book_append_sheet(
       wb,
-      XLSX.utils.aoa_to_sheet([...vides, entete, ["Courses", "Banque A - Courant", "courses", 46023, 20, 20]]),
+      XLSX.utils.aoa_to_sheet([...vides, entete, ligne]),
       "Transactions 2026"
     );
     XLSX.utils.book_append_sheet(

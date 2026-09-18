@@ -29,6 +29,15 @@ export interface LigneTransactionModele {
   compte: string;
   type: string;
   montant: number;
+  /**
+   * Montant AVANT partage — décision D1, format v2.
+   *
+   * Rempli, l'outil lui applique le taux de participation du compte et ignore
+   * `montant`. Le modèle le renseigne sur les seules lignes d'un compte
+   * partagé, avec exactement le double du montant imputé : la démonstration
+   * du mécanisme ne change donc aucun chiffre.
+   */
+  montantBrut?: number;
   sens: "Débit" | "Crédit";
   /**
    * Vide pour ce qui n'est pas une dépense classable : remboursement de
@@ -67,14 +76,77 @@ export const PRET_MODELE = {
   premiereEcheance: "2022-10",
 } as const;
 
-/** Soldes de départ, au premier jour du relevé. */
-export const SOLDES_MODELE: readonly (readonly [string, number])[] = [
-  ["Banque A - Courant", 3200],
-  ["Banque B - Courant", 1500],
-  ["Banque B - Compte joint", 850],
-  ["Banque C - Compte joint", 1200],
-  ["Titres-restaurant", 95],
+/**
+ * Les comptes que le modèle déclare : libellé, solde de départ, solde propre.
+ *
+ * ⚠️ Lot C.2. « Banque A - Part commune » a été AJOUTÉ ici. Le modèle portait
+ * des transactions sur ce compte sans le déclarer dans son propre tableau —
+ * invisible tant que la référence était la liste figée de l'application,
+ * signalé dès que c'est le tableau `Comptes` qui fait foi. Le modèle aurait
+ * produit un avertissement, et un modèle qui déclenche des avertissements
+ * enseigne à les ignorer.
+ *
+ * Son solde de départ est VIDE, et c'est une valeur : ce compte ne porte pas
+ * de solde propre, ses dépenses sont retirées du compte principal. Lui
+ * inventer un solde serait un chiffre faux d'apparence normale.
+ */
+export interface CompteModele {
+  libelle: string;
+  /** `null` = non initialisé, jamais 0. */
+  solde: number | null;
+  porteUnSolde: boolean;
+  /** Libellé du compte qui sert de contrepartie, ou `null`. */
+  compteLie: string | null;
+  /** Obligatoire dès que `compteLie` est rempli — jamais deviné (§4.7). */
+  sensRepercute: "Débit" | "Crédit" | "Les deux" | null;
+  /** Taux de participation, appliqué au `Montant brut`. `null` = 100 %. */
+  participation: string | null;
+}
+
+export const COMPTES_MODELE: readonly CompteModele[] = [
+  { libelle: "Banque A - Courant", solde: 3200, porteUnSolde: true, compteLie: null, sensRepercute: null , participation: null },
+  { libelle: "Banque B - Courant", solde: 1500, porteUnSolde: true, compteLie: null, sensRepercute: null , participation: null },
+  { libelle: "Banque B - Compte joint", solde: 850, porteUnSolde: true, compteLie: "Banque A - Courant", sensRepercute: "Crédit" , participation: null },
+  { libelle: "Banque C - Compte joint", solde: 1200, porteUnSolde: true, compteLie: "Banque A - Courant", sensRepercute: "Crédit" , participation: null },
+  { libelle: "Titres-restaurant", solde: 95, porteUnSolde: true, compteLie: null, sensRepercute: null , participation: null },
+  { libelle: "Banque A - Part commune", solde: null, porteUnSolde: false, compteLie: "Banque A - Courant", sensRepercute: "Débit" , participation: "50 %" },
 ] as const;
+
+/**
+ * Les types du modèle et leur NATURE — lot C.4.
+ *
+ * Sans ce tableau, l'outil ne sait pas qu'un virement vers un livret est de
+ * l'épargne, ni qu'une échéance de prêt en est une. Il ne le devine pas : il
+ * compte la ligne comme une dépense ordinaire, et l'écran Épargne n'a rien à
+ * montrer. C'est le comportement voulu — et c'est pour cela que le modèle
+ * doit le déclarer.
+ *
+ * ⚠️ `Crédit Immobilier` porte DEUX natures : le remboursement de capital est
+ * à la fois une entrée d'épargne et une échéance de prêt. Voir §4.5 du
+ * contrat.
+ */
+/** Les catégories de budget du modèle, et leur couleur. */
+export const CATEGORIES_MODELE: readonly (readonly [string, string])[] = [
+  ["Alimentation", "#e67e22"],
+  ["Assurances", "#8e44ad"],
+  ["Immobilier", "#2980b9"],
+  ["Impots", "#c0392b"],
+  ["Loisir", "#27ae60"],
+  ["Santé", "#00cec9"],
+  ["Transport", "#f39c12"],
+] as const;
+
+export const TYPES_MODELE: readonly (readonly [string, string])[] = [
+  ["Crédit Immobilier", "epargne, pret-capital"],
+  ["Intérêt du prêt", "pret-interets"],
+  ["Épargne Banque A", "epargne, transfert-interne"],
+  ["Transfert Banque A vers Banque B", "transfert-interne"],
+] as const;
+
+/** Soldes de départ, au premier jour du relevé. Dérivé de `COMPTES_MODELE`. */
+export const SOLDES_MODELE: readonly (readonly [string, number])[] = COMPTES_MODELE.filter(
+  (c): c is CompteModele & { solde: number } => c.solde !== null
+).map((c) => [c.libelle, c.solde] as const);
 
 /** Salaires nets versés, mois par mois. Cohérents avec la feuille `Paie`. */
 const SALAIRES = [2538, 2538, 2577];
@@ -131,10 +203,14 @@ export const TRANSACTIONS_MODELE: readonly LigneTransactionModele[] = MOIS.flatM
     ligne("06", m, "Banque A - Courant", "Electricité", 78.9, "Débit", "Dépense Fixe", "Immobilier", "", "Prélèvement fournisseur"),
     ligne("06", m, "Banque A - Courant", "Internet et Forfait téléphone", 45.9, "Débit", "Dépense Fixe", "Autre", "", "Prélèvement opérateur"),
     ligne("07", m, "Banque A - Courant", "Abonnement transport", 88.8, "Débit", "Dépense Fixe", "Transport", "", "Abonnement mensuel"),
-    ligne("08", m, "Banque A - Part commune", "courses", 96.3, "Débit", "Dépense Courante", "Alimentation", "Supermarché", "Courses de la semaine", "Ville A"),
+    // ⚠️ Les deux seules lignes du modèle à porter un « Montant brut » : le
+    // compte est partagé à 50 %, la course a coûté 192,60 € et 96,30 € vous
+    // sont imputés. C'est le mécanisme de la décision D1, montré sur un cas
+    // réel — et le montant imputé ne change pas d'un centime.
+    { ...ligne("08", m, "Banque A - Part commune", "courses", 96.3, "Débit", "Dépense Courante", "Alimentation", "Supermarché", "Courses de la semaine", "Ville A"), montantBrut: 192.6 },
     ligne("12", m, "Titres-restaurant", "cantine", 9.6, "Débit", "Dépense Courante", "Alimentation", "Cantine", "Déjeuner"),
     ligne("14", m, "Banque A - Courant", "Essence", 62.5, "Débit", "Dépense Courante", "Transport", "Station-service", "Plein"),
-    ligne("16", m, "Banque A - Part commune", "courses", 74.15, "Débit", "Dépense Courante", "Alimentation", "Supermarché", "Courses de la semaine", "Ville A"),
+    { ...ligne("16", m, "Banque A - Part commune", "courses", 74.15, "Débit", "Dépense Courante", "Alimentation", "Supermarché", "Courses de la semaine", "Ville A"), montantBrut: 148.3 },
     ligne("18", m, "Banque B - Compte joint", "Transfert Banque A vers Banque B", 300, "Crédit", "", "Comptes Bancaires", "", "Alimentation du compte joint"),
     ligne("20", m, "Banque A - Courant", "Restaurant", 38.4, "Débit", "Dépense Occasionnelle", "Alimentation", "Restaurant", "Dîner", "Ville A"),
     ligne("22", m, "Banque A - Courant", "Loisirs", 24, "Débit", "Dépense Occasionnelle", "Loisir", "Cinéma", "Séance"),
@@ -168,7 +244,7 @@ export const PAIE_MODELE: readonly LignePaieModele[] = [
 ];
 
 const EN_TETE_TRANSACTIONS = [
-  "Date", "Compte", "Type", "Montant", "Sens", "Classe",
+  "Date", "Compte", "Type", "Montant", "Montant brut", "Sens", "Classe",
   "Catégorie", "Sous-catégorie", "Détail", "Libellé", "Ville", "Prévisionnel",
 ];
 
@@ -223,14 +299,15 @@ export function construireClasseurModele(): Uint8Array {
   const tx = [
     EN_TETE_TRANSACTIONS,
     ...TRANSACTIONS_MODELE.map((l) => [
-      l.date, l.compte, l.type, l.montant, l.sens, l.classe,
+      l.date, l.compte, l.type, l.montant, l.montantBrut ?? "", l.sens, l.classe,
       l.categorie, l.sousCategorie, l.detail, l.libelle, l.ville, l.previsionnel,
     ]),
   ];
   const wsTx = XLSX.utils.aoa_to_sheet(tx);
   wsTx["!cols"] = [
-    { wch: 11 }, { wch: 26 }, { wch: 28 }, { wch: 10 }, { wch: 8 }, { wch: 21 },
-    { wch: 16 }, { wch: 16 }, { wch: 10 }, { wch: 30 }, { wch: 10 }, { wch: 12 },
+    { wch: 11 }, { wch: 26 }, { wch: 28 }, { wch: 10 }, { wch: 13 }, { wch: 8 },
+    { wch: 21 }, { wch: 16 }, { wch: 16 }, { wch: 10 }, { wch: 30 }, { wch: 10 },
+    { wch: 12 },
   ];
   XLSX.utils.book_append_sheet(wb, wsTx, "Transactions");
 
@@ -247,20 +324,69 @@ export function construireClasseurModele(): Uint8Array {
   XLSX.utils.book_append_sheet(wb, wsPaie, "Paie");
 
   // Deux tableaux sur la même feuille : Paramètre/Valeur en colonnes A-B,
-  // Compte/Solde de départ en colonnes D-E. Le lecteur les retrouve par leur
-  // cellule d'en-tête, la position n'est pas imposée.
-  const parametres: (string | number)[][] = [
-    ["Paramètre", "Valeur", "", "Compte", "Solde de départ"],
-    ["Version du format", 1, "", SOLDES_MODELE[0][0], SOLDES_MODELE[0][1]],
-    ["Début de relevé", BORNES_MODELE.debut, "", SOLDES_MODELE[1][0], SOLDES_MODELE[1][1]],
-    ["Fin de relevé", BORNES_MODELE.fin, "", SOLDES_MODELE[2][0], SOLDES_MODELE[2][1]],
-    ["Prêt — montant", PRET_MODELE.montant, "", SOLDES_MODELE[3][0], SOLDES_MODELE[3][1]],
-    ["Prêt — mensualité", PRET_MODELE.mensualite, "", SOLDES_MODELE[4][0], SOLDES_MODELE[4][1]],
-    ["Prêt — nombre d'échéances", PRET_MODELE.echeances, "", "", ""],
-    ["Prêt — première échéance", PRET_MODELE.premiereEcheance, "", "", ""],
+  // Le tableau des comptes en colonnes D-E-F. Le lecteur le retrouve par sa
+  // cellule d'en-tête : la position n'est pas imposée, mais la ligne
+  // d'en-tête s'arrête à la première cellule vide — d'où la colonne C laissée
+  // vide entre les deux tableaux.
+  const gauche: (string | number)[][] = [
+    ["Paramètre", "Valeur"],
+    ["Version du format", 1],
+    ["Début de relevé", BORNES_MODELE.debut],
+    ["Fin de relevé", BORNES_MODELE.fin],
+    ["Prêt — montant", PRET_MODELE.montant],
+    ["Prêt — mensualité", PRET_MODELE.mensualite],
+    ["Prêt — nombre d'échéances", PRET_MODELE.echeances],
+    ["Prêt — première échéance", PRET_MODELE.premiereEcheance],
   ];
+  const comptes: (string | number)[][] = [
+    ["Compte", "Solde de départ", "Porte un solde", "Compte lié", "Sens répercuté", "Participation"],
+    ...COMPTES_MODELE.map((c) => [
+      c.libelle, c.solde ?? "", c.porteUnSolde ? "oui" : "non",
+      c.compteLie ?? "", c.sensRepercute ?? "", c.participation ?? "",
+    ]),
+  ];
+  const types: (string | number)[][] = [
+    ["Type", "Nature"],
+    ...TYPES_MODELE.map((t) => [t[0], t[1]]),
+  ];
+  const categories: (string | number)[][] = [
+    ["Catégorie", "Couleur"],
+    ...CATEGORIES_MODELE.map((c) => [c[0], c[1]]),
+  ];
+  const employeurs: (string | number)[][] = [
+    ["Employeur"],
+    ...[...new Set(PAIE_MODELE.map((p) => p.employeur))].map((e) => [e]),
+  ];
+
+  // ⚠️ Une colonne VIDE sépare chaque tableau du suivant : la ligne d'en-tête
+  // se lit de sa cellule vers la droite et s'arrête à la première case vide.
+  // Sans ce blanc, le tableau des comptes avalerait celui des types.
+  const hauteur = Math.max(
+    gauche.length, comptes.length, types.length, categories.length, employeurs.length
+  );
+  const parametres: (string | number)[][] = [];
+  for (let i = 0; i < hauteur; i++) {
+    const g = gauche[i] ?? ["", ""];
+    const c = comptes[i] ?? ["", "", "", "", "", ""];
+    const t = types[i] ?? ["", ""];
+    const k = categories[i] ?? ["", ""];
+    const e = employeurs[i] ?? [""];
+    parametres.push([
+      g[0], g[1], "",
+      c[0], c[1], c[2], c[3], c[4], c[5], "",
+      t[0], t[1], "",
+      k[0], k[1], "",
+      e[0],
+    ]);
+  }
   const wsParam = XLSX.utils.aoa_to_sheet(parametres);
-  wsParam["!cols"] = [{ wch: 26 }, { wch: 14 }, { wch: 3 }, { wch: 26 }, { wch: 16 }];
+  wsParam["!cols"] = [
+    { wch: 26 }, { wch: 14 }, { wch: 3 },
+    { wch: 26 }, { wch: 16 }, { wch: 15 }, { wch: 22 }, { wch: 16 }, { wch: 14 }, { wch: 3 },
+    { wch: 30 }, { wch: 26 }, { wch: 3 },
+    { wch: 18 }, { wch: 10 }, { wch: 3 },
+    { wch: 16 },
+  ];
   XLSX.utils.book_append_sheet(wb, wsParam, "Paramètres");
 
   // ⚠️ Avec `type: "array"`, SheetJS rend un ArrayBuffer, PAS un Uint8Array.

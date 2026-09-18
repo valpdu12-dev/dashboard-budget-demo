@@ -21,7 +21,11 @@
 import { useMemo, useState, useCallback } from "react";
 import { useDataStore } from "@/stores/useDataStore";
 import { fmt } from "@/utils/formatters";
-import { couleurEmployeur } from "@/config/colors";
+import { couleurStable, DONUT_COLORS } from "@/config/colors";
+
+// Lot C.5 — les employeurs n'ont plus de table de couleurs : le repli stable
+// donne toujours une couleur, et toujours la même pour un nom donné.
+const couleurEmployeurStable = (nom: string) => couleurStable(nom, DONUT_COLORS);
 import type { InflationData, SmicData } from "@/types";
 
 // ─── Constantes ──────────────────────────────────────────────────────────
@@ -144,7 +148,7 @@ export function useSalaryInflationData() {
     const names = [...new Set(months.map((m) => m.entreprise))];
     return [
       { name: EMPLOYER_ALL, color: "#94a3b8" },
-      ...names.map((n) => ({ name: n, color: couleurEmployeur(n) })),
+      ...names.map((n) => ({ name: n, color: couleurEmployeurStable(n) })),
     ];
   }, [months]);
 

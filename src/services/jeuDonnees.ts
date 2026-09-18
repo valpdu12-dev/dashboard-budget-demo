@@ -28,11 +28,15 @@ import type { RapportImport } from "@/services/lectureClasseur";
  *
  * 1 — `budget.import.v1` : transactions DÉCODÉES + salaires, sans config.
  * 2 — `budget.jeu.v2`    : le jeu entier, transactions ENCODÉES.
+ * 3 — `budget.jeu.v3`    : le jeu entier + la CONFIGURATION déclarée par le
+ *                          fichier source (`config.parametrage`) — lot C.
  */
-export const VERSION_SCHEMA = 2;
+export const VERSION_SCHEMA = 3;
 
 /** Clé du jeu mémorisé au schéma courant. */
-export const CLE = "budget.jeu.v2";
+export const CLE = "budget.jeu.v3";
+/** Clé du schéma du lot B.5, relue le temps d'une migration. */
+export const CLE_V2 = "budget.jeu.v2";
 /** Clé de l'import d'avant le lot B.5, encore relue le temps d'une migration. */
 export const CLE_V1 = "budget.import.v1";
 
@@ -42,7 +46,7 @@ export const CLE_V1 = "budget.import.v1";
  * Déclarées ici et reprises par `profil.ts`, qui tient l'inventaire complet :
  * une clé recopiée à la main ailleurs finirait par survivre à un effacement.
  */
-export const CLES_JEU: readonly string[] = [CLE, CLE_V1];
+export const CLES_JEU: readonly string[] = [CLE, CLE_V2, CLE_V1];
 
 /** Un jeu complet, tel qu'il est posé dans le store et mémorisé. */
 export interface JeuDonnees {
@@ -74,6 +78,10 @@ export function construireJeuDepuisRapport(
   const config: Config = {
     init: rapport.parametres.soldes,
     demo: false,
+    // Lot C.2. Une configuration vide n'est pas transportée : l'absence du
+    // champ dit « ce fichier ne déclare rien », ce qui n'est pas la même
+    // chose qu'une configuration lue et trouvée vide.
+    ...(rapport.parametres.config.estVide ? {} : { parametrage: rapport.parametres.config }),
     ...(rapport.parametres.couverture ? { couverture: rapport.parametres.couverture } : {}),
     ...(rapport.parametres.pret
       ? {
@@ -195,11 +203,11 @@ export function oublierJeu(): void {
   }
 }
 
-function jeuValide(o: unknown): o is JeuDonnees {
+function jeuValide(o: unknown, version = VERSION_SCHEMA): o is JeuDonnees {
   if (!o || typeof o !== "object") return false;
   const j = o as Partial<JeuDonnees>;
   return (
-    j.version === VERSION_SCHEMA &&
+    j.version === version &&
     !!j.transactions &&
     Array.isArray(j.transactions.s) &&
     Array.isArray(j.transactions.t) &&
@@ -210,23 +218,104 @@ function jeuValide(o: unknown): o is JeuDonnees {
 }
 
 /**
- * Relit le jeu mémorisé, en migrant l'ancien format si besoin.
+ * Ce que la relecture du stockage a à dire à la personne — lot C.6, D6.
  *
- * Un contenu d'une version inconnue est IGNORÉ, pas réparé : peupler à moitié
- * le tableau de bord serait pire que de repartir des fichiers du site.
+ * ⚠️ UN `console.warn` N'EST PAS UNE RÉPONSE. Personne n'ouvre la console.
+ * Jusqu'ici, un jeu mémorisé d'une version inconnue disparaissait sans un
+ * mot : la personne rouvrait le site et retrouvait la démonstration à la
+ * place de ses données, sans savoir pourquoi. Chaque cas porte désormais un
+ * message, et l'écran l'affiche.
  */
-export function lireJeuMemorise(): JeuDonnees | null {
+export interface AvisStockage {
+  code: "migre" | "version-inconnue" | "illisible";
+  titre: string;
+  message: string;
+}
+
+export interface LectureStockage {
+  jeu: JeuDonnees | null;
+  avis: AvisStockage | null;
+}
+
+const AVIS_MIGRE: AvisStockage = {
+  code: "migre",
+  titre: "Vos données ont été reprises, sans leur configuration",
+  message:
+    "Elles ont été mémorisées par une version antérieure, qui ne conservait pas " +
+    "la feuille « Paramètres » de votre fichier. Vos comptes n'ont donc ni taux " +
+    "de participation, ni compte lié, et leurs soldes de départ sont inconnus. " +
+    "Réimportez votre classeur pour les retrouver.",
+};
+
+/**
+ * Relit le jeu mémorisé, en migrant les schémas antérieurs.
+ *
+ * ⚠️ LA MIGRATION EST TOUT OU RIEN. Un contenu qu'on ne sait pas convertir en
+ * entier est IGNORÉ, pas réparé : peupler à moitié le tableau de bord serait
+ * pire que de repartir des fichiers du site. Et le refus est VISIBLE.
+ */
+export function lireJeuMemorise(): LectureStockage {
   try {
     const brut = localStorage.getItem(CLE);
     if (brut) {
       const o: unknown = JSON.parse(brut);
-      if (jeuValide(o)) return o;
-      console.warn("[Budget] Jeu mémorisé d'une version inconnue — ignoré.");
-      return null;
+      if (jeuValide(o)) return { jeu: o, avis: null };
+      return {
+        jeu: null,
+        avis: {
+          code: "version-inconnue",
+          titre: "Vos données mémorisées n'ont pas pu être relues",
+          message:
+            "Elles ont été écrites par une version que celle-ci ne sait pas " +
+            "convertir. Elles n'ont pas été effacées, mais elles ne sont pas " +
+            "affichées : réimportez votre classeur.",
+        },
+      };
     }
-    return migrerV1();
+    const v2 = migrerV2();
+    if (v2) return { jeu: v2, avis: AVIS_MIGRE };
+
+    const v1 = migrerV1();
+    if (v1) return { jeu: v1, avis: AVIS_MIGRE };
+
+    return { jeu: null, avis: null };
   } catch (err) {
     console.warn("[Budget] Jeu mémorisé illisible — ignoré.", err);
+    return {
+      jeu: null,
+      avis: {
+        code: "illisible",
+        titre: "Vos données mémorisées sont illisibles",
+        message:
+          "Le contenu écrit sur cet appareil n'a pas pu être relu. Rien n'a été " +
+          "effacé, mais rien n'a pu être affiché : réimportez votre classeur.",
+      },
+    };
+  }
+}
+
+/**
+ * Migre un jeu mémorisé au schéma 2 — lot C.6, décision D6.
+ *
+ * Le schéma 2 portait tout SAUF la configuration déclarée par le fichier
+ * source : elle n'existait pas encore. On le convertit plutôt que de le
+ * jeter — quelqu'un qui a importé son classeur hier n'a pas à le refaire —
+ * et un bandeau dit ce qui manque. Inventer une configuration serait
+ * exactement le mélange de deux jeux que le lot B.5 a supprimé.
+ */
+function migrerV2(): JeuDonnees | null {
+  const brut = localStorage.getItem(CLE_V2);
+  if (!brut) return null;
+  try {
+    const o: unknown = JSON.parse(brut);
+    if (!jeuValide(o, 2)) return null;
+
+    const jeu: JeuDonnees = { ...o, version: VERSION_SCHEMA };
+    memoriserJeu(jeu);
+    localStorage.removeItem(CLE_V2);
+    return jeu;
+  } catch (err) {
+    console.warn("[Budget] Jeu mémorisé v2 illisible — ignoré.", err);
     return null;
   }
 }

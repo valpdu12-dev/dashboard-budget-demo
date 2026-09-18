@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { toOrganisme, organismesPresents } from "@/utils/organisme";
 import { makeTx } from "../helpers/factories";
-import { ORGANISMES } from "@/config/constants";
+import { REGLES_DEMO } from "../helpers/parametrageDemo";
 
 /**
  * Défaut trouvé le 16/09/2026 sur un VRAI fichier importé.
@@ -70,18 +70,25 @@ describe("organismes présents dans un jeu", () => {
     expect(organismesPresents(tx)).toEqual(["Grosse banque", "Moyenne banque", "Petite banque"]);
   });
 
-  it("garde les organismes connus en tête, dans leur ordre habituel", () => {
-    // La démonstration doit conserver ses couleurs et l'ordre de sa légende.
+  it("garde les organismes DÉCLARÉS en tête, dans l'ordre du fichier", () => {
+    // Lot C.4 : l'ordre ne vient plus d'une liste écrite dans le code, mais de
+    // celui dans lequel la personne a écrit ses comptes.
     const tx = [
       makeTx({ compte: "Zzz compte inconnu", dc: "Débit", montant: 1 }),
       makeTx({ compte: "Banque B - Courant", dc: "Débit" }),
       makeTx({ compte: "Banque A - Courant", dc: "Débit" }),
     ];
-    const presents = organismesPresents(tx);
-    expect(presents.slice(0, 2)).toEqual(
-      (ORGANISMES as readonly string[]).filter((o) => o === "Banque A" || o === "Banque B")
-    );
+    const presents = organismesPresents(tx, REGLES_DEMO);
+    expect(presents.slice(0, 2)).toEqual(["Banque A", "Banque B"]);
     expect(presents[presents.length - 1]).toBe("Zzz compte inconnu");
+  });
+
+  it("sans configuration, aucun organisme n'est privilégié : le poids seul décide", () => {
+    const tx = [
+      makeTx({ compte: "Banque A - Courant", dc: "Débit", montant: 1 }),
+      makeTx({ compte: "Zzz compte inconnu", dc: "Débit", montant: 500 }),
+    ];
+    expect(organismesPresents(tx)).toEqual(["Zzz compte inconnu", "Banque A"]);
   });
 
   it("ne rend rien sur un jeu vide", () => {

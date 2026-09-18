@@ -26,7 +26,7 @@ import { useFilterSync } from "@/hooks/useFilterSync";
 import { useChartSize } from "@/hooks/useChartSize";
 
 import { fmt, fmtShort, fmtPct, fmtDate, mkLabel } from "@/utils/formatters";
-import { couleurEpargne } from "@/config/colors";
+import { useCouleurs } from "@/hooks/useCouleurs";
 
 // ─── Donut outer label ───────────────────────────────────────────────────
 function renderDonutLabel({
@@ -65,10 +65,6 @@ function SavingsTooltip({ active, payload, label }: {
   );
 }
 
-// ─── Couleur donut par type ──────────────────────────────────────────────
-const getTypeColor = (name: string) =>
-  couleurEpargne(name);
-
 // ─── Colonnes DataTable ──────────────────────────────────────────────────
 const TABLE_COLUMNS = [
   {
@@ -94,7 +90,11 @@ const TABLE_COLUMNS = [
     sortable: true,
     render: (v: unknown, row: Record<string, unknown>) => (
       <span className={row.isSortie ? "text-red" : "text-text-sec"}>
-        {row.isSortie ? "Sortie Epargne" : String(v)}
+        {/* Lot C.5 — le libellé vient de la LIGNE, plus d'une chaîne écrite
+            ici. « Sortie Epargne » était le type de l'auteur ; celui de la
+            personne s'appelle autrement, et c'est le sien qui doit s'afficher.
+            La couleur rouge, elle, dit qu'il s'agit d'une sortie. */}
+        {String(v)}
       </span>
     ),
   },
@@ -120,6 +120,7 @@ const TABLE_COLUMNS = [
 
 // ─── Page Épargne ────────────────────────────────────────────────────────
 export default function Epargne() {
+  const couleurs = useCouleurs();
   const { status } = useDataStore();
   useFilterSync({ month: "selEpMonth", type: "selEpType" });
 
@@ -222,7 +223,7 @@ export default function Epargne() {
                   className="cursor-pointer"
                 >
                   {donutData.map((d) => (
-                    <Cell key={d.name} fill={getTypeColor(d.name)} />
+                    <Cell key={d.name} fill={couleurs.type(d.name)} />
                   ))}
                 </Pie>
                 <Tooltip content={<ChartTooltip />} />
@@ -246,7 +247,7 @@ export default function Epargne() {
                 <li key={d.name} className="flex items-center gap-1.5 text-xs text-text-sec">
                   <span
                     className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
-                    style={{ backgroundColor: getTypeColor(d.name) }}
+                    style={{ backgroundColor: couleurs.type(d.name) }}
                     aria-hidden="true"
                   />
                   {d.name} ({donutTotal ? Math.round((d.value / donutTotal) * 100) : 0} %)

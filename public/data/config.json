@@ -8,24 +8,240 @@
     "Titres-restaurant": 145,
     "Banque B - Courant": 2600
   },
-  "transfers": [
-    "Transfert Banque A vers Banque C",
-    "Transfert Banque A vers Banque B"
-  ],
-  "comptes": [
-    "Banque A - Courant",
-    "Banque A - Part commune",
-    "Banque B - Courant",
-    "Banque B - Compte joint",
-    "Banque C - Compte joint",
-    "Titres-restaurant",
-    "Appli partagée - Part commune"
-  ],
-  "comptesLiesPrincipal": [
-    "Banque A - Part commune",
-    "Appli partagée - Part commune"
-  ],
-  "colors": {},
+  "parametrage": {
+    "estVide": false,
+    "comptes": [
+      {
+        "id": "banque a - courant",
+        "libelle": "Banque A - Courant",
+        "organisme": "Banque A",
+        "participation": 1,
+        "compteLie": null,
+        "sensRepercute": null,
+        "porteUnSolde": true,
+        "couleur": "#2563eb",
+        "soldeDepart": 4200
+      },
+      {
+        "id": "banque a - part commune",
+        "libelle": "Banque A - Part commune",
+        "organisme": "Banque A",
+        "participation": 0.5,
+        "compteLie": "banque a - courant",
+        "sensRepercute": "Débit",
+        "porteUnSolde": false,
+        "couleur": "#60a5fa",
+        "soldeDepart": null
+      },
+      {
+        "id": "appli partagee - part commune",
+        "libelle": "Appli partagée - Part commune",
+        "organisme": "Banque A",
+        "participation": 0.5,
+        "compteLie": "banque a - courant",
+        "sensRepercute": "Débit",
+        "porteUnSolde": false,
+        "couleur": "#93c5fd",
+        "soldeDepart": null
+      },
+      {
+        "id": "banque b - courant",
+        "libelle": "Banque B - Courant",
+        "organisme": "Banque B",
+        "participation": 1,
+        "compteLie": null,
+        "sensRepercute": null,
+        "porteUnSolde": true,
+        "couleur": "#0891b2",
+        "soldeDepart": 2600
+      },
+      {
+        "id": "banque b - compte joint",
+        "libelle": "Banque B - Compte joint",
+        "organisme": "Banque B",
+        "participation": 0.5,
+        "compteLie": "banque a - courant",
+        "sensRepercute": "Crédit",
+        "porteUnSolde": true,
+        "couleur": "#059669",
+        "soldeDepart": 1350
+      },
+      {
+        "id": "banque c - compte joint",
+        "libelle": "Banque C - Compte joint",
+        "organisme": "Banque C",
+        "participation": 1,
+        "compteLie": "banque a - courant",
+        "sensRepercute": "Crédit",
+        "porteUnSolde": true,
+        "couleur": "#d97706",
+        "soldeDepart": 980
+      },
+      {
+        "id": "titres-restaurant",
+        "libelle": "Titres-restaurant",
+        "organisme": "Titres-restaurant",
+        "participation": 1,
+        "compteLie": null,
+        "sensRepercute": null,
+        "porteUnSolde": true,
+        "couleur": "#dc2626",
+        "soldeDepart": 145
+      }
+    ],
+    "types": [
+      {
+        "libelle": "Crédit Immobilier",
+        "cle": "credit immobilier",
+        "natures": [
+          "epargne",
+          "pret-capital"
+        ],
+        "classeParDefaut": null
+      },
+      {
+        "libelle": "Intérêt du prêt",
+        "cle": "interet du pret",
+        "natures": [
+          "pret-interets"
+        ],
+        "classeParDefaut": "Dépense Fixe"
+      },
+      {
+        "libelle": "Épargne Banque A",
+        "cle": "epargne banque a",
+        "natures": [
+          "epargne",
+          "transfert-interne"
+        ],
+        "classeParDefaut": null
+      },
+      {
+        "libelle": "Épargne Banque B",
+        "cle": "epargne banque b",
+        "natures": [
+          "epargne"
+        ],
+        "classeParDefaut": null
+      },
+      {
+        "libelle": "Épargne Banque C",
+        "cle": "epargne banque c",
+        "natures": [
+          "epargne"
+        ],
+        "classeParDefaut": null
+      },
+      {
+        "libelle": "Assurance-vie",
+        "cle": "assurance-vie",
+        "natures": [
+          "epargne"
+        ],
+        "classeParDefaut": null
+      },
+      {
+        "libelle": "Cagnotte partagée",
+        "cle": "cagnotte partagee",
+        "natures": [
+          "epargne"
+        ],
+        "classeParDefaut": null
+      },
+      {
+        "libelle": "Transfert Banque A vers Banque B",
+        "cle": "transfert banque a vers banque b",
+        "natures": [
+          "transfert-interne"
+        ],
+        "classeParDefaut": null
+      },
+      {
+        "libelle": "Transfert Banque A vers Banque C",
+        "cle": "transfert banque a vers banque c",
+        "natures": [
+          "transfert-interne"
+        ],
+        "classeParDefaut": null
+      },
+      {
+        "libelle": "Sortie Epargne",
+        "cle": "sortie epargne",
+        "natures": [
+          "transfert-interne",
+          "sortie-epargne"
+        ],
+        "classeParDefaut": null
+      },
+      {
+        "libelle": "Virement extérieur",
+        "cle": "virement exterieur",
+        "natures": [
+          "apport-exterieur"
+        ],
+        "classeParDefaut": null
+      }
+    ],
+    "categories": [
+      {
+        "libelle": "Alimentation",
+        "cle": "alimentation",
+        "couleur": "#e67e22"
+      },
+      {
+        "libelle": "Assurances",
+        "cle": "assurances",
+        "couleur": "#8e44ad"
+      },
+      {
+        "libelle": "Autre",
+        "cle": "autre",
+        "couleur": "#95a5a6"
+      },
+      {
+        "libelle": "Banque",
+        "cle": "banque",
+        "couleur": "#34495e"
+      },
+      {
+        "libelle": "Comptes Bancaires",
+        "cle": "comptes bancaires",
+        "couleur": "#7f8c8d"
+      },
+      {
+        "libelle": "Habillement",
+        "cle": "habillement",
+        "couleur": "#e84393"
+      },
+      {
+        "libelle": "Immobilier",
+        "cle": "immobilier",
+        "couleur": "#2980b9"
+      },
+      {
+        "libelle": "Impots",
+        "cle": "impots",
+        "couleur": "#c0392b"
+      },
+      {
+        "libelle": "Loisir",
+        "cle": "loisir",
+        "couleur": "#27ae60"
+      },
+      {
+        "libelle": "Santé",
+        "cle": "sante",
+        "couleur": "#00cec9"
+      },
+      {
+        "libelle": "Transport",
+        "cle": "transport",
+        "couleur": "#f39c12"
+      }
+    ],
+    "employeurs": [],
+    "compteCreditSortiesEpargne": "banque a - courant"
+  },
   "pret": {
     "montant": 180000,
     "mensualite": 893.6,

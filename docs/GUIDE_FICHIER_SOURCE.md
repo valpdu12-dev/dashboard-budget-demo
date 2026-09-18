@@ -50,6 +50,15 @@ Laissez `Classe` **vide** pour ce qui sort de l'argent sans être une dépense �
 arbitrer : un virement vers votre livret, un transfert entre vos comptes, le
 capital remboursé d'un prêt. Vide est une réponse, pas un oubli.
 
+**Une septième, si vous partagez des dépenses** : `Montant brut`. Écrivez-y
+ce que la dépense a coûté **en entier**, et déclarez le taux de votre compte
+dans la feuille `Paramètres` : l'outil fait la division. Une course de 192,60 €
+sur un compte partagé à 50 % s'écrit `192,60` dans `Montant brut`, et l'outil
+retient 96,30 €.
+
+Laissée vide, c'est `Montant` qui est lu, tel quel — comme avant. Vous n'avez
+donc rien à changer à un fichier existant.
+
 **Les autres colonnes sont facultatives** : `Catégorie`, `Sous-catégorie`,
 `Détail`, `Libellé`, `Ville`, `Prévisionnel`.
 
@@ -71,10 +80,10 @@ Un montant négatif fait refuser la ligne — il ne devient jamais 0 en silence.
 **`D` ou `C` au lieu de `Débit` / `Crédit`.** Refusé, avec un message qui dit
 quoi écrire. Les accents et les majuscules, eux, sont sans importance.
 
-**Une dépense partagée écrite en entier.** Notez le montant **qui vous est
-imputé** : une dépense de 80 € partagée à moitié se note `40`. L'outil ne sait
-pas encore appliquer un taux de partage ; écrire 80 en attendant fausserait
-votre budget sans rien vous dire.
+**Une dépense partagée, et les deux colonnes remplies.** Si `Montant brut` est
+rempli, c'est lui qui compte, et `Montant` n'est pas lu. Remplissez l'une **ou**
+l'autre : `Montant` pour ce qui vous est déjà imputé, `Montant brut` pour ce
+que vous voulez voir divisé par le taux de votre compte.
 
 **Deux lignes rigoureusement identiques.** Même date, même compte, même type,
 même montant, même libellé : la seconde est refusée comme doublon. Deux achats
@@ -128,27 +137,92 @@ Le bloc Prêt est **tout ou rien** : sans les trois premières valeurs, il est
 ignoré en entier. Un montant réel accolé à une mensualité inventée produirait
 un échéancier crédible et faux.
 
-**`Compte` / `Solde de départ`**
+**Le tableau de vos comptes**
 
-Un compte par ligne, avec son solde à la date de début de relevé.
+C'est le plus important de la feuille : c'est lui qui apprend vos comptes à
+l'outil. Une ligne par compte. Seule la colonne `Compte` est obligatoire.
 
-Un compte que vous ne déclarez pas ici est « **non initialisé** » — jamais 0.
+| Colonne | Exemple | Ce que ça fait |
+|---|---|---|
+| `Compte` | `Caisse de bord` | le nom, exactement comme dans vos transactions |
+| `Solde de départ` | `1 200` | votre solde à la date de début de relevé |
+| `Organisme` | `Ma banque` | regroupe vos comptes dans les graphiques |
+| `Participation` | `50 %` | le taux appliqué au `Montant brut` |
+| `Compte lié` | `Caisse de bord` | le compte d'où l'argent sort réellement |
+| `Sens répercuté` | `Débit` | obligatoire dès que `Compte lié` est rempli |
+| `Porte un solde` | `oui` / `non` | `non` pour une sous-poche sans solde propre |
+| `Couleur` | `#3b82f6` | sinon une couleur vous est attribuée |
+
+Un compte que vous ne déclarez pas ici garde ses transactions et son solde,
+mais n'a ni taux, ni compte lié, ni solde de départ — et l'aperçu vous le
+nomme. Un solde de départ non déclaré est « **non initialisé** » : jamais 0.
 Les deux ne se ressemblent pas à l'écran, et c'est voulu.
+
+**Le compte lié**, en un mot : certains comptes ne sont qu'un passage, et
+l'argent sort en réalité d'un autre. Déclarez-le, et dites dans quel sens :
+`Débit` si ce sont les dépenses du compte qui vident l'autre, `Crédit` si ce
+sont ses recettes qui le vident. `Sens répercuté` est obligatoire — deviner
+les deux sens fausserait votre solde sans que rien ne le signale.
+
+Un compte lié ne peut pas en désigner un autre à son tour : la chaîne est
+refusée, en nommant les trois comptes.
+
+**Le tableau de vos types**
+
+| Colonne | Exemple | Ce que ça fait |
+|---|---|---|
+| `Type` | `Mise de côté` | le nom, exactement comme dans vos transactions |
+| `Nature` | `epargne` | ce que ce type FAIT aux calculs |
+| `Classe par défaut` | `Dépense Fixe` | la classe des lignes de ce type qui n'en ont pas |
+
+Les natures reconnues, séparées par une virgule si un type en porte plusieurs :
+
+| Nature | Ce qu'elle déclenche |
+|---|---|
+| `epargne` | entre dans l'écran Épargne |
+| `sortie-epargne` | en sort ; le compte crédité se déclare ci-dessous |
+| `transfert-interne` | exclu des recettes et des dépenses |
+| `apport-exterieur` | neutralise le compte lié : l'argent vient du dehors |
+| `pret-capital` | fait apparaître l'écran Prêt |
+| `pret-interets` | la part intérêts de vos échéances |
+
+Un même type peut en porter deux — un remboursement de capital est à la fois
+une échéance de prêt et une forme d'épargne : `pret-capital, epargne`.
+
+Un type que vous ne déclarez pas est un mouvement ordinaire. C'est le cas
+normal pour vos dépenses ; l'aperçu vous dit combien de types sont dans ce
+cas, pour que vous vérifiiez qu'aucun n'est en fait un virement.
+
+**Deux tableaux de plus, tout simples** : `Catégorie` / `Couleur` pour colorer
+vos postes de budget, et `Employeur` pour lister vos employeurs.
+
+⚠️ **Chaque tableau occupe ses propres colonnes.** Laissez une colonne vide
+entre deux tableaux voisins : c'est ce blanc qui dit à l'outil où l'un
+s'arrête.
+
+**Une ligne de plus dans `Paramètre` / `Valeur`** : `Compte crédité par les
+sorties d'épargne`, qui dit sur quel compte atterrit l'argent repris à votre
+épargne. Sans elle, vos reprises ne sont créditées nulle part — et l'écran
+vous le dit, chiffré.
 
 ---
 
 ## 6. Ce que vous verrez, et ce que vous ne verrez pas
 
-Cette version est une **démonstration ouverte à l'import**, pas encore un outil
-paramétrable. Deux limites, dites franchement :
+**Vos comptes sont les vôtres.** C'était la limite de la version précédente :
+l'application connaissait une liste fixe de comptes, et les vôtres n'avaient
+pas de solde. C'est fini — vos comptes, vos types, vos catégories et vos
+couleurs viennent de votre fichier. Ce que vous ne déclarez pas, l'outil ne
+l'invente pas : il vous le dit.
 
-**Vos comptes ne sont pas les siens.** L'application connaît une liste fixe de
-comptes. Si les vôtres portent d'autres noms — et c'est le cas normal — leurs
-transactions sont bien comptées dans les dépenses, mais **aucun solde n'est
-calculé** : ni dans le graphique de patrimoine, ni dans le total. L'écran
-Comptes vous montre alors la **variation cumulée** de chaque compte (crédits
-moins débits depuis votre première ligne) et vous dit que le point de départ
-reste inconnu. L'import est accepté, et chaque compte inconnu vous est nommé.
+**Un écran qui n'a rien à montrer disparaît** plutôt que de s'afficher vide :
+sans type d'épargne déclaré, pas d'écran Épargne ; sans prêt, pas d'écran
+Prêt ; sans feuille `Paie`, pas d'écran Salaire.
+
+**Ce que l'outil ne sait toujours pas faire** : deviner qu'une ligne est un
+virement entre vos comptes. Il n'y a qu'une ligne, sans contrepartie à
+apparier — seule votre déclaration le lui apprend. Sans elle, le virement
+compte une fois en recette et une fois en dépense, et l'aperçu vous prévient.
 
 **Une dépense sans `Catégorie`** compte dans les dépenses et dans les totaux,
 mais n'apparaît pas dans l'écran Budget mensuel : les objectifs se posent à ce

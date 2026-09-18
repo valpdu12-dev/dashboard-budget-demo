@@ -66,7 +66,7 @@ export default function PretImmobilier() {
           <EmptyState
             icon={<Home size={36} />}
             title="Aucune donnée de prêt"
-            description="Aucune transaction « Crédit Immobilier » ou « Intérêt du prêt » trouvée."
+            description="Aucun type n'est déclaré comme échéance de prêt dans votre fichier, ou aucune transaction ne porte un de ces types. Déclarez les natures « pret-capital » et « pret-interets » dans la feuille Paramètres."
           />
         </div>
       </div>

@@ -1,5 +1,6 @@
 // ── Factories de données de test ──────────────────────────────────────────
 import type { Transaction, SalaryMonth, SalaryData, Config, InflationData, SmicData } from "@/types";
+import { PARAMETRAGE_DEMO } from "./parametrageDemo";
 
 /** Crée une transaction avec des valeurs par défaut */
 export function makeTx(overrides: Partial<Transaction> = {}): Transaction {
@@ -102,19 +103,26 @@ export function makeSalaryData(months?: SalaryMonth[], extras: SalaryExtras = {}
   };
 }
 
-/** Crée une config par défaut */
+/**
+ * Crée une config par défaut.
+ *
+ * ⚠️ Lot C.4 — elle porte désormais `parametrage`, la configuration que le
+ * jeu de démonstration déclare. Sans elle, les calculs ne connaîtraient ni
+ * transfert interne, ni épargne, ni compte lié : les tests qui vérifient ces
+ * règles doivent les déclarer, comme le ferait un vrai fichier.
+ *
+ * Un test qui veut le cas « la source ne déclare rien » passe
+ * `{ parametrage: undefined }`.
+ */
 export function makeConfig(overrides: Partial<Config> = {}): Config {
   return {
+    parametrage: PARAMETRAGE_DEMO,
     init: {
       "Banque A - Courant": 5000,
       "Banque B - Compte joint": 2000,
       "Banque C - Compte joint": 1500,
       "Titres-restaurant": 100,
     },
-    transfers: ["Transfert Banque A vers Banque C", "Transfert Banque A vers Banque B"],
-    comptes: ["Banque A - Courant", "Banque B - Compte joint", "Banque C - Compte joint", "Titres-restaurant"],
-    comptesLiesPrincipal: ["Banque A - Courant"],
-    colors: {},
     ...overrides,
   };
 }

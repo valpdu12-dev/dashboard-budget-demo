@@ -1,7 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useKPIs } from "@/hooks/useKPIs";
 import { makeTx, makeSalaryMonth } from "../helpers/factories";
+import { poserReglesDemo } from "../helpers/poserRegles";
+
+// Les règles viennent du store depuis le lot C.4 : ce test déclare celles de
+// la démonstration, dont il vérifie précisément le comportement.
+beforeEach(() => {
+  poserReglesDemo();
+});
 
 const EMPTY_BALANCES: Record<string, Record<string, number>> = {};
 

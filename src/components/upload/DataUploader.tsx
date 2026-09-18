@@ -11,6 +11,8 @@ import { jeuPersonnelDisponible } from "@/services/profil";
 import { fmtImportOrigine } from "@/utils/importLabel";
 import { useExcelWorker, type ValidationReport } from "@/hooks/useExcelWorker";
 import type { RapportImport } from "@/services/lectureClasseur";
+import type { BudgetConfig } from "@/types/budgetConfig";
+import { normaliserCle } from "@/services/lectureValeurs";
 import { MONTHS_FR } from "@/config/constants";
 
 // ---------------------------------------------------------------------------
@@ -114,6 +116,7 @@ function situer(a: RapportImport["anomalies"][number]): string {
  */
 export function RapportImportVue({ r }: { r: RapportImport }) {
   const c = r.compteurs;
+  const cfg = r.parametres.config;
   const aDesParametres =
     r.parametres.couverture !== null ||
     r.parametres.pret !== null ||
@@ -160,9 +163,114 @@ export function RapportImportVue({ r }: { r: RapportImport }) {
 
       {aDesParametres && (
         <p className="text-[12px] text-text-sec mt-3 px-3 py-2 bg-border/20 border border-border rounded-lg leading-relaxed">
-          Votre feuille « Paramètres » a bien été lue. Les soldes de départ, les
-          dates de relevé et le prêt ne sont pas encore repris par le tableau de
-          bord : seules les transactions et la paie le sont aujourd'hui.
+          Votre feuille « Paramètres » a bien été lue : {NB(Object.keys(r.parametres.soldes).length, "solde de départ", "soldes de départ")},
+          {r.parametres.couverture ? " des bornes de relevé," : " pas de bornes de relevé,"}
+          {r.parametres.pret ? " un prêt déclaré." : " pas de prêt déclaré."}
+        </p>
+      )}
+
+      {/* Lot C.2 — ce que la CONFIGURATION déclare. Dire « lue » sans dire quoi
+          laisserait la personne supposer que tout a été compris. */}
+      <ConfigurationLue cfg={cfg} transactions={r.transactions} />
+    </div>
+  );
+}
+
+/** « 3 comptes », « 1 compte », « aucun compte » — jamais un nombre nu. */
+function NB(n: number, singulier: string, pluriel: string): string {
+  if (n === 0) return `aucun ${singulier}`;
+  return `${n} ${n > 1 ? pluriel : singulier}`;
+}
+
+/**
+ * Ce que la feuille `Paramètres` a déclaré — lot C.2.
+ *
+ * ⚠️ Ce bloc s'affiche AUSSI quand rien n'est déclaré. C'est même son cas le
+ * plus utile : un fichier au format v1 n'a pas de configuration, et le taire
+ * laisserait croire que l'outil a repris les comptes de la personne.
+ */
+function ConfigurationLue({ cfg, transactions }: {
+  cfg: BudgetConfig;
+  transactions: RapportImport["transactions"];
+}) {
+  if (cfg.estVide) {
+    return (
+      <p className="text-[12px] text-text-sec mt-2 px-3 py-2 bg-border/20 border border-border rounded-lg leading-relaxed">
+        Votre fichier ne déclare <strong className="text-text">aucune configuration</strong> :
+        ni compte, ni type, ni catégorie. Vos comptes n'auront ni taux de
+        participation, ni compte lié, et leurs soldes resteront
+        « non initialisés » — jamais 0.
+      </p>
+    );
+  }
+
+  const avecNature = cfg.types.filter((t) => t.natures.length > 0).length;
+
+  // ⚠️ Lot C — LE CHIFFRE QUE D7 DEMANDAIT EST IMPOSSIBLE, et celui-ci le
+  // remplace.
+  //
+  // D7 voulait « 12 lignes ressemblent à des virements entre vos comptes ».
+  // L'heuristique a été écrite et MESURÉE le 17/09/2026 sur le jeu de
+  // démonstration : même montant, même date, un débit et un crédit sur deux
+  // comptes différents → 0 paire trouvée, alors que 71 lignes sont des
+  // virements déclarés. La raison est structurelle : dans ce format, un
+  // virement est UNE SEULE LIGNE dont le type dit qu'elle en est un. Il n'y a
+  // pas de contrepartie à apparier, donc rien à détecter — sauf à deviner sur
+  // les mots du libellé, ce que ce chantier interdit.
+  //
+  // Ce compte-ci, lui, est vrai et vérifiable : combien de types présents dans
+  // le fichier ne portent aucune nature déclarée.
+  const brutes = transactions.filter((t) => t.estBrut).length;
+
+  const declares = new Set(cfg.types.map((t) => t.cle));
+  const sansNature = new Set(
+    transactions
+      .map((t) => normaliserCle(t.type))
+      .filter((cle) => cle && !declares.has(cle))
+  ).size;
+  const transferts = cfg.types.filter((t) => t.natures.includes("transfert-interne")).length;
+  const epargne = cfg.types.filter(
+    (t) => t.natures.includes("epargne") || t.natures.includes("sortie-epargne")
+  ).length;
+
+  return (
+    <div className="text-[12px] text-text-sec mt-2 px-3 py-2 bg-border/20 border border-border rounded-lg leading-relaxed">
+      <p>
+        Configuration lue : {NB(cfg.comptes.length, "compte", "comptes")},{" "}
+        {NB(cfg.types.length, "type", "types")} (dont {avecNature} avec une nature),{" "}
+        {NB(cfg.categories.length, "catégorie", "catégories")},{" "}
+        {NB(cfg.employeurs.length, "employeur", "employeurs")}.
+      </p>
+      {brutes > 0 && (
+        <p className="mt-1">
+          {brutes === 1
+            ? "1 ligne porte un « Montant brut »"
+            : `${brutes} lignes portent un « Montant brut »`}{" "}
+          : leur montant a été calculé avec le taux de participation de leur
+          compte, et la colonne « Montant » n'a pas été lue sur ces lignes.
+        </p>
+      )}
+      {sansNature > 0 && (
+        <p className="mt-1">
+          {sansNature === 1
+            ? "1 de vos types ne porte aucune nature"
+            : `${sansNature} de vos types ne portent aucune nature`}{" "}
+          — c'est normal pour une dépense ordinaire. Vérifiez qu'aucun n'est un
+          virement entre vos comptes ou un versement d'épargne : l'outil ne peut
+          pas le deviner.
+        </p>
+      )}
+      {transferts === 0 && (
+        <p className="mt-1">
+          Aucun type n'est déclaré comme <strong className="text-text">virement interne</strong> :
+          si vous virez de l'argent entre vos propres comptes, ces lignes comptent
+          une fois en recette et une fois en dépense.
+        </p>
+      )}
+      {epargne === 0 && (
+        <p className="mt-1">
+          Aucun type n'est déclaré comme <strong className="text-text">épargne</strong> :
+          l'écran Épargne n'aura rien à montrer.
         </p>
       )}
     </div>

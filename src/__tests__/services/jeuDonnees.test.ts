@@ -15,6 +15,7 @@ import { resetAllStores } from "../helpers/storeReset";
 import { makeTx, makeSalaryData, makeSalaryMonth } from "../helpers/factories";
 import type { RapportImport } from "@/services/lectureClasseur";
 import type { Transaction } from "@/types";
+import { configVide } from "@/types/budgetConfig";
 
 /**
  * Un jeu = un tout — lot B.5.
@@ -34,7 +35,7 @@ function rapport(over: Partial<RapportImport["parametres"]> = {}): RapportImport
   return {
     transactions: TX,
     paie: [{ mk: "2026-01", entreprise: "Employeur A", brut: 3100, cotSal: 682, indem: 0, retenues: 0, net: 2418 }],
-    parametres: { versionFormat: 1, couverture: null, pret: null, soldes: {}, ...over },
+    parametres: { versionFormat: 1, couverture: null, pret: null, soldes: {}, config: configVide(), ...over },
     anomalies: [],
     anomaliesNonListees: 0,
     compteurs: { lignesLues: 2, acceptees: 2, rejetees: 0, ignorees: 0, avertissements: 0 },
@@ -98,7 +99,7 @@ describe("mémorisation", () => {
   it("relit exactement ce qui a été écrit", () => {
     const avant = jeu();
     expect(memoriserJeu(avant)).toBe(true);
-    expect(lireJeuMemorise()).toEqual(avant);
+    expect(lireJeuMemorise().jeu).toEqual(avant);
   });
 
   it("porte une version de schéma", () => {
@@ -107,13 +108,13 @@ describe("mémorisation", () => {
 
   it("ignore un jeu d'une version inconnue plutôt que de le lire à moitié", () => {
     localStorage.setItem("budget.jeu.v2", JSON.stringify({ ...jeu(), version: 99 }));
-    expect(lireJeuMemorise()).toBeNull();
+    expect(lireJeuMemorise().jeu).toBeNull();
   });
 
   it("ignore un contenu illisible sans lever d'exception", () => {
     localStorage.setItem("budget.jeu.v2", "{ceci n'est pas du JSON");
-    expect(() => lireJeuMemorise()).not.toThrow();
-    expect(lireJeuMemorise()).toBeNull();
+    expect(() => lireJeuMemorise().jeu).not.toThrow();
+    expect(lireJeuMemorise().jeu).toBeNull();
   });
 
   it("rend false quand le navigateur refuse l'écriture, au lieu de l'avaler", () => {
@@ -144,7 +145,7 @@ describe("migration depuis l'ancien schéma", () => {
       fileName: "ancien.xlsx",
       importedAt: "2026-08-11T18:00:00.000Z",
     }));
-    const jeu = lireJeuMemorise();
+    const jeu = lireJeuMemorise().jeu;
     expect(jeu?.version).toBe(VERSION_SCHEMA);
     expect(jeu?.fileName).toBe("ancien.xlsx");
     expect(decodeTransactions(jeu!.transactions)).toHaveLength(2);
@@ -158,14 +159,15 @@ describe("migration depuis l'ancien schéma", () => {
       transactions: TX, salary: makeSalaryData([]), fileName: "a.xlsx",
       importedAt: "2026-08-11T18:00:00.000Z",
     }));
-    lireJeuMemorise();
+    lireJeuMemorise().jeu;
     expect(localStorage.getItem("budget.import.v1")).toBeNull();
-    expect(localStorage.getItem("budget.jeu.v2")).not.toBeNull();
+    // Lot C.6 : le schéma courant est le 3.
+    expect(localStorage.getItem("budget.jeu.v3")).not.toBeNull();
   });
 
   it("ignore un contenu v1 tronqué", () => {
     localStorage.setItem("budget.import.v1", JSON.stringify({ transactions: TX }));
-    expect(lireJeuMemorise()).toBeNull();
+    expect(lireJeuMemorise().jeu).toBeNull();
   });
 });
 
@@ -199,7 +201,7 @@ describe("fermer / rouvrir — le critère de sortie de l'étape", () => {
     expect(useDataStore.getState().transactions).toHaveLength(0);
 
     // Ouverture 2 : on relit et on repose.
-    const relu = lireJeuMemorise();
+    const relu = lireJeuMemorise().jeu;
     expect(relu).not.toBeNull();
     useDataStore.getState().poserJeu(relu!);
 
