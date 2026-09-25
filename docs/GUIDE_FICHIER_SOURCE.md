@@ -14,10 +14,12 @@ on s'en sert.
 
 1. Ouvrez le tableau de bord, cliquez sur **Importer .xlsx**.
 2. Cliquez sur **Télécharger le modèle**. Vous obtenez un classeur
-   `Budget_modele.xlsx` avec trois mois d'exemple et un mode d'emploi dans la
-   première feuille.
-3. Remplacez les lignes d'exemple par les vôtres. Gardez les en-têtes tels
-   quels.
+   `Budget_modele.xlsx` : deux ans d'exemple, des listes déroulantes, des
+   formules, une feuille `Visualisation` et un mode d'emploi en première
+   feuille.
+3. Remplacez les lignes d'exemple par les vôtres. Dans le modèle, vous ne
+   remplissez que les colonnes à **en-tête bleu** ; les colonnes à en-tête gris
+   se calculent. Gardez les en-têtes tels quels.
 4. Glissez votre fichier dans la fenêtre d'import.
 5. **Lisez l'aperçu avant de cliquer sur Appliquer.** Il dit combien de lignes
    ont été lues, combien ont été refusées et pourquoi, feuille et ligne à
@@ -59,6 +61,9 @@ retient 96,30 €.
 Laissée vide, c'est `Montant` qui est lu, tel quel — comme avant. Vous n'avez
 donc rien à changer à un fichier existant.
 
+Dans le classeur modèle, c'est `Montant brut` que vous saisissez, et la
+colonne `Montant` se calcule toute seule avec le taux du compte.
+
 **Les autres colonnes sont facultatives** : `Catégorie`, `Sous-catégorie`,
 `Détail`, `Libellé`, `Ville`, `Prévisionnel`.
 
@@ -80,10 +85,12 @@ Un montant négatif fait refuser la ligne — il ne devient jamais 0 en silence.
 **`D` ou `C` au lieu de `Débit` / `Crédit`.** Refusé, avec un message qui dit
 quoi écrire. Les accents et les majuscules, eux, sont sans importance.
 
-**Une dépense partagée, et les deux colonnes remplies.** Si `Montant brut` est
-rempli, c'est lui qui compte, et `Montant` n'est pas lu. Remplissez l'une **ou**
-l'autre : `Montant` pour ce qui vous est déjà imputé, `Montant brut` pour ce
-que vous voulez voir divisé par le taux de votre compte.
+**Un taux changé sans recalcul.** Quand `Montant brut` et `Montant` sont
+remplis tous les deux (c'est le cas du modèle), l'outil calcule lui-même le
+montant depuis le brut et le compare au vôtre. S'ils diffèrent, l'aperçu vous
+le dit, chiffré : en général, un taux modifié dans `Paramètres` alors que le
+fichier n'a pas été recalculé. Et un compte déclaré avec un taux, mais sans
+aucun `Montant brut` rempli, est signalé : son taux ne s'applique nulle part.
 
 **Deux lignes rigoureusement identiques.** Même date, même compte, même type,
 même montant, même libellé : la seconde est refusée comme doublon. Deux achats
@@ -92,8 +99,14 @@ identiques le même jour, ça existe — distinguez-les par le libellé.
 Vous pouvez aussi garder plusieurs feuilles annuelles : `Transactions 2025`,
 `Transactions 2026`. Elles sont additionnées.
 
-Pour mettre une ligne de côté sans la supprimer, mettez `x` dans la colonne
-`Prévisionnel` : elle est ignorée, et l'aperçu vous dit combien l'ont été.
+Pour une ligne à venir — une échéance, un prélèvement prévu —, mettez `x`
+dans la colonne `Prévisionnel`. Elle est mise de côté tant que sa date est
+après votre `Fin de relevé` ; dès que la date est passée, elle compte. L'aperçu
+vous dit combien de lignes ont été mises de côté.
+
+**Un remboursement** s'écrit sur le type de la dépense qu'il annule, avec
+`Crédit` : 40 € de courses, 15 € remboursés → 25 € d'Alimentation. Ce n'est
+pas une recette.
 
 ---
 
@@ -118,25 +131,36 @@ vides plutôt que d'afficher des tirets.
 
 ## 5. La feuille `Paramètres` — facultative, mais elle change beaucoup
 
-Deux petits tableaux, où vous voulez sur la feuille. Ils sont retrouvés par
-leurs en-têtes.
+Plusieurs petits tableaux, où vous voulez sur la feuille. Ils sont retrouvés
+par leurs en-têtes.
 
 **`Paramètre` / `Valeur`**
 
 | Paramètre | Ce que ça fait |
 |---|---|
 | `Début de relevé`, `Fin de relevé` | déclarent la période que votre fichier couvre vraiment |
-| `Prêt — montant`, `Prêt — taux annuel`, `Prêt — durée (mois)` | forme « taux » : donne la projection (mensualité calculée) |
-| `Prêt — montant`, `Prêt — mensualité`, `Prêt — nombre d'échéances` | forme « mensualité » : donne la projection (taux retrouvé) |
-| `Prêt — date de début`, `Prêt — première échéance` | facultatives, déduites sinon |
+| `Prêt — montant`, `Prêt — date de début`, `Prêt — taux annuel`, `Prêt — durée (mois)` | forme « taux » (recommandée) : l'échéancier complet se calcule |
+| `Prêt — montant`, `Prêt — mensualité`, `Prêt — nombre d'échéances` | forme « mensualité » (ancienne) : taux retrouvé, position estimée |
 
 Les deux dates de relevé vont ensemble : déclarer l'une sans l'autre est
 refusé. Sans elles, l'outil devine la période couverte, prudemment — il écarte
 les mois de bord dont il n'est pas sûr qu'ils soient complets.
 
-Le bloc Prêt existe en deux formes — « taux » (montant, taux annuel, durée) ou
-« mensualité » (montant, mensualité, nombre d'échéances). Chacune est **tout ou
-rien** : ses champs vont ensemble, sinon le bloc est ignoré. Sans bloc, l'écran
+Le bloc Prêt existe en deux formes — « taux » (montant, date de début, taux
+annuel, durée) ou « mensualité » (montant, mensualité, nombre d'échéances).
+Chacune est **tout ou rien** : ses champs vont ensemble, sinon le bloc est
+ignoré. La **date de début** est le mois de votre première échéance ; elle est
+obligatoire pour la forme « taux » (`Prêt — première échéance` est acceptée à
+sa place).
+
+L'outil compare ensuite vos transactions à l'échéancier déclaré. Si les
+intérêts ou la mensualité ne concordent pas, l'aperçu et l'écran Prêt vous le
+disent, chiffré — souvent une date de début décalée, et l'outil propose alors
+la bonne. Un remboursement anticipé ou une modulation font aussi diverger les
+deux : ce n'est pas bloquant.
+
+Avec la forme « mensualité », sans date, la position dans l'échéancier est
+**estimée** depuis vos intérêts, et l'écran Prêt le dit. Sans bloc, l'écran
 Prêt montre le seul historique réel de vos échéances et n'invente aucune
 projection. Un montant réel accolé à une mensualité inventée produirait un
 échéancier crédible et faux.
@@ -189,6 +213,7 @@ Les natures reconnues, séparées par une virgule si un type en porte plusieurs 
 | `apport-exterieur` | neutralise le compte lié : l'argent vient du dehors |
 | `pret-capital` | fait apparaître l'écran Prêt |
 | `pret-interets` | la part intérêts de vos échéances |
+| `remboursement` | un crédit qui réduit une dépense (voir aussi la section 3) |
 
 Un même type peut en porter deux — un remboursement de capital est à la fois
 une échéance de prêt et une forme d'épargne : `pret-capital, epargne`.
@@ -208,6 +233,11 @@ s'arrête.
 sorties d'épargne`, qui dit sur quel compte atterrit l'argent repris à votre
 épargne. Sans elle, vos reprises ne sont créditées nulle part — et l'écran
 vous le dit, chiffré.
+
+Si votre ancien fichier déclare aussi ce type de reprise **comme un compte**
+dans le tableau des comptes, cette ligne est ignorée et l'aperçu vous le dit :
+déclarez plutôt un compte sans solde propre (`Porte un solde` = `non`) et
+utilisez-le dans vos transactions.
 
 ---
 

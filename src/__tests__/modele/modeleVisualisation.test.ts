@@ -83,6 +83,27 @@ describe("F.6 — la Visualisation du modèle donne les chiffres de l'applicatio
     expect(nombre(ligne("Total épargné")[1])).toBeCloseTo(epargne.kpis.prevEp, 2);
   });
 
+  it("F.7 — les libellés sont LUS dans Paramètres, jamais écrits en dur", () => {
+    const avecFormules = XLSX.read(octetsModele(), { type: "array", cellFormula: true });
+    const ws = avecFormules.Sheets["Visualisation"];
+    const ref = XLSX.utils.decode_range(ws["!ref"]!);
+    const comptes = config.parametrage!.comptes.filter((c) => c.porteUnSolde).map((c) => c.libelle);
+    const categories = config.parametrage!.categories.map((c) => c.libelle);
+    let lus = 0;
+    for (let r = ref.s.r; r <= ref.e.r; r++) {
+      const c = ws[XLSX.utils.encode_cell({ r, c: 0 })];
+      if (!c || !(comptes.includes(c.v) || categories.includes(c.v))) continue;
+      expect(c.f, `Visualisation!A${r + 1} (« ${c.v} »)`).toMatch(/Param/);
+      lus++;
+    }
+    expect(lus).toBe(comptes.length + categories.length);
+  });
+
+  it("F.7 — les lignes « Autres » sont à zéro sur la démo : tout y est déclaré", () => {
+    expect(nombre(ligne("Autres recettes (type non listé)")[1])).toBe(0);
+    expect(nombre(ligne("Autres catégories (non listées)")[1])).toBe(0);
+  });
+
   it("les catégories font bien le total des dépenses", () => {
     const debut = viz.findIndex((r) => r[0] === "Dépenses du mois par catégorie") + 1;
     const fin = viz.findIndex((r) => r[0] === "Total des dépenses");

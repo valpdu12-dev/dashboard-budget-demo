@@ -744,7 +744,9 @@ chiffré.
 - **O2** — Remboursement anticipé, modulation, différé : signalés sans
   bloquer, cités dans le message. Pas modélisés.
 - **O3** — Remplacée par F10.
-- **O4** — Bandeau : « Noms de comptes réels, montants inventés ».
+- **O4** — Bandeau : « Noms de comptes réels, montants inventés ». *Annulée
+  au lot G (25/09/2026)* : les noms sont redevenus génériques, le bandeau
+  « Aucun compte réel » redevient exact et reste tel quel.
 - **O5** — `Prêt — date de début` devient **obligatoire** pour la forme
   « taux » (format v2.2). `Prêt — première échéance` reste lue, comme synonyme.
   Les deux présentes et différentes → bloc refusé, les deux valeurs affichées.

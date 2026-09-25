@@ -10,7 +10,7 @@
 **➜ Voir la démonstration : https://dashboard-budget-demo.pages.dev/**
 
 Version publique et statique d'un tableau de bord de finances personnelles.
-React 18, TypeScript, Vite, Tailwind, Zustand, Recharts. 887 tests.
+React 18, TypeScript, Vite, Tailwind, Zustand, Recharts. 921 tests.
 
 ![Page Comptes](docs/captures/desktop-01-comptes.png)
 
@@ -37,8 +37,8 @@ tableur :
 Ce tableau de bord répond à ces trois questions à partir d'un seul classeur
 Excel, sans ressaisie. Le format attendu est public et documenté —
 [`docs/FORMAT_FICHIER_SOURCE.md`](docs/FORMAT_FICHIER_SOURCE.md) — et
-l'application fabrique un classeur modèle à la demande, depuis la fenêtre
-d'import.
+un classeur modèle se télécharge depuis la fenêtre d'import — fabriqué par
+un script, et refait puis comparé à chaque contrôle.
 
 ---
 
@@ -243,8 +243,8 @@ la valeur manque, et non un tiret muet.
 
 | | |
 |---|---|
-| Tests | **669**, 57 fichiers |
-| Chaîne complète | lint → types → tests → build → contrôle de publication |
+| Tests | **921**, 71 fichiers |
+| Chaîne complète | lint → types → tests → build → contrôle de publication → vocabulaire → reproductibilité des données → reproductibilité du modèle |
 | Durée | environ 90 s |
 | CI | tout ce qui précède, plus gitleaks et un contrôle de fraîcheur des données |
 
@@ -252,6 +252,12 @@ Le **contrôle de publication** refuse de laisser passer un nom réel, un
 fichier inattendu dans le build, une extension interdite ou un secret. Deux
 listes se complètent : la noire attrape ce qu'on sait nommer, la blanche
 attrape ce à quoi personne n'a pensé.
+
+La liste noire, elle, **n'est pas dans le dépôt** : écrire en clair les noms
+qu'on veut protéger, dans un dépôt public, reviendrait à les publier. Elle
+arrive par un secret en CI et par un fichier privé en local ; absente, le
+contrôle échoue, et un rapport ne cite jamais le texte trouvé — seulement le
+numéro du motif.
 
 Il a lui-même révélé deux choses. D'abord qu'un outil de détection de secrets
 écarte par défaut les clés d'exemple de la documentation — un test bâti
@@ -286,8 +292,9 @@ démonstration, avec ses données.
 ## Importer votre propre fichier
 
 La démonstration accepte **votre** classeur. Bouton **Importer .xlsx**, puis
-**Télécharger le modèle** : trois mois d'exemple, les colonnes attendues et un
-mode d'emploi dans la première feuille.
+**Télécharger le modèle** : deux ans d'exemple, des listes déroulantes, des
+formules (le montant réel se calcule depuis le montant brut et le taux du
+compte), une feuille `Visualisation` et un mode d'emploi en première feuille.
 
 - Le guide, dans l'ordre où l'on s'en sert :
   [`docs/GUIDE_FICHIER_SOURCE.md`](docs/GUIDE_FICHIER_SOURCE.md)
@@ -346,7 +353,7 @@ de ce qui est versionné.
 ```bash
 npm ci        # installation reproductible
 npm run dev   # http://localhost:5173
-npm run check # lint + types + tests + build + contrôle de publication
+npm run check # lint + types + tests + build + contrôles de publication et de reproductibilité
 ```
 
 Aucun fichier `.env` : ni API, ni jeton, ni secret.
@@ -355,6 +362,7 @@ Aucun fichier `.env` : ni API, ni jeton, ni secret.
 |---|---|
 | `npm run donnees` | régénère les cinq fichiers de `public/data/` |
 | `npm run verif` | contrôle de publication — **bloquant** |
+| `npm run modele` | refait le classeur modèle et le compare au fichier publié |
 | `npm run preview` | sert le build sur `http://localhost:4173` |
 
 ---
@@ -380,6 +388,8 @@ Aucun fichier `.env` : ni API, ni jeton, ni secret.
 | **B.8** | Recette et publication | ✅ |
 | **C** | Paramétrage complet par le fichier source — l'outil ne connaît plus aucun compte ni type | ✅ |
 | **E** | Prêt paramétrable (montant, date, taux, durée), démonstration sur la structure d'une configuration réelle, noms génériques et montants inventés | ✅ |
+| **F** | Prêt calculé depuis sa date et contrôlé par les transactions ; vrai classeur modèle (listes, formules, Visualisation) publié sous garde-fou | ✅ |
+| **G** | Noms génériques, liste noire hors du dépôt, historique repris à zéro | ✅ |
 | **D** | Recette de diffusion | à venir |
 
 ---
@@ -394,6 +404,10 @@ comptes, types, taux de participation, comptes liés, couleurs et prêt viennent
 tous de la feuille `Paramètres`. L'écran Paramètres les **montre** — d'où vient
 chaque valeur — mais ne les modifie pas encore. Détail dans
 [`docs/LIMITES_PARAMETRAGE.md`](docs/LIMITES_PARAMETRAGE.md).
+
+**Le prêt suit un échéancier régulier.** Un remboursement anticipé, une
+modulation ou un différé ne sont pas modélisés : l'outil voit alors que les
+transactions divergent de la déclaration, et le dit, chiffré.
 
 **La couverture temporelle n'est inférée que si la source ne déclare rien.**
 Un fichier qui donne ses dates de relevé est cru sur parole, et ses mois de

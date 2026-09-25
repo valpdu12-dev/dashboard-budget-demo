@@ -596,3 +596,54 @@ describe("validerConfig — toute anomalie est situable", () => {
     }
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// F7 (lot F.7) — un type de sortie d'épargne déclaré aussi comme compte
+
+describe("validerConfig — F7 : le nom d'un type de sortie d'épargne en compte", () => {
+  const base = (comptes: ReturnType<typeof ligneCompte>[]) =>
+    brute({
+      comptes,
+      types: [{ ligne: 20, type: "Retrait livret", nature: "sortie-epargne" }],
+    });
+
+  it("la ligne de compte est ignorée, l'import a lieu, et l'aperçu le dit", () => {
+    const { config, anomalies } = validerConfig(
+      base([ligneCompte(2, "Principal"), ligneCompte(3, "retrait  LIVRET")])
+    );
+    expect(config.comptes.map((c) => c.libelle)).toEqual(["Principal"]);
+    const a = anomalies.filter((x) => x.colonne === "Compte");
+    expect(a).toHaveLength(1);
+    expect(a[0].gravite).toBe("avertissement");
+    expect(a[0].ligne).toBe(3);
+    expect(a[0].message).toMatch(/c'est un type depuis le format v2/);
+    expect(a[0].message).toMatch(/ignorée/);
+  });
+
+  it("un compte lié à la ligne ignorée perd son lien, et le message le dit", () => {
+    const { config, anomalies } = validerConfig(
+      base([
+        ligneCompte(2, "Retrait livret"),
+        ligneCompte(3, "Joint", { compteLie: "Retrait livret", sensRepercute: "Débit" }),
+      ])
+    );
+    expect(config.comptes.find((c) => c.libelle === "Joint")?.compteLie).toBeNull();
+    expect(anomalies.some((x) => x.colonne === "Compte lié" && x.ligne === 3)).toBe(true);
+  });
+
+  it("sait ne rien dire : un compte au nom d'un type ordinaire n'est pas écarté", () => {
+    const { config, anomalies } = validerConfig(
+      brute({
+        comptes: [ligneCompte(2, "Retrait livret")],
+        types: [{ ligne: 20, type: "Retrait livret" }],
+      })
+    );
+    expect(config.comptes).toHaveLength(1);
+    expect(anomalies).toEqual([]);
+  });
+
+  it("rien n'est deviné : sans type de sortie d'épargne déclaré, rien n'est écarté", () => {
+    const { config } = validerConfig(brute({ comptes: [ligneCompte(2, "Retrait livret")] }));
+    expect(config.comptes).toHaveLength(1);
+  });
+});

@@ -155,8 +155,9 @@ export function validerConfig(brute: ConfigBrute): ResultatValidationConfig {
     return { config: configVide(), anomalies: [] };
   }
 
-  const comptes = validerComptes(brute, col);
+  const comptesLus = validerComptes(brute, col);
   const types = validerTypes(brute, col);
+  const comptes = ecarterComptesSortieEpargne(comptesLus, types, brute, col);
   const categories = validerCategories(brute, col);
   const employeurs = validerEmployeurs(brute, col);
   const compteCreditSortiesEpargne = validerCompteSorties(brute, comptes, col);
@@ -607,6 +608,57 @@ function validerEmployeurs(brute: ConfigBrute, col: Collecteur): string[] {
   }
 
   return retenus;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// F7 — « SORTIE EPARGNE » DÉCLARÉ COMME COMPTE
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Depuis le format v2 (D2), le libellé des sorties d'épargne est un TYPE, de
+ * nature `sortie-epargne`. Une ligne du tableau Comptes qui porte le nom d'un
+ * tel type est un reste d'ancien fichier : l'import a lieu, la ligne de
+ * compte est ignorée, et l'aperçu le dit en nommant quoi faire.
+ *
+ * Le nom est lu dans les TYPES DÉCLARÉS, jamais écrit ici (§5 du contrat) :
+ * sans type `sortie-epargne` déclaré, rien n'est reconnu, et rien n'est
+ * deviné.
+ */
+function ecarterComptesSortieEpargne(
+  comptes: CompteConfig[], types: TypeConfig[], brute: ConfigBrute, col: Collecteur
+): CompteConfig[] {
+  const nomsDeType = new Set(
+    types.filter((t) => t.natures.includes("sortie-epargne")).map((t) => t.cle)
+  );
+  const ecartes = comptes.filter((c) => nomsDeType.has(c.id));
+  if (ecartes.length === 0) return comptes;
+
+  const idsEcartes = new Set(ecartes.map((c) => c.id));
+  for (const c of ecartes) {
+    const ligne =
+      brute.comptes.find((l) => normaliserCle(nettoyerTexte(l.compte)) === c.id)?.ligne ?? 0;
+    col.avertir(
+      ligne, "Compte",
+      `« ${c.libelle} » est déclaré comme compte, mais c'est un type depuis le format v2. ` +
+      `Cette ligne du tableau Comptes est ignorée. Pour garder la trace de l'épargne qui ` +
+      `sort, déclarez un compte sans solde propre (« Porte un solde » = non) et ` +
+      `utilisez-le dans la colonne Compte des transactions de ce type.`
+    );
+  }
+
+  return comptes
+    .filter((c) => !idsEcartes.has(c.id))
+    .map((c) => {
+      if (!c.compteLie || !idsEcartes.has(c.compteLie)) return c;
+      const ligne =
+        brute.comptes.find((l) => normaliserCle(nettoyerTexte(l.compte)) === c.id)?.ligne ?? 0;
+      col.avertir(
+        ligne, "Compte lié",
+        `« ${c.libelle} » était lié à un compte ignoré (voir plus haut). Il n'a plus de ` +
+        `compte lié.`
+      );
+      return { ...c, compteLie: null };
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────

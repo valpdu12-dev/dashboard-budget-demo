@@ -96,3 +96,14 @@ fichier déclare, et calcule leur solde avec les mêmes deux notions pour tous.
 
 Suite du document : `CONTRAT_PARAMETRAGE.md` pour les règles,
 `FORMAT_FICHIER_SOURCE.md` §5 pour ce qui s'écrit dans le classeur.
+
+---
+
+## Ajout du lot F (25/09/2026) — les limites qui restent, nommées
+
+| Limite | Ce que fait l'outil |
+|---|---|
+| Remboursement anticipé, modulation d'échéance, différé | **Non modélisés.** L'échéancier déclaré diverge alors des transactions : l'aperçu et l'écran Prêt le disent, chiffré, en citant ces trois cas. Rien n'est bloqué. |
+| Un prêt déclaré sans date de début (forme « mensualité ») | La position dans l'échéancier est **estimée** depuis les intérêts, et l'écran le dit. |
+| Feuille `Visualisation` du classeur modèle | Elle lit comptes, types et catégories dans `Paramètres`, avec un nombre fixe d'emplacements : 12 comptes à solde, 12 types de recette, 25 catégories, 10 types d'épargne. Au-delà, les lignes « Autres » gardent les totaux justes. |
+| Écran Paramètres | Il montre ce que le fichier déclare ; il ne l'écrit pas. La source reste le classeur. |

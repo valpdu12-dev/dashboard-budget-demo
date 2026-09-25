@@ -132,6 +132,14 @@ quand la ligne ne le précise pas. L'aperçu chiffre ce qui reste muet : « 4 de
 vos types ne portent aucune nature ». Il ne les refuse pas — un type sans
 nature est un mouvement ordinaire, et c'est le cas le plus courant.
 
+**Un remboursement réduit une dépense — v2.2.** Un crédit est un
+remboursement quand son type porte la nature `remboursement`, **ou** quand son
+type a une `Classe par défaut` (c'est un type de dépense). Il n'est pas une
+recette : il réduit la dépense de sa catégorie. On l'écrit sur le type de la
+dépense qu'il annule. Exemple : 40 € de courses, puis 15 € remboursés sur le
+même type → 25 € d'Alimentation. Le montant reste positif ; c'est le sens
+`Crédit` qui porte l'effet.
+
 `Classe` n'a de sens que pour un débit. Sur un crédit, elle est **ignorée, et
 l'aperçu le dit** : « la classe a été ignorée sur 4 lignes de recette ». Un salaire
 n'est pas une dépense fixe ; laisser croire le contraire sans rien dire est le genre
@@ -157,9 +165,19 @@ Une dépense de 80 € partagée à moitié s'écrit donc de deux façons, au ch
 `Montant` = 40, ou `Montant brut` = 80 sur un compte déclaré à 50 %. Les deux
 donnent 40.
 
-`Montant brut` rempli, `Montant` **n'est pas lu** — même s'il porte une valeur.
-Aucune des deux ne l'emporte par surprise : la colonne écrite gagne, et c'est
-tout.
+`Montant brut` rempli, `Montant` **n'entre pas dans le calcul** — même s'il
+porte une valeur. Aucune des deux ne l'emporte par surprise : la colonne écrite
+gagne, et c'est tout.
+
+**Les deux remplies — v2.2.** C'est le cas du classeur modèle : on saisit
+`Montant brut`, et le fichier calcule `Montant` par formule. L'outil applique
+lui-même le taux au brut, puis **compare** avec le `Montant` du fichier. S'ils
+diffèrent — un taux changé dans `Paramètres` sans que le fichier ait été
+recalculé —, l'aperçu le dit, chiffré, une fois par compte.
+
+**Un taux qui ne s'applique pas — v2.2.** Un compte déclaré avec une
+`Participation`, mais dont aucune ligne ne remplit `Montant brut` : le taux
+n'est appliqué nulle part, et l'aperçu le dit en nommant le compte.
 
 Un compte sans taux déclaré impute **100 %** du brut. Un compte absent du
 tableau des comptes impute 100 % **et il est nommé** dans l'aperçu : un taux
@@ -176,12 +194,19 @@ fonctionne apprend à ignorer ses alertes.
 Une ligne est ignorée, sans être une erreur, dans trois cas :
 
 - elle est entièrement vide ;
-- la colonne `Prévisionnel` vaut `x` — c'est une prévision, pas un mouvement
-  constaté ;
+- la colonne `Prévisionnel` vaut `x` **et** sa date est postérieure à la
+  `Fin de relevé` — c'est une prévision, pas encore un mouvement constaté ;
 - `Date`, `Compte` et `Montant` sont tous les trois vides.
 
 Le nombre de lignes ignorées est affiché dans l'aperçu. Ignoré n'est pas
 silencieux.
+
+**Une ligne prévisionnelle échue compte — v2.2.** Une ligne marquée `x` dont
+la date est **antérieure ou égale à la `Fin de relevé`** (§5.1) est comptée
+comme un mouvement : l'échéance prévue est passée. La référence est la
+`Fin de relevé`, jamais la date du jour : le même fichier donne les mêmes
+chiffres demain. Sans `Fin de relevé` déclarée, toutes les lignes `x` restent
+ignorées, et l'aperçu le dit, chiffré.
 
 ### 3.7 Dépenses sans catégorie de budget
 
@@ -277,17 +302,17 @@ En-têtes : `Paramètre` et `Valeur`.
 
 | Paramètre | Valeur attendue | Obligatoire |
 |---|---|---|
-| `Version du format` | `1` ou `2` | non — absent = lu comme une v1 |
+| `Version du format` | `1`, `2`, `2.1` ou `2.2` | non — absent = lu comme une v1 |
 | `Compte crédité par les sorties d'épargne` | nom d'un compte | non — **v2** |
 | `Début de relevé` | date | non |
 | `Fin de relevé` | date | non |
 | `Prêt — montant` | nombre | non |
-| `Prêt — date de début` | `AAAA-MM` ou date | non — **v2.1** |
+| `Prêt — date de début` | `AAAA-MM` ou date | **oui pour la forme « taux »** — **v2.2** |
 | `Prêt — taux annuel` | taux (`1,8 %` ou `0,018`) | non — **v2.1** |
 | `Prêt — durée (mois)` | entier | non — **v2.1** |
 | `Prêt — mensualité` | nombre | non — bloc historique |
 | `Prêt — nombre d'échéances` | entier | non — bloc historique |
-| `Prêt — première échéance` | `AAAA-MM` | non |
+| `Prêt — première échéance` | `AAAA-MM` | non — synonyme de `date de début` (v2.2) |
 
 **Début et fin de relevé** alimentent le **régime 1** de la couverture
 temporelle : la source déclare ce qu'elle couvre, et on la croit. Les mois de
@@ -316,8 +341,27 @@ mensualité par défaut produirait un échéancier crédible et faux.
 1 € près**. Sinon le bloc Prêt est **refusé**, en affichant les deux valeurs et
 en disant laquelle corriger — jamais « la première gagne ».
 
-La première échéance est facultative. Absente, elle est déduite de la `date de
-début` (forme taux) ou de la première transaction portant un type de prêt.
+**La date de début — v2.2.** C'est le mois de la **première échéance**. Elle
+est **obligatoire** pour la forme « taux » : sans elle, le bloc est refusé, et
+l'aperçu le dit. `Prêt — première échéance` est lue comme un synonyme. Les deux
+présentes et différentes : bloc refusé, les deux valeurs affichées.
+
+**L'échéancier se calcule depuis cette date — v2.2.** L'échéance en cours est
+le nombre de mois entre la date de début et le **dernier mois des données**
+(jamais la date du jour). Capital restant, intérêts et date de fin en
+découlent.
+
+**Les transactions vérifient la déclaration — v2.2.** Pour chaque mois qui
+porte du capital et des intérêts, l'outil compare avec l'échéancier. Un écart
+de plus de 2 € sur les intérêts d'un mois, ou de plus de 5 € sur la
+mensualité, est signalé dans l'aperçu et sur l'écran Prêt, chiffré. Quand les
+intérêts désignent une autre échéance, le message propose la bonne date de
+début. Un remboursement anticipé, une modulation ou un différé font diverger
+l'échéancier légitimement : le message les cite, sans bloquer.
+
+**La forme « mensualité » sans date** reste lue : la position dans
+l'échéancier est alors **estimée** depuis les intérêts, et l'écran Prêt le
+dit, en invitant à déclarer la date.
 
 **Compte crédité par les sorties d'épargne.** Quand un type de nature
 `sortie-epargne` sort de l'argent d'un livret, cet argent arrive quelque part.
@@ -369,7 +413,7 @@ En-tête ouvrant : `Type`. Un type par ligne. **Nouveau en v2.**
 | `Nature` | non | Une ou plusieurs natures, séparées par des virgules |
 | `Classe par défaut` | non | `Dépense Fixe`, `Courante` ou `Occasionnelle` |
 
-**La nature dit ce que le mouvement fait aux calculs.** Six valeurs, et la
+**La nature dit ce que le mouvement fait aux calculs.** Sept valeurs, et la
 liste est close — chacune correspond à un calcul écrit dans le code. Une
 nature déclarable mais sans effet serait un champ mort.
 
@@ -381,6 +425,7 @@ nature déclarable mais sans effet serait un champ mort.
 | `apport-exterieur` | l'argent vient de l'extérieur |
 | `pret-capital` | remboursement de capital : échéancier du prêt |
 | `pret-interets` | intérêts du prêt |
+| `remboursement` | un crédit qui réduit une dépense (§3.3) |
 
 **Un type peut en porter plusieurs**, et c'est une nécessité mesurée : un
 virement vers un livret est à la fois un transfert interne et une entrée
@@ -391,7 +436,7 @@ Trois couples sont refusés, parce qu'ils se contredisent : `epargne` avec
 `sortie-epargne`, `apport-exterieur` avec `transfert-interne`, `pret-capital`
 avec `pret-interets`. Le message dit lequel, et pourquoi.
 
-Une nature inconnue est **refusée**, avec la liste des six. Elle n'est jamais
+Une nature inconnue est **refusée**, avec la liste des sept. Elle n'est jamais
 ignorée en silence : un mot mal orthographié changerait les chiffres sans rien
 dire.
 
@@ -429,6 +474,14 @@ Il n'a pas de solde de départ : il est « non initialisé », jamais 0.
 
 L'import est accepté, et l'aperçu **nomme** chaque compte inconnu.
 
+**Un type de sortie d'épargne déclaré comme compte — v2.2.** Depuis la v2, le
+libellé des sorties d'épargne est un **type** (nature `sortie-epargne`). Une
+ligne du tableau `Compte` qui porte le nom d'un tel type est un reste d'ancien
+fichier : l'import a lieu, **cette ligne de compte est ignorée**, et l'aperçu
+le dit. Pour garder la trace de l'épargne qui sort, déclarez un compte sans
+solde propre (`Porte un solde` = `non`) et utilisez-le dans la colonne
+`Compte`.
+
 ⚠️ **Ce paragraphe disait autre chose en v1.** Il disait que l'application
 connaissait une liste fixe de comptes et que ses règles de solde étaient
 écrites compte par compte, si bien qu'un compte nommé autrement n'apparaissait
@@ -451,8 +504,8 @@ s'applique (§3.4), et les transferts internes se déclarent par leur nature
 - **Il ne déclare pas de nouvelles classes de dépense.** Les trois — Fixe,
   Courante, Occasionnelle — sont l'ossature de deux écrans. Seule
   l'**affectation** d'un type à une classe se déclare.
-- **Il ne déclare pas de nouvelles natures.** Les six du §5.3 correspondent
-  chacune à un calcul écrit. Une septième, déclarable mais sans effet, serait
+- **Il ne déclare pas de nouvelles natures.** Les sept du §5.3 correspondent
+  chacune à un calcul écrit. Une huitième, déclarable mais sans effet, serait
   un champ mort.
 - **Il ne déclare pas l'ordre ni le nom des écrans.**
 - **Il ne se modifie pas depuis l'application.** L'écran Paramètres montre ce
@@ -547,3 +600,4 @@ un échec constaté, jamais.
 | v1.1 | 16/09/2026 | Deux manques trouvés en fabriquant le modèle (B.1) : la `Classe` vide des débits qui ne sont pas des dépenses (§3.3), et le sort des feuilles non reconnues (§2). |
 | **v2** | **17/09/2026** | **Lot C.** Le fichier déclare son paramétrage. `Transactions` gagne **`Montant brut`** et le taux de participation (§3.4). `Paramètres` passe de deux à **cinq tableaux** (§5) : `Compte` élargi à huit colonnes, plus `Type`, `Catégorie` et `Employeur`. La limite « comptes inconnus sans solde » est **levée** (§5.6). Aucune colonne existante n'a changé de sens : **un fichier v1 se lit sans être retouché et donne les mêmes chiffres**, vérifié par le rapprochement à zéro écart des étapes C.3 à C.6. |
 | **v2.1** | **22/09/2026** | **Lot E.0.** Le bloc Prêt gagne une **forme « taux »** : `date de début`, `taux annuel`, `durée (mois)` — la mensualité est **calculée** (§5.1). L'ancienne forme (`mensualité`, `nombre d'échéances`) reste lue ; les deux présentes doivent concorder à 1 € près, sinon refus. Aucune ligne existante détournée : un fichier v2 se lit sans être retouché. |
+| **v2.2** | **24–25/09/2026** | **Lot F.** `Prêt — date de début` **obligatoire** pour la forme « taux », `première échéance` en synonyme ; échéancier calculé depuis cette date, et contrôlé par les transactions (§5.1). Ligne prévisionnelle échue comptée jusqu'à la `Fin de relevé` (§3.5). `Montant` et `Montant brut` remplis : comparés (§3.4). Un crédit sur un type de dépense est un remboursement (§3.3). Un type de sortie d'épargne déclaré comme compte : ligne ignorée, et dit (§5.6). Un fichier v2.1 se lit sans être retouché, sauf une forme « taux » sans date, désormais refusée. |
