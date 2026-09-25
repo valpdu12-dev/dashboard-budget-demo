@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    // Aucun paquet @types global pour le code applicatif : il tourne dans un
+    // navigateur. Les types Vite arrivent par src/vite-env.d.ts, les types Node
+    // sont reserves a tsconfig.node.json. Sans cette ligne, @types/node serait
+    // charge ici et "process" ou "Buffer" passeraient le controle en silence.
+    "types": [],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["src/**/__tests__/**", "node_modules", "dist"]
+}

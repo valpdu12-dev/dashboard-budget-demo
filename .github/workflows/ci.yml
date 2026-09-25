@@ -1,0 +1,101 @@
+# Intégration continue — dépôt public de démonstration.
+#
+# Un seul travail, dans l'ordre exact de `npm run check`, plus deux contrôles
+# que la machine de développement ne peut pas faire seule : gitleaks, et la
+# fraîcheur des données générées.
+#
+# Pourquoi un seul travail et non trois en parallèle : les trois travaux
+# précédents réinstallaient chacun les dépendances. Trois `npm ci` pour un
+# projet de cette taille coûtent plus de temps que la parallélisation n'en
+# fait gagner, et diluent la lecture du journal quand quelque chose casse.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Un push qui suit de près un autre annule la vérification devenue inutile.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verification:
+    name: Vérification complète
+    runs-on: ubuntu-latest
+
+    env:
+      # Sans cette variable, l'absence de gitleaks ne serait qu'un
+      # avertissement — acceptable sur un poste de travail, pas ici.
+      GITLEAKS_REQUIS: "1"
+      GITLEAKS_VERSION: "8.24.3"
+      # Lot G — la liste des noms interdits ne vit pas dans le dépôt. Elle
+      # arrive par un secret. Absente ou tronquée, tests et contrôle de
+      # publication ÉCHOUENT : rien n'est sauté en silence.
+      LISTE_NOIRE: ${{ secrets.LISTE_NOIRE }}
+
+    steps:
+      # v5 et non v4 : les briques v4 tournent sur un Node que GitHub
+      # déprécie, et il le signale à chaque exécution. v5 est la première
+      # version qui corrige ce point — v7 existe, mais rien ici n'a besoin
+      # de ce qu'elle apporte.
+      - name: Récupération du dépôt
+        uses: actions/checkout@v5
+
+      # Node 20 et non 22 : c'est le plancher déclaré dans `engines`.
+      # La CI doit éprouver la version la plus basse qu'on prétend supporter,
+      # pas la plus confortable.
+      - name: Node 20
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Installation reproductible
+        run: npm ci
+
+      - name: Installation de gitleaks
+        run: |
+          set -euo pipefail
+          curl -sSL -o /tmp/gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf /tmp/gitleaks.tar.gz -C /usr/local/bin gitleaks
+          gitleaks version
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Types
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # Les cinq fichiers de public/data/ sont produits par un générateur à
+      # graine fixe. Les régénérer doit donc être sans effet. S'il y a une
+      # différence, c'est que le générateur a été modifié sans être rejoué :
+      # le dépôt publierait des données qui ne correspondent plus à leur
+      # source.
+      - name: Données générées à jour
+        run: |
+          npm run donnees
+          if ! git diff --quiet -- public/data; then
+            echo "::error::public/data/ ne correspond plus au générateur. Lancer 'npm run donnees' et committer le résultat."
+            git --no-pager diff --stat -- public/data
+            exit 1
+          fi
+          echo "public/data/ est à jour."
+
+      # Dernier rempart avant publication : liste noire, liste blanche du
+      # build, extensions interdites, gitleaks.
+      - name: Contrôle de publication
+        run: npm run verif

@@ -1,0 +1,97 @@
+/* ── Polices embarquées ───────────────────────────────────────────────────
+ *
+ * Servies par le site. index.html ne charge plus rien depuis Google Fonts :
+ * un site qui promet « aucun service tiers » ne peut pas faire partir
+ * l'adresse IP de ses visiteurs chez un tiers au premier octet de CSS.
+ *
+ * Fontes variables : un seul fichier couvre toutes les graisses.
+ * Les deux plages unicode-range séparent le latin du latin étendu — le
+ * navigateur ne télécharge la seconde que s'il en a besoin.
+ *
+ * Provenance et licences : src/assets/fonts/PROVENANCE.md
+ */
+
+@font-face {
+  font-family: "DM Sans Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 1000;
+  src: url("./assets/fonts/dm-sans-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@font-face {
+  font-family: "DM Sans Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 1000;
+  src: url("./assets/fonts/dm-sans-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 700;
+  src: url("./assets/fonts/ibm-plex-sans-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 700;
+  src: url("./assets/fonts/ibm-plex-sans-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Smooth scroll global ──────────────────────────────────────────────── */
+html { scroll-behavior: smooth; }
+
+/* ── Scrollbar custom (dark theme) ─────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #111827; }
+::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+
+/* ── Component layer ───────────────────────────────────────────────────── */
+@layer components {
+  .card {
+    @apply bg-surface border border-border rounded-xl p-5 animate-fade-slide
+           transition-[transform,box-shadow] duration-300 ease-out;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+  .kpi-card {
+    @apply card flex flex-col gap-1 animate-scale-in;
+  }
+}
+
+/* ── Stagger delays (animation-delay pour grilles KPI) ─────────────────── */
+@layer utilities {
+  .stagger-grid > *:nth-child(1)  { animation-delay: 0ms; }
+  .stagger-grid > *:nth-child(2)  { animation-delay: 50ms; }
+  .stagger-grid > *:nth-child(3)  { animation-delay: 100ms; }
+  .stagger-grid > *:nth-child(4)  { animation-delay: 150ms; }
+  .stagger-grid > *:nth-child(5)  { animation-delay: 200ms; }
+  .stagger-grid > *:nth-child(6)  { animation-delay: 250ms; }
+  .stagger-grid > *:nth-child(7)  { animation-delay: 300ms; }
+  .stagger-grid > *:nth-child(8)  { animation-delay: 350ms; }
+  .stagger-grid > *:nth-child(9)  { animation-delay: 400ms; }
+  .stagger-grid > *:nth-child(10) { animation-delay: 450ms; }
+  .stagger-grid > *:nth-child(11) { animation-delay: 500ms; }
+  .stagger-grid > *:nth-child(12) { animation-delay: 550ms; }
+
+  /* Recharts chart containers — subtle entry */
+  .chart-enter .recharts-wrapper {
+    animation: fadeSlideIn 0.5s ease-out 0.2s both;
+  }
+}

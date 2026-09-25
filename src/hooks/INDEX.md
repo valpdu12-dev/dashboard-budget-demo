@@ -1,0 +1,28 @@
+# `src/hooks/` — Hooks de données
+
+Chaque hook isole le calcul et la dérivation des données d'une page ou d'une fonction transverse (extraits des `useMemo` inline de V1). Ils consomment les stores et renvoient des données prêtes à afficher.
+
+⚠️ **Lot C.3.** Sept d'entre eux ne calculent plus rien : le calcul vit dans `src/calculs/`, en fonction pure, et le hook n'est que le branchement sur les stores. Voir `src/calculs/INDEX.md` — la liste de ce qui a été déplacé, et de ce qui ne l'a pas été.
+
+## Hooks transverses
+
+| Fichier | Rôle |
+|---|---|
+| `useFilteredData.ts` | Connecte FilterStore + DataStore → jeu de données filtré |
+| `useFilterSync.ts` | Synchronise les filtres Zustand ↔ URL (bidirectionnel) |
+| `useBalances.ts` | Calcule les soldes des comptes (optimisé via Map groupBy) |
+| `useKPIs.ts` | Calcule les KPIs globaux |
+| `useInsights.ts` | Calcule les insights (hausses/baisses, récurrents) |
+| `useResponsive.ts` | Détection responsive avec listener de resize |
+| `useExcelWorker.ts` | Pont Web Worker ↔ DataUploader ↔ DataStore (parsing Excel + rapport de validation) |
+
+## Hooks par page
+
+| Fichier | Page associée |
+|---|---|
+| `useExpenseData.ts` | Dépenses |
+| `useBudgetData.ts` | Budget Mensuel |
+| `useSalaryPageData.ts` | Salaire |
+| `useSalaryInflationData.ts` | Salaire vs Inflation (pouvoir d'achat) |
+| `useSavingsData.ts` | Épargne |
+| `useMortgageData.ts` | Prêt Immobilier (inclut les constantes du prêt) |

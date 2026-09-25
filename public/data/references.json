@@ -1,0 +1,259 @@
+{
+  "_lisez_moi": "Données publiques réelles. Tout le reste du jeu de démonstration est inventé.",
+  "consulte_le": "2026-09-15",
+  "sources": [
+    {
+      "serie": "inflation",
+      "libelle": "Indice des prix à la consommation — moyenne annuelle, ensemble des ménages, France",
+      "producteur": "INSEE",
+      "url": "https://www.insee.fr/fr/statistiques/8726461",
+      "note": "Taux 2013-2025. Détail par grand poste publié pour 2024 et 2025 seulement. Série vérifiée sur insee.fr : identique, valeur par valeur, à celle du tableau de bord d'origine."
+    },
+    {
+      "serie": "smic",
+      "libelle": "SMIC mensuel net (35 h, 151,67 h/mois), et brut de contrôle",
+      "producteur": "INSEE / valeurs légales publiées au Journal officiel",
+      "url": "https://www.insee.fr/fr/statistiques/1375188",
+      "note": "net_monthly et date_effective sont repris sans modification de la base de référence du tableau de bord d'origine, pour que la démo calcule le pouvoir d'achat avec la même référence. brut_monthly et brut_hourly sont ajoutés comme contrôle : valeurs légales en vigueur au 1er janvier, hors Mayotte. Rapport net/brut : 0,776 à 0,783 avant 2019 (nets publiés de l'époque), 0,7916 ensuite."
+    }
+  ],
+  "inflation": [
+    {
+      "year": "2013",
+      "rate_annual": 0.9,
+      "rate_alimentation": null,
+      "rate_services": null,
+      "rate_energie": null,
+      "rate_transports": null,
+      "rate_produits_manufactures": null
+    },
+    {
+      "year": "2014",
+      "rate_annual": 0.5,
+      "rate_alimentation": null,
+      "rate_services": null,
+      "rate_energie": null,
+      "rate_transports": null,
+      "rate_produits_manufactures": null
+    },
+    {
+      "year": "2015",
+      "rate_annual": 0,
+      "rate_alimentation": null,
+      "rate_services": null,
+      "rate_energie": null,
+      "rate_transports": null,
+      "rate_produits_manufactures": null
+    },
+    {
+      "year": "2016",
+      "rate_annual": 0.2,
+      "rate_alimentation": null,
+      "rate_services": null,
+      "rate_energie": null,
+      "rate_transports": null,
+      "rate_produits_manufactures": null
+    },
+    {
+      "year": "2017",
+      "rate_annual": 1,
+      "rate_alimentation": null,
+      "rate_services": null,
+      "rate_energie": null,
+      "rate_transports": null,
+      "rate_produits_manufactures": null
+    },
+    {
+      "year": "2018",
+      "rate_annual": 1.8,
+      "rate_alimentation": null,
+      "rate_services": null,
+      "rate_energie": null,
+      "rate_transports": null,
+      "rate_produits_manufactures": null
+    },
+    {
+      "year": "2019",
+      "rate_annual": 1.1,
+      "rate_alimentation": null,
+      "rate_services": null,
+      "rate_energie": null,
+      "rate_transports": null,
+      "rate_produits_manufactures": null
+    },
+    {
+      "year": "2020",
+      "rate_annual": 0.5,
+      "rate_alimentation": null,
+      "rate_services": null,
+      "rate_energie": null,
+      "rate_transports": null,
+      "rate_produits_manufactures": null
+    },
+    {
+      "year": "2021",
+      "rate_annual": 1.6,
+      "rate_alimentation": null,
+      "rate_services": null,
+      "rate_energie": null,
+      "rate_transports": null,
+      "rate_produits_manufactures": null
+    },
+    {
+      "year": "2022",
+      "rate_annual": 5.2,
+      "rate_alimentation": null,
+      "rate_services": null,
+      "rate_energie": null,
+      "rate_transports": null,
+      "rate_produits_manufactures": null
+    },
+    {
+      "year": "2023",
+      "rate_annual": 4.9,
+      "rate_alimentation": null,
+      "rate_services": null,
+      "rate_energie": null,
+      "rate_transports": null,
+      "rate_produits_manufactures": null
+    },
+    {
+      "year": "2024",
+      "rate_annual": 2,
+      "rate_alimentation": 1.4,
+      "rate_services": 2.7,
+      "rate_energie": 2.3,
+      "rate_transports": 2.5,
+      "rate_produits_manufactures": 0
+    },
+    {
+      "year": "2025",
+      "rate_annual": 0.9,
+      "rate_alimentation": 1.2,
+      "rate_services": 2.3,
+      "rate_energie": -5.6,
+      "rate_transports": 0.5,
+      "rate_produits_manufactures": -0.3
+    }
+  ],
+  "inflationByCategory": [
+    {
+      "year": "2024",
+      "rate_annual": 2,
+      "rate_alimentation": 1.4,
+      "rate_services": 2.7,
+      "rate_energie": 2.3,
+      "rate_transports": 2.5,
+      "rate_produits_manufactures": 0
+    },
+    {
+      "year": "2025",
+      "rate_annual": 0.9,
+      "rate_alimentation": 1.2,
+      "rate_services": 2.3,
+      "rate_energie": -5.6,
+      "rate_transports": 0.5,
+      "rate_produits_manufactures": -0.3
+    }
+  ],
+  "smic": [
+    {
+      "year": "2013",
+      "net_monthly": 1120.43,
+      "date_effective": "01/01/2013",
+      "brut_monthly": 1430.22,
+      "brut_hourly": 9.43
+    },
+    {
+      "year": "2014",
+      "net_monthly": 1128.7,
+      "date_effective": "01/01/2014",
+      "brut_monthly": 1445.38,
+      "brut_hourly": 9.53
+    },
+    {
+      "year": "2015",
+      "net_monthly": 1135.99,
+      "date_effective": "01/01/2015",
+      "brut_monthly": 1457.52,
+      "brut_hourly": 9.61
+    },
+    {
+      "year": "2016",
+      "net_monthly": 1141.61,
+      "date_effective": "01/01/2016",
+      "brut_monthly": 1466.62,
+      "brut_hourly": 9.67
+    },
+    {
+      "year": "2017",
+      "net_monthly": 1149.07,
+      "date_effective": "01/01/2017",
+      "brut_monthly": 1480.3,
+      "brut_hourly": 9.76
+    },
+    {
+      "year": "2018",
+      "net_monthly": 1173.6,
+      "date_effective": "01/01/2018",
+      "brut_monthly": 1498.47,
+      "brut_hourly": 9.88
+    },
+    {
+      "year": "2019",
+      "net_monthly": 1204.19,
+      "date_effective": "01/01/2019",
+      "brut_monthly": 1521.22,
+      "brut_hourly": 10.03
+    },
+    {
+      "year": "2020",
+      "net_monthly": 1219,
+      "date_effective": "01/01/2020",
+      "brut_monthly": 1539.42,
+      "brut_hourly": 10.15
+    },
+    {
+      "year": "2021",
+      "net_monthly": 1258,
+      "date_effective": "01/01/2021",
+      "brut_monthly": 1554.58,
+      "brut_hourly": 10.25
+    },
+    {
+      "year": "2022",
+      "net_monthly": 1329.05,
+      "date_effective": "01/01/2022",
+      "brut_monthly": 1603.12,
+      "brut_hourly": 10.57
+    },
+    {
+      "year": "2023",
+      "net_monthly": 1383.2,
+      "date_effective": "01/01/2023",
+      "brut_monthly": 1709.28,
+      "brut_hourly": 11.27
+    },
+    {
+      "year": "2024",
+      "net_monthly": 1398.7,
+      "date_effective": "01/01/2024",
+      "brut_monthly": 1766.92,
+      "brut_hourly": 11.65
+    },
+    {
+      "year": "2025",
+      "net_monthly": 1426.3,
+      "date_effective": "01/01/2025",
+      "brut_monthly": 1801.8,
+      "brut_hourly": 11.88
+    },
+    {
+      "year": "2026",
+      "net_monthly": 1478,
+      "date_effective": "01/01/2026",
+      "brut_monthly": 1823.03,
+      "brut_hourly": 12.02
+    }
+  ]
+}

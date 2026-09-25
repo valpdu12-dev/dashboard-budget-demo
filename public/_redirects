@@ -1,0 +1,9 @@
+# Repli SPA — Cloudflare Pages.
+#
+# Sans cette ligne, ouvrir ou rafraîchir /patrimoine/pret renvoie un 404 :
+# l'hébergeur cherche un fichier à ce chemin, il n'en existe aucun. Le
+# routeur vit dans le navigateur, donc toute adresse inconnue doit servir
+# index.html, à qui le routeur reprendra la main.
+#
+# Le code 200 et non 301 : l'adresse affichée doit rester celle demandée.
+/*    /index.html   200
