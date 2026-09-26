@@ -866,7 +866,7 @@ cell(wsViz, "A1", "Mois").font = GRAS;
 const b1 = cell(wsViz, "B1", dateUTC(MOIS_DEFAUT), "mmmm yyyy");
 saisir(b1);
 b1.font = { bold: true, color: { argb: "FFC0392B" } }; // V6 : gras, rouge
-legende(wsViz, 2, 1); // ligne 2, libre : les blocs commencent en ligne 3
+legende(wsViz, 1, 13); // H.8 — ligne 1, à droite : les blocs commencent en ligne 2, comme la V6
 cell(wsViz, "C1", "jusqu'au");
 wsViz.getCell("D1").value = { formula: "EDATE($B$1,1)", result: dateUTC(MOIS_FIN) };
 wsViz.getCell("D1").numFmt = DATE;
@@ -879,10 +879,13 @@ const DANS_MOIS = `${TX("A")},">="&$B$1,${TX("A")},"<"&$D$1,${TX("O")},1`;
 const dansMois = (l) => l.date >= MOIS_DEFAUT && l.date < MOIS_FIN && l.compte1 === 1;
 const somme = (pred, f) => arrondir(lignes.filter(pred).reduce((s, l) => s + f(l), 0));
 
-// H.4 — la disposition de la V6 (décision Q4 du lot H) : trois colonnes de
-// blocs en haut, la liste des dépenses du mois en dessous.
-//   A–C : soldes, puis recettes       E–I : épargne, puis rapprochement
-//   K–M : dépenses par catégorie      A–F, sous les blocs : les dépenses du mois
+// H.8 — la disposition et les informations de la V6 (demande du 26/09) :
+//   A–B : revenus totaux, recettes, dépenses par compte, solde du mois
+//   E–F : taux d'épargne, épargne, E13 le solde du compte principal (même
+//         ligne que la V6), rapprochement bancaire
+//   I–K : dépenses par catégorie
+//   dessous : les comptes (restant M-1, M, apports, M×2), le détail des
+//   dépenses par type et par compte, puis les dépenses du mois ligne à ligne.
 // Chaque bloc a son origine (ligne, colonne). Ses formules ne connaissent que
 // des colonnes RELATIVES : X(0) le libellé, X(1) la 1re valeur, X(2)…
 const lettre = (n) => {
@@ -928,7 +931,7 @@ const enGras = () => {
 // vides. Une ligne « Autres » ramasse ce qu'aucun emplacement ne montre (type
 // ou catégorie non déclarés) : le total reste juste.
 
-const SLOTS = { comptes: 12, recettes: 12, categories: 25, epargne: 10 };
+const SLOTS = { comptes: 8, recettes: 8, categories: 15, tousComptes: 10, depenses: 60 };
 const PLAGE = (col, n) => `${F}!$${col}$${PL(0)}:$${col}$${PL(n - 1)}`;
 // P_COMPTES, P_TYPES, P_CATEGORIES : définis en tête (H.1).
 
@@ -945,6 +948,11 @@ const RANGS = {
     (r) => `AND(${F}!M${r}<>"",${F}!P${r}="Crédit",ISERROR(SEARCH("transfert-interne",${F}!N${r})))`],
   epargne: ["G", "(calcul) rang type d'épargne", P_TYPES,
     (r) => `AND(${F}!M${r}<>"",ISNUMBER(SEARCH(",epargne,",","&SUBSTITUTE(${F}!N${r}," ","")&",")))`],
+  // H.8 — le détail des dépenses (V6) : tous les comptes en colonnes, les
+  // types de dépense (débit, hors transfert interne) en lignes.
+  tousComptes: ["H", "(calcul) rang compte", P_COMPTES, (r) => `${F}!D${r}<>""`],
+  depenses: ["L", "(calcul) rang type de dépense", P_TYPES,
+    (r) => `AND(${F}!M${r}<>"",${F}!P${r}="Débit",ISERROR(SEARCH("transfert-interne",${F}!N${r})))`],
 };
 /** Écrit une colonne de rangs ; en cache, le rang de chaque ligne retenue. */
 const ecrireRangs = ([col, entete, n, cond], tous, retenus) => {
@@ -975,12 +983,14 @@ const libelleCalc = (formule, valeur) => {
   wsViz.getCell(r, c0).value = { formula: formule, result: valeur };
 };
 
-// ── Les soldes (A–C) ───────────────────────────────────────────────────
-const soldeFormule = (ligne, critere) =>
-  `IFERROR(INDEX(${F}!$F:$F,MATCH($${X(0)}${ligne},${F}!$D:$D,0))*1,0)` +
-  `+SUMIFS(${TX("R")},${TX("C")},$${X(0)}${ligne},${TX("A")},${critere},${TX("O")},1)` +
-  `+SUMIFS(${TX("T")},${TX("S")},$${X(0)}${ligne},${TX("A")},${critere},${TX("O")},1)` +
-  `+IF($${X(0)}${ligne}=CompteSorties,SUMIFS(${TX("U")},${TX("A")},${critere},${TX("O")},1),0)`;
+// ── La formule du solde d'un compte, pour un compte lu dans une cellule ──
+// `ref` : l'adresse de la cellule qui porte le nom du compte ($A12, $E$13…).
+const soldeDe = (ref, critere) =>
+  `IFERROR(INDEX(${F}!$F:$F,MATCH(${ref},${F}!$D:$D,0))*1,0)` +
+  `+SUMIFS(${TX("R")},${TX("C")},${ref},${TX("A")},${critere},${TX("O")},1)` +
+  `+SUMIFS(${TX("T")},${TX("S")},${ref},${TX("A")},${critere},${TX("O")},1)` +
+  `+IF(${ref}=CompteSorties,SUMIFS(${TX("U")},${TX("A")},${critere},${TX("O")},1),0)`;
+const soldeFormule = (ligne, critere) => soldeDe(`$${X(0)}${ligne}`, critere);
 const soldeJS = (compte, pred) =>
   arrondir(
     (compteParLibelle.get(compte)?.soldeDepart ?? 0) +
@@ -988,36 +998,33 @@ const soldeJS = (compte, pred) =>
     somme((l) => pred(l) && l.lie === compte, (l) => l.effetLie) +
     (compte === sorties ? somme(pred, (l) => l.sortieEpargne) : 0)
   );
-
-bloc(3, 1);
-titre(["Soldes des comptes", "Début du mois", "Fin du mois"]);
+const finMoisJS = (compte) => soldeJS(compte, (l) => l.compte1 === 1 && l.date < MOIS_FIN);
+const debutMoisJS = (compte) => soldeJS(compte, (l) => l.compte1 === 1 && l.date < MOIS_DEFAUT);
 const avecSolde = P.comptes.filter((c) => c.porteUnSolde).map((c) => c.libelle);
-ecrireRangs(RANGS.comptes, P.comptes.map((c) => c.libelle), avecSolde);
-const premiereLigneSolde = r;
-emplacements(avecSolde, SLOTS.comptes, "comptes à solde").forEach((compte, i) => {
-  const ligne = r;
-  libelleCalc(kieme(RANGS.comptes, "D", i + 1), compte);
-  ligneCalc(null, [
-    [siVide(ligne, soldeFormule(ligne, `"<"&$B$1`)),
-      compte ? soldeJS(compte, (l) => l.compte1 === 1 && l.date < MOIS_DEFAUT) : ""],
-    [siVide(ligne, soldeFormule(ligne, `"<"&$D$1`)),
-      compte ? soldeJS(compte, (l) => l.compte1 === 1 && l.date < MOIS_FIN) : ""],
-  ]);
-});
-const derniereLigneSolde = r - 1;
+const tousComptes = P.comptes.map((c) => c.libelle);
 const totalSoldes = (col) =>
   arrondir(avecSolde.reduce((s, c) => s + soldeJS(c, (l) => l.compte1 === 1 && l.date < col), 0));
-ligneCalc("Total", [
-  [`SUM(${X(1)}${premiereLigneSolde}:${X(1)}${derniereLigneSolde})`, totalSoldes(MOIS_DEFAUT)],
-  [`SUM(${X(2)}${premiereLigneSolde}:${X(2)}${derniereLigneSolde})`, totalSoldes(MOIS_FIN)],
-]);
-enGras();
-r++;
+const totalDepenses = somme(dansMois, (l) => l.depense);
+const estRecette = (l) => dansMois(l) && l.sens === "Crédit" && l.rembourse === 0 && !l.transfert;
+const totalRecettes = somme(estRecette, (l) => l.montant);
+const typesEpargne = TYPES.filter((t) => t.natures.includes("epargne"));
+const totalEpargne = somme((l) => dansMois(l) && l.sens === "Débit" &&
+  typesEpargne.some((t) => t.libelle === l.type), (l) => l.montant);
+const ENTETE_VIZ = (ligne, col, valeur) => {
+  const c = wsViz.getCell(ligne, col);
+  c.value = valeur;
+  c.font = ENTETE;
+  c.fill = GRIS;
+  return c;
+};
 
-// ── Les recettes (A–C, sous les soldes) ────────────────────────────────
-// Les transferts internes n'en sont pas : ils déplacent de l'argent entre vos
-// comptes (même règle que l'application). Le total ne dépend pas des
-// emplacements : tout crédit du mois, ni remboursement ni transfert interne.
+// Lignes fixes de la V6, que les autres blocs viennent chercher.
+const L_REVENUS = 2;          // A2  Revenus totaux
+const L_SOLDE_PRINCIPAL = 13; // E13 Solde du compte principal (même ligne que la V6)
+
+// ══ Colonne de gauche (A–B) : revenus, dépenses par compte, solde du mois ══
+cell(wsViz, `A${L_REVENUS}`, "Revenus totaux").font = GRAS;
+bloc(3, 1);
 titre(["Recettes du mois", "Montant"]);
 const debutRecettes = r;
 const typesRecette = TYPES.filter((x) => x.sens === "Crédit" && !x.natures.includes("transfert-interne"));
@@ -1033,8 +1040,6 @@ emplacements(typesRecette.map((t) => t.libelle), SLOTS.recettes, "types de recet
   ]]);
 });
 const finRecettes = r - 1;
-const estRecette = (l) => dansMois(l) && l.sens === "Crédit" && l.rembourse === 0 && !l.transfert;
-const totalRecettes = somme(estRecette, (l) => l.montant);
 const ligneTotalRecettes = r + 1;
 ligneCalc("Autres recettes (type non listé)", [[
   `ROUND(${X(1)}${ligneTotalRecettes}-SUM(${X(1)}${debutRecettes}:${X(1)}${finRecettes}),2)`,
@@ -1047,15 +1052,58 @@ ligneCalc("Total des recettes", [[
   totalRecettes,
 ]]);
 enGras();
+// V6 : les sorties d'épargne du mois entrent dans les revenus totaux (ce ne
+// sont pas des recettes pour l'application : l'argent vient de vos comptes).
+const sortiesMois = somme(dansMois, (l) => l.sortieEpargne);
+const ligneSorties = ligneCalc("Sorties d'épargne du mois", [[`SUMIFS(${TX("U")},${DANS_MOIS})`, sortiesMois]]);
+r++;
+
+// Les dépenses par compte à solde, avec celles de ses comptes sans solde
+// propre qui lui sont liés (comme la V6). SUMPRODUCT(SUMIFS(…)) : une
+// formule ordinaire, pas matricielle.
+titre(["Dépenses du mois par compte", "Montant"]);
+const ligneDepensesTotales = ligneCalc("Dépenses totales", [[`SUMIFS(${TX("Q")},${DANS_MOIS})`, totalDepenses]]);
+enGras();
+const depensesCompteJS = (compte) =>
+  somme((l) => dansMois(l) && (l.compte === compte ||
+    (compteParLibelle.get(l.compte)?.porteUnSolde === false && l.lie === compte)), (l) => l.depense);
+const debutParCompte = r;
+emplacements(avecSolde, SLOTS.comptes, "comptes à solde").forEach((compte, i) => {
+  const ligne = r;
+  libelleCalc(kieme(RANGS.comptes, "D", i + 1), compte);
+  ligneCalc(null, [[
+    siVide(ligne,
+      `SUMIFS(${TX("Q")},${TX("C")},$${X(0)}${ligne},${DANS_MOIS})` +
+      `+SUMPRODUCT(SUMIFS(${TX("Q")},${TX("C")},${PLAGE("D", P_COMPTES)},${DANS_MOIS})` +
+      `*(${PLAGE("H", P_COMPTES)}=$${X(0)}${ligne})*(${PLAGE("G", P_COMPTES)}="non"))`),
+    compte ? depensesCompteJS(compte) : "",
+  ]]);
+});
+const finParCompte = r - 1;
+ligneCalc("Autres comptes (sans solde, non liés)", [[
+  `ROUND(${X(1)}${ligneDepensesTotales}-SUM(${X(1)}${debutParCompte}:${X(1)}${finParCompte}),2)`,
+  arrondir(totalDepenses - avecSolde.reduce((s, c) => s + depensesCompteJS(c), 0)),
+]]);
+r++;
+const revenusTotaux = arrondir(totalRecettes + sortiesMois + totalSoldes(MOIS_DEFAUT));
+ligneCalc("Solde du mois (revenus totaux − dépenses totales)", [[
+  `ROUND($B$${L_REVENUS}-${X(1)}${ligneDepensesTotales},2)`, arrondir(revenusTotaux - totalDepenses),
+]]);
+enGras();
 const finGauche = r;
 
-// ── L'épargne (E–F) ────────────────────────────────────────────────────
-bloc(3, 5);
-titre(["Épargne du mois", "Montant"]);
-const debutEpargne = r;
-const typesEpargne = TYPES.filter((t) => t.natures.includes("epargne"));
+// ══ Colonne du milieu (E–F) : épargne, solde du compte principal, rapprochement ══
+bloc(2, 5);
+const ligneTotalEpargne = 3;
+ligneCalc("Taux d'épargne (épargne ÷ recettes)", [[
+  `IFERROR(${X(1)}${ligneTotalEpargne}/$B$${ligneTotalRecettes},0)`,
+  totalRecettes ? totalEpargne / totalRecettes : 0, "0.0%",
+]]);
+const debutEpargne = ligneTotalEpargne + 1;
+ligneCalc("Total épargné", [[`SUM(${X(1)}${debutEpargne}:${X(1)}${L_SOLDE_PRINCIPAL - 1})`, totalEpargne]]);
+enGras();
 ecrireRangs(RANGS.epargne, TYPES.map((x) => x.libelle), typesEpargne.map((x) => x.libelle));
-emplacements(typesEpargne.map((t) => t.libelle), SLOTS.epargne, "types d'épargne").forEach((type, i) => {
+emplacements(typesEpargne.map((t) => t.libelle), L_SOLDE_PRINCIPAL - debutEpargne, "types d'épargne").forEach((type, i) => {
   const ligne = r;
   libelleCalc(kieme(RANGS.epargne, "M", i + 1), type);
   ligneCalc(null, [[
@@ -1063,47 +1111,61 @@ emplacements(typesEpargne.map((t) => t.libelle), SLOTS.epargne, "types d'épargn
     type ? somme((l) => dansMois(l) && l.type === type && l.sens === "Débit", (l) => l.montant) : "",
   ]]);
 });
-ligneCalc("Total épargné", [[
-  `SUM(${X(1)}${debutEpargne}:${X(1)}${r - 1})`,
-  somme((l) => dansMois(l) && l.sens === "Débit" &&
-    typesEpargne.some((t) => t.libelle === l.type), (l) => l.montant),
-]]);
-enGras();
-r++;
+if (r !== L_SOLDE_PRINCIPAL) echouer("le solde du compte principal n'est pas en ligne 13, comme dans la V6.");
 
-// ── Le rapprochement bancaire (E–I, sous l'épargne) ────────────────────
-// Vous saisissez le solde lu sur le relevé et sa date ; le fichier donne le
-// solde qu'il calcule à cette date, et l'écart.
-titre(["Rapprochement bancaire — compte", "Date du relevé", "Solde lu sur le relevé", "Solde calculé", "Écart"]);
-for (let i = 0; i < 3; i++) {
-  const ligne = r;
-  const rapproche = soldeFormule(ligne, `"<="&$${X(1)}${ligne}`);
-  saisir(wsViz.getCell(ligne, c0));
-  saisir(wsViz.getCell(ligne, c0 + 1));
-  wsViz.getCell(ligne, c0 + 1).numFmt = DATE;
-  saisir(wsViz.getCell(ligne, c0 + 2));
-  wsViz.getCell(ligne, c0 + 2).numFmt = EUROS;
-  wsViz.getCell(ligne, c0 + 3).value = {
-    formula: `IF(OR($${X(0)}${ligne}="",$${X(1)}${ligne}=""),"",${rapproche})`, result: "",
-  };
-  wsViz.getCell(ligne, c0 + 3).numFmt = EUROS;
-  wsViz.getCell(ligne, c0 + 4).value = {
-    formula: `IF(OR($${X(2)}${ligne}="",$${X(3)}${ligne}=""),"",ROUND($${X(2)}${ligne}-$${X(3)}${ligne},2))`, result: "",
-  };
-  wsViz.getCell(ligne, c0 + 4).numFmt = EUROS;
-  valider(wsViz, `${X(0)}${ligne}`, LISTE_TABLEAU(F, "D", P_COMPTES), "Compte inconnu",
+// E13 : le compte se choisit dans une liste ; par défaut, le compte crédité
+// par les sorties d'épargne. F13 : son solde en fin de mois.
+{
+  const choix = saisir(wsViz.getCell(`E${L_SOLDE_PRINCIPAL}`));
+  choix.value = sorties || null;
+  choix.font = { ...POLICE, bold: true };
+  valider(wsViz, `E${L_SOLDE_PRINCIPAL}`, LISTE_TABLEAU(F, "D", P_COMPTES), "Compte inconnu",
     "Choisissez un compte déclaré dans Paramètres.");
-  valider(wsViz, `${X(1)}${ligne}`, DATE_PLAUSIBLE, "Date du relevé", MSG_DATE);
-  valider(wsViz, `${X(2)}${ligne}`, UN_NOMBRE, "Solde lu", "Le solde lu sur le relevé : un nombre, négatif s'il est débiteur.");
+  const v = wsViz.getCell(`F${L_SOLDE_PRINCIPAL}`);
+  v.value = {
+    formula: `IF($E$${L_SOLDE_PRINCIPAL}="","",ROUND(${soldeDe(`$E$${L_SOLDE_PRINCIPAL}`, `"<"&$D$1`)},2))`,
+    result: sorties ? finMoisJS(sorties) : "",
+  };
+  v.numFmt = EUROS;
+  v.font = GRAS;
+  cell(wsViz, `G${L_SOLDE_PRINCIPAL}`, "← solde du compte en fin de mois").font =
+    { italic: true, color: { argb: "FF808080" } };
   r++;
 }
+r++;
+
+// Le rapprochement bancaire : un relevé, en colonne (V6 : E15–G15).
+titre(["Rapprochement bancaire", ""]);
+const rap = {};
+[["compte", "Compte"], ["date", "Date du relevé"], ["lu", "Solde lu sur le relevé"],
+  ["calcule", "Solde calculé à cette date"], ["ecart", "Écart"]].forEach(([k, libelle]) => {
+  rap[k] = r;
+  wsViz.getCell(r, c0).value = libelle;
+  r++;
+});
+saisir(wsViz.getCell(rap.compte, c0 + 1));
+saisir(wsViz.getCell(rap.date, c0 + 1)).numFmt = DATE;
+saisir(wsViz.getCell(rap.lu, c0 + 1)).numFmt = EUROS;
+valider(wsViz, `${X(1)}${rap.compte}`, LISTE_TABLEAU(F, "D", P_COMPTES), "Compte inconnu",
+  "Choisissez un compte déclaré dans Paramètres.");
+valider(wsViz, `${X(1)}${rap.date}`, DATE_PLAUSIBLE, "Date du relevé", MSG_DATE);
+valider(wsViz, `${X(1)}${rap.lu}`, UN_NOMBRE, "Solde lu", "Le solde lu sur le relevé : un nombre, négatif s'il est débiteur.");
+wsViz.getCell(rap.calcule, c0 + 1).value = {
+  formula: `IF(OR($${X(1)}$${rap.compte}="",$${X(1)}$${rap.date}=""),"",ROUND(${soldeDe(`$${X(1)}$${rap.compte}`, `"<="&$${X(1)}$${rap.date}`)},2))`,
+  result: "",
+};
+wsViz.getCell(rap.calcule, c0 + 1).numFmt = EUROS;
+wsViz.getCell(rap.ecart, c0 + 1).value = {
+  formula: `IF(OR($${X(1)}$${rap.lu}="",$${X(1)}$${rap.calcule}=""),"",ROUND($${X(1)}$${rap.lu}-$${X(1)}$${rap.calcule},2))`,
+  result: "",
+};
+wsViz.getCell(rap.ecart, c0 + 1).numFmt = EUROS;
 const finMilieu = r;
 
-// ── Les dépenses, par catégorie (K–M) ──────────────────────────────────
+// ══ Colonne de droite (I–K) : dépenses par catégorie ══
 // « Dépense nette » (colonne Q) : les débits, moins les remboursements (F11).
-bloc(3, 11);
+bloc(2, 9);
 titre(["Dépenses du mois par catégorie", "Montant", "%"]);
-const totalDepenses = somme(dansMois, (l) => l.depense);
 const debutDepenses = r;
 const ligneTotalDepenses = debutDepenses + SLOTS.categories + 2;
 const pourcent = (ligne, v) =>
@@ -1142,7 +1204,132 @@ ligneCalc("Total des dépenses", [
 enGras();
 const finDroite = r;
 
-// ── Les dépenses du mois, ligne à ligne (A–F, sous les blocs) ──────────
+// ══ Les comptes (V6 : Restant M-1, Apport, Restant M, Restant M×2) ══
+bloc(Math.max(finGauche, finMilieu, finDroite) + 1, 1);
+titre(["Comptes", "Début du mois (restant M-1)", "Fin du mois (restant M)", "Apports du mois", "Restant M × 2"]);
+ecrireRangs(RANGS.comptes, tousComptes, avecSolde);
+const premiereLigneSolde = r;
+emplacements(avecSolde, SLOTS.comptes, "comptes à solde").forEach((compte, i) => {
+  const ligne = r;
+  libelleCalc(kieme(RANGS.comptes, "D", i + 1), compte);
+  const fin = compte ? finMoisJS(compte) : "";
+  ligneCalc(null, [
+    [siVide(ligne, soldeFormule(ligne, `"<"&$B$1`)), compte ? debutMoisJS(compte) : ""],
+    [siVide(ligne, soldeFormule(ligne, `"<"&$D$1`)), fin],
+    [siVide(ligne, `SUMIFS(${TX("K")},${TX("C")},$${X(0)}${ligne},${TX("L")},"Crédit",${DANS_MOIS})`),
+      compte ? somme((l) => dansMois(l) && l.compte === compte && l.sens === "Crédit", (l) => l.montant) : ""],
+    [siVide(ligne, `ROUND(${X(2)}${ligne}*2,2)`), compte ? arrondir(fin * 2) : ""],
+  ]);
+});
+const derniereLigneSolde = r - 1;
+const ligneTotalSoldes = ligneCalc("Total", [
+  [`SUM(${X(1)}${premiereLigneSolde}:${X(1)}${derniereLigneSolde})`, totalSoldes(MOIS_DEFAUT)],
+  [`SUM(${X(2)}${premiereLigneSolde}:${X(2)}${derniereLigneSolde})`, totalSoldes(MOIS_FIN)],
+  [`SUM(${X(3)}${premiereLigneSolde}:${X(3)}${derniereLigneSolde})`,
+    somme((l) => dansMois(l) && avecSolde.includes(l.compte) && l.sens === "Crédit", (l) => l.montant)],
+  [`SUM(${X(4)}${premiereLigneSolde}:${X(4)}${derniereLigneSolde})`, arrondir(totalSoldes(MOIS_FIN) * 2)],
+]);
+enGras();
+// A2 : les revenus totaux de la V6 — les recettes du mois, les sorties
+// d'épargne, plus l'argent présent sur les comptes au début du mois.
+wsViz.getCell(`B${L_REVENUS}`).value = {
+  formula: `ROUND($B$${ligneTotalRecettes}+$B$${ligneSorties}+$B$${ligneTotalSoldes},2)`, result: revenusTotaux,
+};
+wsViz.getCell(`B${L_REVENUS}`).numFmt = EUROS;
+wsViz.getCell(`B${L_REVENUS}`).font = GRAS;
+r++;
+
+// ══ Le détail des dépenses du mois, par type et par compte (V6, ligne 31) ══
+const COL_DETAIL_TOTAL = 2 + SLOTS.tousComptes;
+{
+  const l0 = r;
+  ENTETE_VIZ(l0, 1, "Détail des dépenses du mois");
+  ecrireRangs(RANGS.tousComptes, tousComptes, tousComptes);
+  emplacements(tousComptes, SLOTS.tousComptes, "comptes").forEach((compte, i) => {
+    const c = ENTETE_VIZ(l0, 2 + i, null);
+    c.value = { formula: kieme(RANGS.tousComptes, "D", i + 1), result: compte };
+  });
+  ["Total", "%", "Nbre opérations", "Dépense Fixe", "Dépense Courante", "Dépense Occasionnelle", "Catégorie"]
+    .forEach((t, k) => ENTETE_VIZ(l0, COL_DETAIL_TOTAL + k, t));
+  r++;
+}
+const lEnTeteDetail = r - 1;
+const colL = (k) => lettre(COL_DETAIL_TOTAL + k);
+const ligneToutes = r;
+const typesDepense = TYPES.filter((t) => t.sens === "Débit" && !t.natures.includes("transfert-interne"));
+ecrireRangs(RANGS.depenses, TYPES.map((x) => x.libelle), typesDepense.map((x) => x.libelle));
+{
+  wsViz.getCell(r, 1).value = "Toutes les dépenses";
+  wsViz.getCell(r, 1).font = GRAS;
+  emplacements(tousComptes, SLOTS.tousComptes, "comptes").forEach((compte, i) => {
+    const col = lettre(2 + i);
+    const c = wsViz.getCell(r, 2 + i);
+    c.value = {
+      formula: `IF(${col}$${lEnTeteDetail}="","",SUMIFS(${TX("Q")},${TX("C")},${col}$${lEnTeteDetail},${DANS_MOIS}))`,
+      result: compte ? somme((l) => dansMois(l) && l.compte === compte, (l) => l.depense) : "",
+    };
+    c.numFmt = EUROS;
+    c.font = GRAS;
+  });
+  const t = wsViz.getCell(r, COL_DETAIL_TOTAL);
+  t.value = { formula: `SUMIFS(${TX("Q")},${DANS_MOIS})`, result: totalDepenses };
+  t.numFmt = EUROS;
+  t.font = GRAS;
+  const p = wsViz.getCell(r, COL_DETAIL_TOTAL + 1);
+  p.value = { formula: `IFERROR(${colL(0)}${r}/${colL(0)}${r},0)`, result: totalDepenses ? 1 : 0 };
+  p.numFmt = "0.0%";
+  const n = wsViz.getCell(r, COL_DETAIL_TOTAL + 2);
+  n.value = { formula: `SUM(${colL(2)}${r + 1}:${colL(2)}${r + SLOTS.depenses + 1})`,
+    result: lignes.filter((l) => dansMois(l) && typesDepense.some((t) => t.libelle === l.type)).length };
+  r++;
+}
+const debutDetail = r;
+const typeParam = (ligne, col) =>
+  `IFERROR(INDEX(${F}!$${col}:$${col},MATCH($A${ligne},${F}!$M:$M,0))&"","")`;
+emplacements(typesDepense.map((t) => t.libelle), SLOTS.depenses, "types de dépense").forEach((type, i) => {
+  const ligne = r;
+  const t = typeParLibelle.get(type);
+  wsViz.getCell(r, 1).value = { formula: kieme(RANGS.depenses, "M", i + 1), result: type };
+  emplacements(tousComptes, SLOTS.tousComptes, "comptes").forEach((compte, k) => {
+    const col = lettre(2 + k);
+    const c = wsViz.getCell(r, 2 + k);
+    c.value = {
+      formula: `IF(OR($A${ligne}="",${col}$${lEnTeteDetail}=""),"",` +
+        `SUMIFS(${TX("Q")},${TX("D")},$A${ligne},${TX("C")},${col}$${lEnTeteDetail},${DANS_MOIS}))`,
+      result: type && compte ? somme((l) => dansMois(l) && l.type === type && l.compte === compte, (l) => l.depense) : "",
+    };
+    c.numFmt = EUROS;
+  });
+  const total = type ? somme((l) => dansMois(l) && l.type === type, (l) => l.depense) : "";
+  const cellule = (k, formule, valeur, fmt) => {
+    const c = wsViz.getCell(r, COL_DETAIL_TOTAL + k);
+    c.value = { formula: `IF($A${ligne}="","",${formule})`, result: valeur };
+    if (fmt) c.numFmt = fmt;
+  };
+  cellule(0, `SUMIFS(${TX("Q")},${TX("D")},$A${ligne},${DANS_MOIS})`, total, EUROS);
+  cellule(1, `IFERROR(${colL(0)}${ligne}/${colL(0)}$${ligneToutes},0)`,
+    type === "" ? "" : totalDepenses ? total / totalDepenses : 0, "0.0%");
+  cellule(2, `COUNTIFS(${TX("D")},$A${ligne},${DANS_MOIS})`,
+    type ? lignes.filter((l) => dansMois(l) && l.type === type).length : "", "0");
+  CLASSES.forEach((classe, k) => {
+    cellule(3 + k, `IF(${typeParam(ligne, "O")}="${classe}","x","")`, type ? (t.classe === classe ? "x" : "") : "");
+  });
+  cellule(6, typeParam(ligne, "Q"), type ? t.categorie : "");
+  r++;
+});
+{
+  const ligne = r;
+  wsViz.getCell(r, 1).value = "Autres types (non listés)";
+  const v = arrondir(totalDepenses - somme((l) => dansMois(l) && typesDepense.some((t) => t.libelle === l.type), (l) => l.depense));
+  const c = wsViz.getCell(r, COL_DETAIL_TOTAL);
+  c.value = { formula: `ROUND(${colL(0)}${ligneToutes}-SUM(${colL(0)}${debutDetail}:${colL(0)}${ligne - 1}),2)`, result: v };
+  c.numFmt = EUROS;
+  r++;
+}
+r++;
+const finDetail = r;
+
+// ── Les dépenses du mois, ligne à ligne (A–F, sous le détail) ──────────
 // H.4 — comme la V6 : les dépenses seules (débits, sans les transferts
 // internes). Sans formule matricielle : Transactions numérote ses dépenses du
 // mois dans la colonne V (« N° dépense du mois »), et chaque ligne de la liste
@@ -1150,7 +1337,7 @@ const finDroite = r;
 // DIT, avec le nombre de lignes non listées — jamais une liste tronquée en
 // silence.
 const LISTE_MAX = 200;
-bloc(Math.max(finGauche, finMilieu, finDroite) + 1, 1);
+bloc(finDetail, 1);
 const ligneCompte = r;
 const nDepenses = rangDepense.size;
 {
@@ -1194,9 +1381,9 @@ for (let k = 1; k <= LISTE_MAX; k++) {
 }
 
 // ── Mise en page (V6) ──────────────────────────────────────────────────
-[34, 28, 22, 20, 34, 16, 22, 16, 16, 3, 32, 16, 10]
+[34, 16, 16, 16, 34, 16, 16, 16, 30, 16, 10, 16, 16, 16, 12, 12, 14, 18]
   .forEach((w, i) => { wsViz.getColumn(i + 1).width = w; });
-wsViz.views = [{ state: "frozen", ySplit: 2 }];
+wsViz.views = [{ state: "frozen", ySplit: 1 }];
 
 // ─────────────────────────────────────────────────────────────────────────
 // 5. L'ÉCRITURE

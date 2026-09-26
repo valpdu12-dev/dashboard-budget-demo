@@ -61,6 +61,15 @@ const ligne = (libelle: string) => {
   const [r, c] = ou(libelle);
   return viz[r].slice(c);
 };
+/** H.8 — un libellé cherché SOUS une ancre (le même compte figure dans plusieurs blocs). */
+const ligneApres = (ancre: string, libelle: string) => {
+  const [r0] = ou(ancre);
+  for (let r = r0 + 1; r < viz.length; r++) {
+    const c = (viz[r] ?? []).indexOf(libelle);
+    if (c >= 0) return viz[r].slice(c);
+  }
+  throw new Error(`Visualisation : « ${libelle} » introuvable sous « ${ancre} »`);
+};
 const nombre = (v: unknown) => (typeof v === "number" ? v : 0); // une somme nulle peut être écrite vide
 
 describe("F.6 — la Visualisation du modèle donne les chiffres de l'application", () => {
@@ -75,9 +84,9 @@ describe("F.6 — la Visualisation du modèle donne les chiffres de l'applicatio
     const comptes = Object.keys(kpis.prevBal).filter((c) => c !== "Total");
     expect(comptes.length).toBe(5);
     for (const c of comptes) {
-      expect(nombre(ligne(c)[2]), c).toBeCloseTo(kpis.prevBal[c], 2);
+      expect(nombre(ligneApres("Comptes", c)[2]), c).toBeCloseTo(kpis.prevBal[c], 2);
     }
-    expect(nombre(ligne("Total")[2])).toBeCloseTo(kpis.prevBal.Total, 2);
+    expect(nombre(ligneApres("Comptes", "Total")[2])).toBeCloseTo(kpis.prevBal.Total, 2);
   });
 
   it("les dépenses du mois (transferts internes exclus, remboursements déduits)", () => {
@@ -101,16 +110,19 @@ describe("F.6 — la Visualisation du modèle donne les chiffres de l'applicatio
     // Les blocs du haut seulement : la liste des dépenses, en dessous, montre
     // des comptes et des catégories lus dans Transactions, ligne à ligne.
     const limite = ou("Dépenses du mois, ligne à ligne")[0];
-    let lus = 0;
+    // H.8 — un même compte figure dans plusieurs blocs ; seule E13, le compte
+    // choisi pour son solde, est une cellule à remplir (écrite, pas lue).
+    const vus = new Set<string>();
     for (let r = ref.s.r; r < limite; r++) {
       for (let col = ref.s.c; col <= ref.e.c; col++) {
-        const c = ws[XLSX.utils.encode_cell({ r, c: col })];
-        if (!c || !(comptes.includes(c.v) || categories.includes(c.v))) continue;
-        expect(c.f, `Visualisation!${XLSX.utils.encode_cell({ r, c: col })} (« ${c.v} »)`).toMatch(/Param/);
-        lus++;
+        const adr = XLSX.utils.encode_cell({ r, c: col });
+        const c = ws[adr];
+        if (!c || !(comptes.includes(c.v) || categories.includes(c.v)) || adr === "E13") continue;
+        expect(c.f, `Visualisation!${adr} (« ${c.v} »)`).toMatch(/Param/);
+        vus.add(c.v);
       }
     }
-    expect(lus).toBe(comptes.length + categories.length);
+    expect([...vus].sort()).toEqual([...comptes, ...categories].sort());
   });
 
   it("F.7 — les lignes « Autres » sont à zéro sur la démo : tout y est déclaré", () => {
@@ -123,6 +135,36 @@ describe("F.6 — la Visualisation du modèle donne les chiffres de l'applicatio
     const [fin] = ou("Total des dépenses");
     const somme = viz.slice(d + 1, fin).reduce((s, r) => s + nombre(r[col + 1]), 0);
     expect(somme).toBeCloseTo(kpis.depPrev, 2);
+  });
+
+  it("H.8 — E13 : le solde de fin de mois du compte principal, comme l'application", () => {
+    const principal = config.parametrage!.comptes.find((c) => c.id === config.parametrage!.compteCreditSortiesEpargne)!.libelle;
+    expect(viz[12][4]).toBe(principal);
+    expect(nombre(viz[12][5])).toBeCloseTo(kpis.prevBal[principal], 2);
+  });
+
+  it("H.8 — les dépenses par compte et le détail par type retombent sur le total de l'application", () => {
+    expect(nombre(ligne("Dépenses totales")[1])).toBeCloseTo(kpis.depPrev, 2);
+    const [d, col] = ou("Dépenses du mois par compte");
+    const [fin] = ou("Solde du mois (revenus totaux − dépenses totales)");
+    const parCompte = viz.slice(d + 2, fin).reduce((s, r) => s + nombre(r[col + 1]), 0);
+    expect(parCompte).toBeCloseTo(kpis.depPrev, 2);
+    const [dd] = ou("Détail des dépenses du mois");
+    const entete = viz[dd];
+    const cTotal = entete.indexOf("Total");
+    expect(nombre(ligne("Toutes les dépenses")[cTotal])).toBeCloseTo(kpis.depPrev, 2);
+    const [finDetail] = ou("Dépenses du mois, ligne à ligne");
+    const parType = viz.slice(dd + 2, finDetail).reduce((s, r) => s + nombre(r[cTotal]), 0);
+    expect(parType).toBeCloseTo(kpis.depPrev, 2);
+  });
+
+  it("H.8 — revenus totaux et solde du mois se tiennent", () => {
+    const revenus = nombre(ligne("Revenus totaux")[1]);
+    const attendu = nombre(ligne("Total des recettes")[1]) + nombre(ligne("Sorties d'épargne du mois")[1]) +
+      nombre(ligneApres("Comptes", "Total")[1]);
+    expect(revenus).toBeCloseTo(attendu, 2);
+    expect(nombre(ligne("Solde du mois (revenus totaux − dépenses totales)")[1]))
+      .toBeCloseTo(revenus - kpis.depPrev, 2);
   });
 
   it("H.4 — la liste des dépenses du mois : les débits d'août, sans transfert interne, comme l'application", () => {
