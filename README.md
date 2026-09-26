@@ -358,6 +358,17 @@ npm run dev   # http://localhost:5173
 npm run check # lint + types + tests + build + contrôles de publication et de reproductibilité
 ```
 
+**Vous avez cloné le dépôt ?** Vous n'avez pas la liste noire : elle est
+privée (voir plus haut). `npm run check` s'arrête donc sur « liste noire
+introuvable ». Lancez plutôt :
+
+```bash
+LISTE_NOIRE_FACULTATIVE=1 npm run check
+```
+
+Tout le reste est vérifié ; l'absence de la liste noire est écrite en toutes
+lettres dans le rapport. La CI, elle, ne s'en passe jamais.
+
 Aucun fichier `.env` : ni API, ni jeton, ni secret.
 
 | Commande | Rôle |
@@ -422,6 +433,13 @@ une moyenne fausse ne se voit pas, une moyenne absente se voit.
 suffit à la feuille `Paie` ; les deux graphiques de détail des cotisations ont
 besoin d'une ligne par ligne de bulletin. Ils restent alimentés par
 l'adaptateur de l'ancien format, et affichent un message dans l'autre cas.
+
+**L'outillage de développement porte encore des alertes.** Le site publié
+n'en a aucune (`npm audit --omit=dev` : 0). Les outils qui servent à le
+construire et à le tester en gardent sept, modérées ou élevées : le serveur de
+développement de Vite (surtout sous Windows), Vitest, et une bibliothèque du
+générateur de classeur. Toutes demandent une version majeure, à faire à part.
+ESLint 8, en fin de vie, attend de même sa migration vers ESLint 9.
 
 **Le mois courant de la démonstration est figé** à septembre 2026. C'est le
 prix du déterminisme du générateur : un jeu qui bouge à chaque exécution

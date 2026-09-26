@@ -28,7 +28,9 @@ permissions:
 jobs:
   verification:
     name: Vérification complète
-    runs-on: ubuntu-latest
+    # Lot D (Q4) — image épinglée : `ubuntu-latest` passe à Ubuntu 26 le
+    # 19/10/2026. Le changement d'image se fera exprès, pas par surprise.
+    runs-on: ubuntu-24.04
 
     env:
       # Sans cette variable, l'absence de gitleaks ne serait qu'un
@@ -48,13 +50,14 @@ jobs:
       - name: Récupération du dépôt
         uses: actions/checkout@v5
 
-      # Node 20 et non 22 : c'est le plancher déclaré dans `engines`.
-      # La CI doit éprouver la version la plus basse qu'on prétend supporter,
-      # pas la plus confortable.
-      - name: Node 20
+      # Node 22 : c'est le plancher déclaré dans `engines`. La CI doit
+      # éprouver la version la plus basse qu'on prétend supporter, pas la
+      # plus confortable. Lot D (Q4) : Node 20 est en fin de vie depuis
+      # avril 2026 ; le plancher monte à 22 (LTS).
+      - name: Node 22
         uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Installation reproductible
@@ -99,3 +102,13 @@ jobs:
       # build, extensions interdites, gitleaks.
       - name: Contrôle de publication
         run: npm run verif
+
+      # Lot D — les deux contrôles de `npm run check` que la CI ne rejouait
+      # pas : aucun libellé de la démonstration dans le code, et le classeur
+      # modèle publié refait à l'identique par son script (un modèle retouché
+      # à la main ne doit pas partir en ligne).
+      - name: Vocabulaire
+        run: npm run vocabulaire
+
+      - name: Modèle refait à l'identique
+        run: npm run modele

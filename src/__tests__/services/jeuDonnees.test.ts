@@ -159,7 +159,7 @@ describe("migration depuis l'ancien schéma", () => {
       transactions: TX, salary: makeSalaryData([]), fileName: "a.xlsx",
       importedAt: "2026-08-11T18:00:00.000Z",
     }));
-    lireJeuMemorise().jeu;
+    lireJeuMemorise();
     expect(localStorage.getItem("budget.import.v1")).toBeNull();
     // Lot C.6 : le schéma courant est le 3.
     expect(localStorage.getItem("budget.jeu.v3")).not.toBeNull();
