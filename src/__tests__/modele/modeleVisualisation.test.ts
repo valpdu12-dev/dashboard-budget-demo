@@ -47,10 +47,19 @@ const epargne = calculerEpargne({
 // ── Le côté modèle : les valeurs en cache de la feuille Visualisation ────
 const wb = XLSX.read(octetsModele(), { type: "array", cellDates: false });
 const viz = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets["Visualisation"], { header: 1, raw: true, defval: null });
+// H.4 — les blocs sont côte à côte : un libellé peut être dans n'importe
+// quelle colonne. `ou` le trouve ; `ligne` rend la ligne À PARTIR de lui, si
+// bien que [1] est toujours la première valeur à sa droite.
+const ou = (libelle: string): [number, number] => {
+  for (let r = 0; r < viz.length; r++) {
+    const c = (viz[r] ?? []).indexOf(libelle);
+    if (c >= 0) return [r, c];
+  }
+  throw new Error(`Visualisation : « ${libelle} » introuvable`);
+};
 const ligne = (libelle: string) => {
-  const l = viz.find((r) => r[0] === libelle);
-  if (!l) throw new Error(`Visualisation : ligne « ${libelle} » introuvable`);
-  return l;
+  const [r, c] = ou(libelle);
+  return viz[r].slice(c);
 };
 const nombre = (v: unknown) => (typeof v === "number" ? v : 0); // une somme nulle peut être écrite vide
 
@@ -89,12 +98,17 @@ describe("F.6 — la Visualisation du modèle donne les chiffres de l'applicatio
     const ref = XLSX.utils.decode_range(ws["!ref"]!);
     const comptes = config.parametrage!.comptes.filter((c) => c.porteUnSolde).map((c) => c.libelle);
     const categories = config.parametrage!.categories.map((c) => c.libelle);
+    // Les blocs du haut seulement : la liste des dépenses, en dessous, montre
+    // des comptes et des catégories lus dans Transactions, ligne à ligne.
+    const limite = ou("Dépenses du mois, ligne à ligne")[0];
     let lus = 0;
-    for (let r = ref.s.r; r <= ref.e.r; r++) {
-      const c = ws[XLSX.utils.encode_cell({ r, c: 0 })];
-      if (!c || !(comptes.includes(c.v) || categories.includes(c.v))) continue;
-      expect(c.f, `Visualisation!A${r + 1} (« ${c.v} »)`).toMatch(/Param/);
-      lus++;
+    for (let r = ref.s.r; r < limite; r++) {
+      for (let col = ref.s.c; col <= ref.e.c; col++) {
+        const c = ws[XLSX.utils.encode_cell({ r, c: col })];
+        if (!c || !(comptes.includes(c.v) || categories.includes(c.v))) continue;
+        expect(c.f, `Visualisation!${XLSX.utils.encode_cell({ r, c: col })} (« ${c.v} »)`).toMatch(/Param/);
+        lus++;
+      }
     }
     expect(lus).toBe(comptes.length + categories.length);
   });
@@ -105,9 +119,23 @@ describe("F.6 — la Visualisation du modèle donne les chiffres de l'applicatio
   });
 
   it("les catégories font bien le total des dépenses", () => {
-    const debut = viz.findIndex((r) => r[0] === "Dépenses du mois par catégorie") + 1;
-    const fin = viz.findIndex((r) => r[0] === "Total des dépenses");
-    const somme = viz.slice(debut, fin).reduce((s, r) => s + nombre(r[1]), 0);
+    const [d, col] = ou("Dépenses du mois par catégorie");
+    const [fin] = ou("Total des dépenses");
+    const somme = viz.slice(d + 1, fin).reduce((s, r) => s + nombre(r[col + 1]), 0);
     expect(somme).toBeCloseTo(kpis.depPrev, 2);
+  });
+
+  it("H.4 — la liste des dépenses du mois : les débits d'août, sans transfert interne, comme l'application", () => {
+    // Le côté application : les transactions d'août 2026, au débit, qui ne
+    // sont pas des transferts internes — calculées par ses propres règles.
+    const attendues = f.baseTx.filter((t) =>
+      t.date.startsWith("2026-08") && t.dc === "Débit" && !regles.aNature(t.type, "transfert-interne"));
+    const [d] = ou("Dépenses du mois, ligne à ligne");
+    expect(viz[d][1]).toBe(attendues.length);
+    expect(viz[d][2]).toBe(`${attendues.length} dépense(s) ce mois-ci.`);
+    const lignesListe = viz.slice(d + 2, d + 2 + 200).filter((r) => r[0] !== null && r[0] !== "");
+    expect(lignesListe).toHaveLength(attendues.length);
+    const total = lignesListe.reduce((s, r) => s + nombre(r[5]), 0);
+    expect(total).toBeCloseTo(attendues.reduce((s, t) => s + t.montant, 0), 2);
   });
 });

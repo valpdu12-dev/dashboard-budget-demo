@@ -87,9 +87,11 @@ describe("le classeur modèle PUBLIÉ (lot F.5)", () => {
 
   it("rend les 1 053 transactions de la démonstration ; les lignes préparées vides sont ignorées", () => {
     expect(rapport.transactions).toHaveLength(1053);
-    // 4 999 lignes de formules préparées (jusqu'à la ligne 5000), dont 3 946
-    // vides. Aucune n'est rejetée : une ligne vide n'est pas une erreur.
-    expect(rapport.compteurs.ignorees).toBe(3946);
+    // 4 999 lignes de formules préparées dans Transactions (jusqu'à la ligne
+    // 5000), dont 3 946 vides ; et, depuis le lot H.1, 300 lignes préparées
+    // dans Paie, dont 240 vides. Aucune n'est rejetée : une ligne vide n'est
+    // pas une erreur.
+    expect(rapport.compteurs.ignorees).toBe(3946 + 240);
   });
 
   it("rend ses 60 bulletins, avec le net recalculé", () => {

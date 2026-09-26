@@ -295,6 +295,8 @@ La démonstration accepte **votre** classeur. Bouton **Importer .xlsx**, puis
 **Télécharger le modèle** : deux ans d'exemple, des listes déroulantes, des
 formules (le montant réel se calcule depuis le montant brut et le taux du
 compte), une feuille `Visualisation` et un mode d'emploi en première feuille.
+Deux couleurs — jaune à remplir, gris calculé —, et les cellules calculées
+verrouillées sans mot de passe.
 
 - Le guide, dans l'ordre où l'on s'en sert :
   [`docs/GUIDE_FICHIER_SOURCE.md`](docs/GUIDE_FICHIER_SOURCE.md)
@@ -390,6 +392,7 @@ Aucun fichier `.env` : ni API, ni jeton, ni secret.
 | **E** | Prêt paramétrable (montant, date, taux, durée), démonstration sur la structure d'une configuration réelle, noms génériques et montants inventés | ✅ |
 | **F** | Prêt calculé depuis sa date et contrôlé par les transactions ; vrai classeur modèle (listes, formules, Visualisation) publié sous garde-fou | ✅ |
 | **G** | Noms génériques, liste noire hors du dépôt, historique repris à zéro | ✅ |
+| **H** | Modèle facile à remplir : deux couleurs, listes, consignes et notes, Visualisation, verrou sans mot de passe, tri par date | ✅ |
 | **D** | Recette de diffusion | à venir |
 
 ---

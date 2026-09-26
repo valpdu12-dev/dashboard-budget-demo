@@ -27,6 +27,48 @@ on s'en sert.
 
 Rien n'est chargé tant que vous n'avez pas cliqué sur « Appliquer ».
 
+### Le modèle, en cinq points
+
+**Deux couleurs.** Jaune pâle sous un en-tête bleu nuit : à remplir. Gris sous
+un en-tête gris : calculé, n'écrivez rien. Chaque feuille le rappelle en haut,
+à droite de ses colonnes. Passez la souris sur un en-tête : une note dit quoi
+écrire.
+
+**Des listes.** `Compte`, `Type`, `Sens` et `Prévisionnel` se choisissent dans
+une liste ; dans `Paie`, le `Mois` et l'`Employeur` aussi. Les comptes et les
+types viennent de vos tableaux de `Paramètres` : déclarez d'abord, choisissez
+ensuite. Une valeur hors liste est refusée, avec un message qui dit quoi faire.
+Seul un employeur non déclaré est accepté, avec un avertissement. Les dates
+vont de 2000 à 2099, et un montant brut est toujours positif.
+
+La liste des mois de `Paie` couvre les dix ans qui finissent à votre
+`Fin de relevé`. Sans cette date, la liste est vide.
+
+⚠️ **Pas de ligne vide au milieu d'un tableau de `Paramètres`.** Les listes
+comptent les lignes remplies depuis le haut du tableau. Un trou, et la
+dernière entrée disparaît de la liste.
+
+**Un verrou, sans mot de passe.** Les cellules grises sont verrouillées : une
+formule effacée par erreur fausserait tout sans bruit. Vous pouvez
+sélectionner, filtrer, élargir une colonne. Vous pouvez aussi **trier**
+`Transactions` et `Paie` : flèche d'un en-tête bleu nuit, puis Croissant ou
+Décroissant. Les colonnes grises suivent chaque ligne. Vous ne pouvez pas
+insérer ni supprimer une ligne. Pour vider les lignes d'exemple, sélectionnez
+les colonnes à remplir et appuyez sur la touche Suppr.
+
+Pour lever le verrou d'une feuille : onglet **Révision**, **Ôter la
+protection de la feuille**. Aucun mot de passe n'est demandé.
+
+**Les en-têtes bleu nuit ne sont pas verrouillés** — sinon Excel refuse de
+trier. **Ne les renommez pas** : l'outil trouve chaque colonne par son nom.
+Renommer `Date`, `Compte` ou `Type` fait refuser la feuille, avec un message.
+Mais renommer une colonne facultative — `Libellé`, `Sous-catégorie`,
+`Détail`, `Ville`, `Prévisionnel` — la fait **ignorer sans message**. Pour
+`Prévisionnel`, c'est grave : vos lignes à venir compteraient comme passées.
+
+**Essayé dans Excel pour Mac.** LibreOffice et Numbers n'ont pas été essayés :
+les formules devraient suivre ; les listes et le verrou, peut-être pas.
+
 ---
 
 ## 2. La feuille `Transactions` — la seule obligatoire
