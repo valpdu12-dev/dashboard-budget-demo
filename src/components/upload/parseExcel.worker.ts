@@ -561,7 +561,8 @@ self.onmessage = (event: MessageEvent) => {
     } catch (e) {
       throw new Error(
         `Impossible de lire le fichier. Vérifiez qu'il s'agit d'un fichier .xlsx valide. ` +
-        `Détail : ${(e as Error).message}`
+        `Détail : ${(e as Error).message}`,
+        { cause: e }
       );
     }
 
