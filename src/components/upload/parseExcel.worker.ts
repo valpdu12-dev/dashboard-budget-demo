@@ -518,6 +518,31 @@ self.onmessage = (event: MessageEvent) => {
     // ─── 1. Lecture du workbook ───────────────────────────────────────────
     progress("Ouverture du fichier…", 5);
 
+    // Lot D.6 — reconnaître ce qui n'est pas un classeur .xlsx AVANT de le
+    // lire. SheetJS lit presque tout (un CSV, du texte, des octets au
+    // hasard) comme une feuille « Sheet1 » ; le message parlait alors d'une
+    // feuille manquante au lieu de dire que le fichier n'est pas un .xlsx.
+    const octets = new Uint8Array(buffer);
+    if (octets.length === 0) {
+      throw new Error(
+        "Le fichier est vide (0 octet). Enregistrez de nouveau votre classeur depuis Excel, au format .xlsx."
+      );
+    }
+    const estZip = octets[0] === 0x50 && octets[1] === 0x4b;
+    const estOle = octets[0] === 0xd0 && octets[1] === 0xcf && octets[2] === 0x11 && octets[3] === 0xe0;
+    if (estOle) {
+      throw new Error(
+        "Ce classeur est au format .xls (ancien) ou protégé par un mot de passe à l'ouverture : " +
+          "il ne peut pas être lu ici. Dans Excel : Fichier › Enregistrer sous › Classeur Excel (.xlsx), sans mot de passe."
+      );
+    }
+    if (!estZip) {
+      throw new Error(
+        "Ce fichier n'est pas un classeur Excel .xlsx lisible : c'est peut-être un autre format " +
+          "(CSV, texte…) renommé en .xlsx, ou un fichier abîmé. Ouvrez-le dans Excel et enregistrez-le au format .xlsx."
+      );
+    }
+
     let wb: XLSX.WorkBook;
     try {
       // `cellDates: false` : les dates restent des séries Excel et sont

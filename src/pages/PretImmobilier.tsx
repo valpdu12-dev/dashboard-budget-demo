@@ -278,7 +278,7 @@ export default function PretImmobilier() {
           <input
             type="range" min={0} max={500} step={10} value={extra}
             onChange={(e) => setExtra(Number(e.target.value))}
-            className="w-full accent-indigo cursor-pointer"
+            className="w-full accent-indigo cursor-pointer max-md:h-12"
             aria-label="Remboursement anticipé mensuel"
           />
           <div className="flex justify-between text-[11px] text-text-sec">

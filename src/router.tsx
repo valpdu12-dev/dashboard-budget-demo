@@ -3,7 +3,7 @@
 // Phase 5A -- Routes imbriquées par type de flux + sous-navigation (pills).
 // Le fallback <SkeletonPage> s'affiche pendant le chargement du chunk.
 import { lazy, Suspense, type ReactNode } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { SkeletonPage } from "@/components/ui/Skeleton";
 import { useDataStore } from "@/stores/useDataStore";
@@ -62,6 +62,29 @@ export function RouteSiRubrique({
   return <>{children}</>;
 }
 
+/**
+ * Lot D.4 — une adresse inconnue affichait l'écran Comptes sans un mot,
+ * l'adresse fausse restant dans la barre. Un marque-page erroné passait pour
+ * juste. Désormais : on le dit, et on propose le retour.
+ */
+export function PageIntrouvable() {
+  const { pathname } = useLocation();
+  return (
+    <div className="p-6 max-w-xl">
+      <h1 className="text-xl font-title font-bold text-text">Page introuvable</h1>
+      <p className="text-text-sec mt-2">
+        L'adresse « {pathname} » ne correspond à aucun écran du tableau de bord.
+      </p>
+      <Link
+        to="/"
+        className="inline-block mt-4 px-3.5 py-2 rounded-lg border border-indigo/40 bg-indigo/[0.08] text-indigo-text text-[13px] font-medium hover:bg-indigo/[0.15] transition-colors"
+      >
+        Revenir à l'accueil
+      </Link>
+    </div>
+  );
+}
+
 export function AppRouter() {
   return (
     <Suspense fallback={<SkeletonPage />}>
@@ -107,7 +130,7 @@ export function AppRouter() {
               navigation principale : ce n'est pas un écran de chiffres, c'est
               un écran de vérification. Il s'atteint depuis l'en-tête. */}
           <Route path="parametres" element={<Parametres />} />
-          <Route path="*"        element={<Comptes />} />
+          <Route path="*"        element={<PageIntrouvable />} />
         </Route>
       </Routes>
     </Suspense>

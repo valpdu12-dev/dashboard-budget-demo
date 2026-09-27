@@ -60,6 +60,15 @@ html { scroll-behavior: smooth; }
 ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #4B5563; }
 
+/* ── Focus visible (lot D.5) ───────────────────────────────────────────
+   Le contour par défaut du navigateur se voyait à peine sur fond sombre,
+   surtout sur les liens du menu. Un anneau indigo net, au clavier seulement
+   (:focus-visible) : la souris ne le déclenche pas. */
+:focus-visible {
+  outline: 2px solid #818CF8;
+  outline-offset: 2px;
+}
+
 /* ── Component layer ───────────────────────────────────────────────────── */
 @layer components {
   .card {

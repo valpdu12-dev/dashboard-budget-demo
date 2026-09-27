@@ -233,6 +233,21 @@ export function detecterFormat(wb: XLSX.WorkBook): FormatDetecte {
   }
   if (wb.SheetNames.some((n) => RE_TX_ANCIEN.test(normNom(n)))) return "ancien";
 
+  // Lot D.6 — la feuille est là, mais pas ses colonnes : le dire. Avant, le
+  // message annonçait « aucune feuille reconnue… trouvées : Transactions »,
+  // ce qui contredisait ce que la personne avait sous les yeux.
+  const presente = feuillesTransactions(wb)[0];
+  if (presente) {
+    const trouvees = ligne1(wb.Sheets[presente]).map((v) => String(v ?? "").trim()).filter(Boolean);
+    const cles = new Set(trouvees.map(normaliserCle));
+    const manquent = ["Date", "Compte", "Montant"].filter((c) => !cles.has(normaliserCle(c)));
+    throw new ErreurClasseur(
+      `La feuille « ${presente} » est bien là, mais sa ligne 1 n'a pas ` +
+        `${manquent.length > 1 ? "les colonnes" : "la colonne"} ${manquent.join(", ")}. ` +
+        `Colonnes trouvées : ${trouvees.join(", ") || "aucune"}.`
+    );
+  }
+
   throw new ErreurClasseur(
     `Aucune feuille de transactions reconnue. Feuilles trouvées : ` +
       `${wb.SheetNames.join(", ") || "aucune"}. ` +

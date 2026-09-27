@@ -62,7 +62,13 @@ const libelleDe = new Map(P.comptes.map((c) => [c.id, c.libelle]));
 const compteParLibelle = new Map(P.comptes.map((c) => [c.libelle, c]));
 const typeDeclare = new Map(P.types.map((t) => [t.libelle, t]));
 
-const arrondir = (n) => Math.round(n * 100) / 100;
+// Lot D.9 — comme ARRONDI d'Excel (et le lecteur) : la valeur décimale à 15
+// chiffres, le demi s'éloignant de zéro. `Math.round(n * 100) / 100` rendait
+// 2,17 € pour 4,35 × 50 %, là où Excel écrit 2,18 €.
+const arrondir = (n) => {
+  const c = Math.round(Number((Math.abs(n) * 100).toPrecision(15))) / 100;
+  return n < 0 && c !== 0 ? -c : c;
+};
 const echouer = (m) => { console.error(`\n✗ Modèle : ${m}\n`); process.exit(1); };
 
 // ─────────────────────────────────────────────────────────────────────────

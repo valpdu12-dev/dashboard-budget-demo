@@ -6,6 +6,7 @@ import { Wallet, ArrowLeftRight, SlidersHorizontal, Settings } from "lucide-reac
 import { useFilterStore } from "@/stores/useFilterStore";
 import { PERIOD_OPTIONS } from "@/config/constants";
 import { UploadButton } from "@/components/upload/DataUploader";
+import { useDataStore } from "@/stores/useDataStore";
 import { ProfilBascule } from "@/components/layout/ProfilBascule";
 import { Chip } from "@/components/ui/Chip";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -78,6 +79,12 @@ export function Header() {
     PERIOD_OPTIONS.find((p) => p.value === period)?.label ?? "";
   const activeFilters = (cat1Filter !== "all" ? 1 : 0) + (showTransfers ? 1 : 0);
 
+  // Lot D — le titre suit les données affichées, comme le bandeau : « Démo »
+  // sur les données de la personne serait faux. L'onglet du navigateur aussi.
+  const mesDonnees = useDataStore((s) => s.origin) === "upload";
+  const titre = mesDonnees ? "Dashboard Budget — Mes données" : "Dashboard Budget — Démo";
+  useEffect(() => { document.title = titre; }, [titre]);
+
   return (
     <header className="flex flex-col bg-surface border-b border-border sticky top-0 z-50">
       {/* Ligne 1 : Titre + (bouton Filtres sous 430 px) + Upload */}
@@ -85,7 +92,7 @@ export function Header() {
         <div className="flex items-center gap-2.5 min-w-0">
           <Wallet size={22} className="text-indigo-text shrink-0" />
           <span className="text-base xs:text-xl font-title font-bold text-text truncate">
-            {isSmall ? "Budget Démo" : "Dashboard Budget — Démo"}
+            {isSmall ? (mesDonnees ? "Budget" : "Budget Démo") : titre}
           </span>
         </div>
         <div className="flex items-center gap-2 shrink-0">

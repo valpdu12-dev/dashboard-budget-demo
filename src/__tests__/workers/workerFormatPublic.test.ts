@@ -117,3 +117,31 @@ describe("worker — non-régression de l'ancien format", () => {
     expect(res.rapport ?? null).toBeNull();
   });
 });
+
+
+// Lot D.6 — ce qui n'est pas un classeur .xlsx est reconnu AVANT la lecture.
+// Sans ce contrôle, SheetJS lisait un CSV ou des octets au hasard comme une
+// feuille « Sheet1 », et le message parlait d'une feuille manquante.
+describe("worker — un fichier qui n'est pas un classeur .xlsx (lot D.6)", () => {
+  const octets = (tab: number[] | string) =>
+    (typeof tab === "string" ? new TextEncoder().encode(tab) : new Uint8Array(tab)).buffer as ArrayBuffer;
+
+  it("un fichier vide : il le dit", () => {
+    const r = envoyer(new ArrayBuffer(0));
+    expect(r.type).toBe("error");
+    expect(String(r.message)).toMatch(/vide \(0 octet\)/);
+  });
+  it("un CSV renommé en .xlsx : ce n'est pas un classeur", () => {
+    const r = envoyer(octets("Date;Compte;Montant\n01/01/2026;A;10\n"));
+    expect(r.type).toBe("error");
+    expect(String(r.message)).toMatch(/n'est pas un classeur Excel \.xlsx lisible/);
+  });
+  it("un ancien .xls (ou un classeur chiffré) : il dit comment l'enregistrer", () => {
+    const r = envoyer(octets([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0, 0, 0, 0]));
+    expect(r.type).toBe("error");
+    expect(String(r.message)).toMatch(/format \.xls/);
+  });
+  it("sait échouer : le modèle, lui, passe toujours", () => {
+    expect(envoyer(modeleEnOctets()).type).toBe("result");
+  });
+});

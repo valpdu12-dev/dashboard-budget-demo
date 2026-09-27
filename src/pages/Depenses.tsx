@@ -431,7 +431,7 @@ export default function Depenses() {
             {budgetKpis.totalBudgeted > 0 && (
               <button
                 onClick={toggleBudgetOverlay}
-                className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
+                className={`text-[11px] px-2 py-0.5 max-md:min-h-tap max-md:px-3.5 rounded-full border transition-colors ${
                   showBudgetOverlay
                     ? "border-red/40 bg-red/10 text-red"
                     : "border-border text-text-sec hover:text-text"

@@ -48,9 +48,9 @@ function fmtMonthKey(mk: string | undefined): string {
 }
 
 function validateFile(file: File | null): string | null {
-  if (!file) return "Aucun fichier selectionne.";
+  if (!file) return "Aucun fichier sélectionné.";
   if (!file.name.toLowerCase().endsWith(".xlsx")) {
-    return `Format non pris en charge : "${file.name}". Seuls les fichiers .xlsx sont acceptes.`;
+    return `Format non pris en charge : "${file.name}". Seuls les fichiers .xlsx sont acceptés.`;
   }
   if (file.size > MAX_FILE_SIZE_B) {
     return `Fichier trop volumineux (${(file.size / 1024 / 1024).toFixed(1)} Mo). Taille maximum : ${MAX_FILE_SIZE_MB} Mo.`;
@@ -85,7 +85,7 @@ function ValidationKPI({
       <div className="text-[11px] text-text-sec uppercase tracking-wide mb-1">
         {label}
       </div>
-      <div className={`text-xl font-bold tabular-nums ${valueColor}`}>
+      <div className={`text-xl font-bold tabular-nums whitespace-nowrap ${valueColor}`}>
         {value}
       </div>
       {sub && (
@@ -306,7 +306,7 @@ function ValidationSummary({ v }: { v: ValidationReport }) {
   return (
     <div className="mt-6">
       <h3 className="text-sm font-semibold text-text-sec uppercase tracking-wide mb-4">
-        Resume de validation
+        Résumé de validation
       </h3>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2.5">
         <ValidationKPI
@@ -315,17 +315,17 @@ function ValidationSummary({ v }: { v: ValidationReport }) {
           sub={`sur ${v.nbMois} mois`}
         />
         <ValidationKPI
-          label="Periode"
+          label="Période"
           value={fmtDate(v.dateMin)}
           sub={`→ ${fmtDate(v.dateMax)}`}
         />
         <ValidationKPI
-          label="Total Debits"
+          label="Total débits"
           value={fmtEuro(v.totalDebits)}
           positive={false}
         />
         <ValidationKPI
-          label="Total Credits"
+          label="Total crédits"
           value={fmtEuro(v.totalCredits)}
           positive={true}
         />
@@ -347,7 +347,7 @@ function ValidationSummary({ v }: { v: ValidationReport }) {
       </div>
       {v.comptes.length > 0 && (
         <div className="mt-3">
-          <span className="text-xs text-text-sec">Comptes detectes : </span>
+          <span className="text-xs text-text-sec">Comptes détectés : </span>
           {v.comptes.map((c) => (
             <span
               key={c}
@@ -410,13 +410,47 @@ export function DataUploader() {
     }
   }, [uploaderOpen]);
 
+  // Lot D.5 — une vraie fenêtre de dialogue au clavier. Avant : le focus
+  // restait derrière, Tab parcourait la page, et le choix du fichier était
+  // hors d'atteinte sans souris. Désormais : le focus entre dans la fenêtre,
+  // Tab y tourne en boucle, Échap la ferme, et le focus revient sur le
+  // bouton qui l'avait ouverte.
+  const panneauRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!uploaderOpen) return;
+    const avant = document.activeElement as HTMLElement | null;
+    const raf = requestAnimationFrame(() => panneauRef.current?.focus());
+    const focusables = (): HTMLElement[] =>
+      Array.from(
+        panneauRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      // Le champ de fichier est caché (le bouton de dépôt l'ouvre) : il ne
+      // compte pas. Les autres contrôles ne sont dans la page que visibles.
+      ).filter((el) => !(el instanceof HTMLInputElement && el.type === "file"));
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setUploaderOpen(false);
+      if (e.key === "Escape") { setUploaderOpen(false); return; }
+      if (e.key !== "Tab") return;
+      const liste = focusables();
+      if (liste.length === 0) return;
+      const premier = liste[0];
+      const dernier = liste[liste.length - 1];
+      const actif = document.activeElement;
+      const dedans = !!actif && !!panneauRef.current?.contains(actif);
+      if (e.shiftKey && (!dedans || actif === premier || actif === panneauRef.current)) {
+        e.preventDefault();
+        dernier.focus();
+      } else if (!e.shiftKey && (!dedans || actif === dernier)) {
+        e.preventDefault();
+        premier.focus();
+      }
     };
     window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("keydown", handleKey);
+      avant?.focus?.();
+    };
   }, [uploaderOpen, setUploaderOpen]);
 
   const processFile = useCallback(
@@ -550,11 +584,18 @@ export function DataUploader() {
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-surface border border-border rounded-2xl w-full max-w-[680px] max-h-[90vh] overflow-y-auto shadow-2xl mx-4">
+      <div
+        ref={panneauRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titre-import"
+        tabIndex={-1}
+        className="bg-surface border border-border rounded-2xl w-full max-w-[680px] max-h-[90vh] overflow-y-auto shadow-2xl mx-4 focus:outline-none"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-border">
           <div>
-            <h2 className="text-lg font-title font-bold text-text">
+            <h2 id="titre-import" className="text-lg font-title font-bold text-text">
               Charger un nouveau fichier
             </h2>
             <p className="text-[13px] text-text-sec mt-1">
@@ -563,7 +604,7 @@ export function DataUploader() {
               importance : c'est la structure des feuilles qui compte.
             </p>
           </div>
-          <button onClick={onClose} className="p-1 rounded-md text-text-sec hover:text-text transition-colors" aria-label="Fermer">
+          <button onClick={onClose} className="p-1 max-md:min-h-tap max-md:min-w-tap inline-flex items-center justify-center rounded-md text-text-sec hover:text-text transition-colors" aria-label="Fermer">
             <X size={22} />
           </button>
         </div>
@@ -649,6 +690,18 @@ export function DataUploader() {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => !isLoading && inputRef.current?.click()}
+            // Lot D.5 — la zone n'était qu'un div cliquable : hors d'atteinte
+            // au clavier. Elle devient un bouton (Entrée ou Espace).
+            role="button"
+            tabIndex={isLoading ? -1 : 0}
+            aria-label="Choisir un fichier .xlsx sur cet appareil"
+            aria-disabled={isLoading || undefined}
+            onKeyDown={(e) => {
+              if (!isLoading && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                inputRef.current?.click();
+              }
+            }}
             className={`border-2 border-dashed ${dropBorderClass} rounded-xl px-6 py-10 flex flex-col items-center gap-3 ${dropBgClass} text-center ${isLoading ? "cursor-default" : "cursor-pointer"} transition-all duration-200`}
           >
             <input ref={inputRef} type="file" accept=".xlsx" onChange={handleInputChange} className="hidden" />
@@ -673,15 +726,15 @@ export function DataUploader() {
                   <span className="text-[13px] text-text-sec">({(selectedFile.size / 1024).toFixed(0)} Ko)</span>
                 </div>
               ) : isDragging ? (
-                <p className="text-[15px] text-indigo-text font-semibold">Relachez pour charger le fichier</p>
+                <p className="text-[15px] text-indigo-text font-semibold">Relâchez pour charger le fichier</p>
               ) : (
                 <p className="text-[15px] text-text-sec">
-                  <span className="text-indigo-text font-semibold">Cliquez pour selectionner</span>{" "}ou deposez votre fichier ici
+                  <span className="text-indigo-text font-semibold">Cliquez pour sélectionner</span>{" "}ou déposez votre fichier ici
                 </p>
               )}
               {!isLoading && !isDragging && (
-                <p className="text-xs text-text-sec/60 mt-1.5">
-                  Fichiers acceptes : .xlsx {"—"} Taille max : {MAX_FILE_SIZE_MB} Mo
+                <p className="text-xs text-text-sec mt-1.5">
+                  Fichiers acceptés : .xlsx {"—"} Taille max : {MAX_FILE_SIZE_MB} Mo
                 </p>
               )}
             </div>
@@ -758,7 +811,7 @@ export function DataUploader() {
               {applied && (
                 <div className="flex items-center gap-2 mt-3 px-3.5 py-2.5 bg-green/[0.08] border border-green/20 rounded-lg text-[13px] text-green">
                   <Check size={16} />
-                  <span>Donnees appliquees avec succes. Le dashboard est maintenant a jour.</span>
+                  <span>Données appliquées avec succès. Le tableau de bord est à jour.</span>
                 </div>
               )}
               {/*
@@ -790,9 +843,9 @@ export function DataUploader() {
             {isError && (
               <button
                 onClick={() => { setLocalError(null); setSelectedFile(null); inputRef.current?.click(); }}
-                className="px-4 py-2.5 rounded-lg border border-border text-text-sec text-sm font-medium hover:text-text transition-colors"
+                className="px-4 py-2.5 max-md:min-h-tap rounded-lg border border-border text-text-sec text-sm font-medium hover:text-text transition-colors"
               >
-                Reessayer
+                Réessayer
               </button>
             )}
 
@@ -808,7 +861,7 @@ export function DataUploader() {
                   a.click();
                   URL.revokeObjectURL(url);
                 }}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-indigo/40 bg-indigo/[0.08] text-indigo-text text-sm font-medium hover:bg-indigo/[0.15] transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2.5 max-md:min-h-tap rounded-lg border border-indigo/40 bg-indigo/[0.08] text-indigo-text text-sm font-medium hover:bg-indigo/[0.15] transition-colors"
               >
                 <Download size={16} />
                 Exporter en JSON
@@ -817,7 +870,7 @@ export function DataUploader() {
 
             <button
               onClick={onClose}
-              className="px-4 py-2.5 rounded-lg border border-border text-text-sec text-sm font-medium hover:text-text transition-colors"
+              className="px-4 py-2.5 max-md:min-h-tap rounded-lg border border-border text-text-sec text-sm font-medium hover:text-text transition-colors"
             >
               {applied ? "Fermer" : "Annuler"}
             </button>
@@ -825,7 +878,7 @@ export function DataUploader() {
             {isSuccess && pendingData && !applied && (
               <button
                 onClick={handleApply}
-                className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-gradient-to-br from-indigo to-[#4F46E5] text-white text-sm font-semibold shadow-[0_4px_12px_rgba(99,102,241,0.3)] hover:opacity-90 transition-opacity"
+                className="flex items-center gap-1.5 px-5 py-2.5 max-md:min-h-tap rounded-lg bg-gradient-to-br from-indigo to-[#4F46E5] text-white text-sm font-semibold shadow-[0_4px_12px_rgba(99,102,241,0.3)] hover:opacity-90 transition-opacity"
               >
                 <Check size={16} />
                 Appliquer au dashboard
@@ -834,8 +887,11 @@ export function DataUploader() {
           </div>
 
           {/* Confidentialite */}
-          <p className="text-[11px] text-border text-center mt-5 leading-relaxed">
-            Vos donnees ne quittent jamais votre navigateur. Le parsing s'effectue entierement en local, sans envoi vers un serveur.
+          {/* Lot D.5 — la promesse de confidentialité était écrite en
+              `text-border` : 1,2:1 de contraste, illisible. Elle doit se lire. */}
+          <p className="text-[11px] text-text-sec text-center mt-5 leading-relaxed">
+            Vos données ne quittent jamais votre navigateur : le fichier est lu
+            entièrement sur cet appareil, sans envoi vers un serveur.
           </p>
         </div>
       </div>
@@ -857,7 +913,7 @@ export function UploadButton() {
   return (
     <button
       onClick={() => setUploaderOpen(true)}
-      title={isFromUpload ? "Donnees importees actives" : "Charger un fichier Budget.xlsx"}
+      title={isFromUpload ? "Vos données importées sont affichées" : "Charger un fichier Budget.xlsx"}
       className={`relative flex items-center gap-1.5 px-3.5 py-[7px] max-md:min-h-tap rounded-lg text-[13px] font-medium transition-all ${
         isFromUpload
           ? "bg-green/10 border border-green/30 text-green"
@@ -868,7 +924,7 @@ export function UploadButton() {
         <span className="absolute -top-[3px] -right-[3px] w-2 h-2 bg-green rounded-full border-2 border-surface" />
       )}
       <Upload size={15} />
-      {isFromUpload ? "Donnees importees" : "Importer .xlsx"}
+      {isFromUpload ? "Données importées" : "Importer .xlsx"}
     </button>
   );
 }

@@ -24,7 +24,7 @@ export function SubNav() {
   if (!pills || pills.length < 2) return null;
 
   return (
-    <nav className="flex shrink-0 gap-2 overflow-x-auto px-3 py-2.5 md:px-6 border-b border-border bg-surface">
+    <nav aria-label="Écrans de la rubrique" className="flex shrink-0 gap-2 overflow-x-auto px-3 py-2.5 md:px-6 border-b border-border bg-surface">
       {pills.map((pill) => (
         <NavLink
           key={pill.path}

@@ -13,7 +13,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
 export function Sidebar() {
   const onglets = useOngletsVisibles();
   return (
-    <nav className="w-52 bg-surface border-r border-border flex flex-col py-4 shrink-0">
+    <nav aria-label="Rubriques" className="w-52 bg-surface border-r border-border flex flex-col py-4 shrink-0">
       {onglets.map((tab) => {
         const Icon = ICON_MAP[tab.icon];
         return (

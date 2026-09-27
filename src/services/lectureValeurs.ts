@@ -89,9 +89,19 @@ export function lireNombre(v: unknown): number | null {
   return isFinite(n) ? arrondir(n) : null;
 }
 
-/** Arrondi au centime. Deux décimales, pas plus. */
+/**
+ * Arrondi au centime, comme la fonction ARRONDI d'Excel.
+ *
+ * Lot D.9 — `Math.round(n * 100) / 100` se trompait sur les demi-centimes :
+ * 4,35 × 50 % vaut 2,17499999… en virgule flottante, arrondi à 2,17 € quand
+ * Excel donne 2,18 €. L'outil signalait alors un écart d'un centime avec le
+ * classeur de la personne, qui avait raison. On arrondit donc la valeur
+ * DÉCIMALE (15 chiffres significatifs, la précision d'Excel), et le demi
+ * s'éloigne de zéro, comme dans Excel.
+ */
 export function arrondir(n: number): number {
-  return Math.round(n * 100) / 100;
+  const centimes = Math.round(Number((Math.abs(n) * 100).toPrecision(15))) / 100;
+  return n < 0 && centimes !== 0 ? -centimes : centimes;
 }
 
 /** Clé de mois « AAAA-MM » depuis une date ou un texte `AAAA-MM`. */

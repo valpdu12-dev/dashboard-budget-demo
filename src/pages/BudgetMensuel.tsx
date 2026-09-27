@@ -36,7 +36,9 @@ import { useCouleurs } from "@/hooks/useCouleurs";
 const STATUS_STYLES: Record<BudgetCat2Row["status"], { bg: string; text: string; label: string }> = {
   ok:        { bg: "bg-green/10", text: "text-green",   label: "OK" },
   warning:   { bg: "bg-yellow-500/10", text: "text-yellow-400", label: "Attention" },
-  over:      { bg: "bg-red/10",   text: "text-red",     label: "Dépassé" },
+  // Lot D.5 — le rouge de marque sur son aplat tombait à 4,34:1 en 11 px ;
+  // un rouge plus clair pour ce texte-là (6,5:1).
+  over:      { bg: "bg-red/[0.06]", text: "text-[#F87171]", label: "Dépassé" },
   "no-budget": { bg: "bg-surface", text: "text-text-sec", label: "—" },
   // Pas de jugement : sans mois comparable, il n'y a pas de dépense connue.
   indisponible: { bg: "bg-surface", text: "text-text-sec", label: "Indisponible" },

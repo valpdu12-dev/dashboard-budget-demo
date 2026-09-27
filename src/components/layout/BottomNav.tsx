@@ -15,7 +15,7 @@ export function BottomNav() {
   return (
     // pb-safe-b : retrait sous la barre de gestes Android / l'encoche iOS.
     // Vaut 0 sur un navigateur de bureau, la nav reste donc collée en bas.
-    <nav className="flex fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border pb-safe-b">
+    <nav aria-label="Rubriques" className="flex fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border pb-safe-b">
       {onglets.map((tab) => {
         const Icon = ICON_MAP[tab.icon];
         return (

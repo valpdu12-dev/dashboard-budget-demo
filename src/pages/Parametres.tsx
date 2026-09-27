@@ -51,7 +51,7 @@ function Rien({ texte }: { texte: string }) {
 
 const TH = "px-3 py-2 text-left font-medium text-text-sec whitespace-nowrap";
 const TD = "px-3 py-2 text-text whitespace-nowrap";
-const TD_ABSENT = "px-3 py-2 text-text-sec/70 italic whitespace-nowrap";
+const TD_ABSENT = "px-3 py-2 text-text-sec italic whitespace-nowrap";
 
 /**
  * Un taux en pourcentage lisible.
@@ -105,7 +105,7 @@ function TableauComptes({ config }: { config: BudgetConfig }) {
             <td className={TD}>
               {pourcent(c.participation)}
               {c.participation === 1 && (
-                <span className="text-text-sec/70"> (par défaut)</span>
+                <span className="text-text-sec"> (par défaut)</span>
               )}
             </td>
             <Cellule valeur={c.compteLie === null ? null : parId.get(c.compteLie) ?? c.compteLie} />

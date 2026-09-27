@@ -24,9 +24,12 @@ export function fmtImportOrigine(
   importedAt: string | null
 ): string {
   const base = fileName
-    ? `les donnees de « ${fileName} »`
-    : "des donnees importees";
+    ? `les données de « ${fileName} »`
+    : "des données importées";
   if (!importedAt) return base;
   const jour = jourFr(importedAt);
-  return jour ? `${base}, importees le ${jour}` : base;
+  if (!jour) return base;
+  // Sans nom de fichier : « des données importées le 11/08/2026 », pas
+  // « des données importées, importées le … ».
+  return fileName ? `${base}, importées le ${jour}` : `${base} le ${jour}`;
 }

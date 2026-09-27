@@ -24,7 +24,8 @@ export function AppShell() {
       <Header />
       <div className="flex flex-1 overflow-hidden">
         {!isMobile && <Sidebar />}
-        <main className="flex-1 overflow-y-auto flex flex-col">
+        {/* Lot D.5 — zone défilante atteignable au clavier (flèches, Page suivante). */}
+        <main tabIndex={0} className="flex-1 overflow-y-auto flex flex-col focus-visible:outline-offset-[-2px]">
           {/* Sous-navigation contextuelle (pills) — rendue seulement si
               l'onglet courant a des pills ; visible desktop et mobile */}
           <SubNav />
