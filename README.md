@@ -352,7 +352,7 @@ de ce qui est versionné.
 
 ## Démarrer
 
-Node 22 ou plus (`.nvmrc`), npm 10 ou plus.
+Node 22 ou plus (`.node-version`), npm 10 ou plus.
 
 ```bash
 npm ci        # installation reproductible
