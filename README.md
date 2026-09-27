@@ -352,6 +352,8 @@ de ce qui est versionné.
 
 ## Démarrer
 
+Node 22 ou plus (`.nvmrc`), npm 10 ou plus.
+
 ```bash
 npm ci        # installation reproductible
 npm run dev   # http://localhost:5173
