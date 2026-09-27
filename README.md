@@ -10,7 +10,7 @@
 **➜ Voir la démonstration : https://dashboard-budget-demo.pages.dev/**
 
 Version publique et statique d'un tableau de bord de finances personnelles.
-React 18, TypeScript, Vite, Tailwind, Zustand, Recharts. 921 tests.
+React 18, TypeScript, Vite, Tailwind, Zustand, Recharts. 975 tests.
 
 ![Page Comptes](docs/captures/desktop-01-comptes.png)
 
@@ -286,7 +286,7 @@ téléphone.
 | Réseau pendant l'import | 0 requête hors du site |
 | Mobile (320 à 412 px, puis un vrai téléphone) | aucun débordement, cibles tactiles de 44 px ou plus |
 | Modèle modifié et réenregistré par Excel | relu sans rejet |
-| Site publié | `npm audit --omit=dev` : 0 alerte |
+| Dépendances | `npm audit` : 0 alerte, site publié et outillage |
 
 Elle a trouvé de vrais défauts : une fenêtre d'import inatteignable au
 clavier, une promesse de confidentialité écrite à un contraste de 1,2:1,
@@ -428,6 +428,7 @@ Aucun fichier `.env` : ni API, ni jeton, ni secret.
 | **G** | Noms génériques, liste noire hors du dépôt, historique repris à zéro | ✅ |
 | **H** | Modèle facile à remplir : deux couleurs, listes, consignes et notes, Visualisation, verrou sans mot de passe, tri par date | ✅ |
 | **D** | Recette de diffusion — clone propre, dépendances du site sans alerte, CI sur Node 22, accessibilité, clavier, erreurs, mobile, arrondi comme Excel | ✅ |
+| **O** | Outils à jour — Vite 8, Vitest 5, ESLint 10 ; plus aucune alerte `npm audit`, outillage compris | ✅ |
 
 ---
 
@@ -456,13 +457,6 @@ une moyenne fausse ne se voit pas, une moyenne absente se voit.
 suffit à la feuille `Paie` ; les deux graphiques de détail des cotisations ont
 besoin d'une ligne par ligne de bulletin. Ils restent alimentés par
 l'adaptateur de l'ancien format, et affichent un message dans l'autre cas.
-
-**L'outillage de développement porte encore des alertes.** Le site publié
-n'en a aucune (`npm audit --omit=dev` : 0). Les outils qui servent à le
-construire et à le tester en gardent sept, modérées ou élevées : le serveur de
-développement de Vite (surtout sous Windows), Vitest, et une bibliothèque du
-générateur de classeur. Toutes demandent une version majeure, à faire à part.
-ESLint 8, en fin de vie, attend de même sa migration vers ESLint 9.
 
 **Le mois courant de la démonstration est figé** à septembre 2026. C'est le
 prix du déterminisme du générateur : un jeu qui bouge à chaque exécution
