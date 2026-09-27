@@ -243,7 +243,7 @@ la valeur manque, et non un tiret muet.
 
 | | |
 |---|---|
-| Tests | **921**, 71 fichiers |
+| Tests | **975**, 77 fichiers |
 | Chaîne complète | lint → types → tests → build → contrôle de publication → vocabulaire → reproductibilité des données → reproductibilité du modèle |
 | Durée | environ 90 s |
 | CI | tout ce qui précède, plus gitleaks et un contrôle de fraîcheur des données |
@@ -271,6 +271,27 @@ export const JETON     = "v1.0-9f3a…"   → NON détecté
 
 Même valeur, même fichier. Seul le nom change. Un projet écrit en français a
 donc un angle mort, comblé par une règle maison.
+
+### La recette de diffusion
+
+Avant de montrer le site, il a été parcouru comme un inconnu le ferait :
+dépôt cloné sur une machine neuve, navigateur sans profil, clavier seul,
+téléphone.
+
+| Contrôle | Résultat |
+|---|---|
+| Accessibilité (axe-core, WCAG 2 A/AA et bonnes pratiques) | 0 défaut sur les 11 écrans et la fenêtre d'import |
+| Clavier seul | tout le parcours, import compris ; focus visible, piégé dans la fenêtre, rendu à la fermeture |
+| Fichiers piégés (vide, CSV renommé, .xls, chiffré, colonne manquante) | un message juste pour chacun, aucun écran blanc |
+| Réseau pendant l'import | 0 requête hors du site |
+| Mobile (320 à 412 px, puis un vrai téléphone) | aucun débordement, cibles tactiles de 44 px ou plus |
+| Modèle modifié et réenregistré par Excel | relu sans rejet |
+| Site publié | `npm audit --omit=dev` : 0 alerte |
+
+Elle a trouvé de vrais défauts : une fenêtre d'import inatteignable au
+clavier, une promesse de confidentialité écrite à un contraste de 1,2:1,
+des messages d'erreur qui accusaient la mauvaise cause, un arrondi qui
+s'écartait d'un centime de celui d'Excel. Tous corrigés, et verrouillés par des tests.
 
 ---
 
@@ -406,7 +427,7 @@ Aucun fichier `.env` : ni API, ni jeton, ni secret.
 | **F** | Prêt calculé depuis sa date et contrôlé par les transactions ; vrai classeur modèle (listes, formules, Visualisation) publié sous garde-fou | ✅ |
 | **G** | Noms génériques, liste noire hors du dépôt, historique repris à zéro | ✅ |
 | **H** | Modèle facile à remplir : deux couleurs, listes, consignes et notes, Visualisation, verrou sans mot de passe, tri par date | ✅ |
-| **D** | Recette de diffusion | à venir |
+| **D** | Recette de diffusion — clone propre, dépendances du site sans alerte, CI sur Node 22, accessibilité, clavier, erreurs, mobile, arrondi comme Excel | ✅ |
 
 ---
 
@@ -446,6 +467,10 @@ ESLint 8, en fin de vie, attend de même sa migration vers ESLint 9.
 **Le mois courant de la démonstration est figé** à septembre 2026. C'est le
 prix du déterminisme du générateur : un jeu qui bouge à chaque exécution
 rendrait tout écart de test ininterprétable.
+
+**Le contrôle d'accessibilité n'est pas dans la CI.** Il a été passé à la
+main, écran par écran, au lot D. Une régression future ne serait vue qu'à la
+prochaine recette.
 
 **Le SMIC net porte une incohérence héritée** de la base de référence : les
 années postérieures à 2019 utilisent la dernière revalorisation de l'année,
