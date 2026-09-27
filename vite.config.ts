@@ -1,7 +1,7 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import { CSP_META, fichierEnTetes } from "./src/config/csp";
+import { CSP_META, fichierEnTetes } from "./src/config/csp.ts";
 
 /**
  * Sécurité de la page publiée — lot B.7.
@@ -46,17 +46,26 @@ function securitePublication(): Plugin {
 export default defineConfig({
   plugins: [react(), securitePublication()],
   resolve: {
-    alias: { "@": path.resolve(__dirname, "./src") },
+    alias: { "@": path.resolve(import.meta.dirname, "./src") },
   },
   build: {
     sourcemap: false,
-    rollupOptions: {
+    // Vite 8 construit avec Rolldown : `manualChunks` en objet n'existe plus,
+    // les deux paquets de bibliothèques s'écrivent en groupes. xlsx n'y est
+    // pas : il est importé dans le Web Worker, qui a son propre bundle.
+    rolldownOptions: {
       output: {
-        // NB : xlsx retiré de manualChunks car importé dans le Web Worker
-        // (le worker a son propre bundle, pas de partage de chunks)
-        manualChunks: {
-          react: ["react", "react-dom", "react-router-dom"],
-          charts: ["recharts"],
+        codeSplitting: {
+          groups: [
+            {
+              name: "react",
+              test: /[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler|cookie|set-cookie-parser)[\\/]/,
+            },
+            {
+              name: "charts",
+              test: /[\\/]node_modules[\\/](recharts|recharts-scale|react-smooth|victory-vendor|d3-[^\\/]+|internmap|lodash|decimal\.js-light|eventemitter3|fast-equals|tiny-invariant|react-transition-group|dom-helpers|clsx|prop-types|react-is)[\\/]/,
+            },
+          ],
         },
       },
     },

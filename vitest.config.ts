@@ -6,7 +6,7 @@ import path from "path";
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: { "@": path.resolve(__dirname, "./src") },
+    alias: { "@": path.resolve(import.meta.dirname, "./src") },
   },
   test: {
     globals: true,
@@ -22,7 +22,7 @@ export default defineConfig({
     // projet : depuis ce dossier, il chargeait le vitest.setup.ts du projet
     // parent au lieu du notre. Invisible tant que la copie n'est pas imbriquee
     // dans un autre projet ; bloquant ici.
-    setupFiles: [path.resolve(__dirname, "vitest.setup.ts")],
+    setupFiles: [path.resolve(import.meta.dirname, "vitest.setup.ts")],
     include: ["src/**/__tests__/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", "dist"],
     coverage: {
