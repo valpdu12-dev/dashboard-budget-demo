@@ -199,7 +199,16 @@ function DataTableInner<T extends Record<string, unknown>>({
           )}
         </div>
       ) : (
-      <div className="overflow-x-auto">
+      // `tabIndex={0}` + `role="region"` : quand le tableau est plus large que
+      // la carte (ex. colonne « Événement », 20/10/2026, sur un vrai fichier :
+      // 1 050 px pour 982 px), la zone défile — elle doit alors être
+      // atteignable au clavier (axe-core : scrollable-region-focusable).
+      <div
+        className="overflow-x-auto"
+        tabIndex={0}
+        role="region"
+        aria-label={title ? `Tableau : ${title}` : "Tableau"}
+      >
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-border">

@@ -23,6 +23,37 @@ export interface EtatFiltres {
   selCat2: string | null;
   selType: string | null;
   selOrg: string | null;
+  /** Enseignes cochées (cat3) ; vide = aucun filtre. */
+  selEnseignes: readonly string[];
+  /** Événements cochés (cat4) ; vide = aucun filtre. */
+  selEvenements: readonly string[];
+}
+
+/**
+ * Garde les transactions dont l'enseigne est dans `enseignes` ET l'événement
+ * dans `evenements`. Une liste vide ne filtre pas.
+ *
+ * Plusieurs valeurs dans une liste = OU ; les deux listes entre elles = ET.
+ * Comparaison EXACTE : « UBER » ≠ « Uber » (les doublons d'écriture se
+ * corrigent dans le fichier source, pas ici).
+ *
+ * Exemple : enseignes = [Boulangerie, Cinéma], evenements = [Rentrée]
+ *   → les lignes Boulangerie OU Cinéma, ET dans « Rentrée ».
+ *
+ * UNE seule fonction, partagée par `filteredTx` et par les blocs 1 et 8 de
+ * `calculDepenses.ts` : sinon un graphique finit par oublier une liste.
+ */
+export function garderCategories<T extends { cat3: string; cat4: string }>(
+  tx: T[],
+  enseignes: readonly string[],
+  evenements: readonly string[]
+): T[] {
+  if (!enseignes.length && !evenements.length) return tx;
+  const e3 = new Set(enseignes);
+  const e4 = new Set(evenements);
+  return tx.filter(
+    (t) => (!e3.size || e3.has(t.cat3)) && (!e4.size || e4.has(t.cat4))
+  );
 }
 
 export interface DonneesFiltrees {
@@ -41,7 +72,10 @@ export function filtrerDonnees(
   f: EtatFiltres,
   regles: Regles
 ): DonneesFiltrees {
-  const { period, cat1Filter, showTransfers, selMonth, selCat2, selType, selOrg } = f;
+  const {
+    period, cat1Filter, showTransfers, selMonth, selCat2, selType, selOrg,
+    selEnseignes, selEvenements,
+  } = f;
 
   // ─── Liste triée de tous les mois disponibles ──────────────────
   const allMonths = extractAllMonths(transactions);
@@ -118,6 +152,7 @@ export function filtrerDonnees(
   if (selCat2) filteredTx = filteredTx.filter((t) => t.cat2 === selCat2);
   if (selType) filteredTx = filteredTx.filter((t) => t.type === selType);
   if (selOrg) filteredTx = filteredTx.filter((t) => toOrganisme(t.compte, regles) === selOrg);
+  filteredTx = garderCategories(filteredTx, selEnseignes, selEvenements);
 
   return {
     allMonths,

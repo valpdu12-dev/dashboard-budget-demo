@@ -25,6 +25,7 @@ import { Chip } from "@/components/ui/Chip";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SkeletonPage } from "@/components/ui/Skeleton";
+import { ListeRecherche } from "@/components/ui/ListeRecherche";
 
 import { useFilterStore } from "@/stores/useFilterStore";
 import { useDataStore } from "@/stores/useDataStore";
@@ -35,6 +36,7 @@ import { useExpenseData } from "@/hooks/useExpenseData";
 import { useBudgetData } from "@/hooks/useBudgetData";
 import { useFilterSync } from "@/hooks/useFilterSync";
 import { useChartSize } from "@/hooks/useChartSize";
+import { useOptionsCategorie } from "@/hooks/useOptionsCategorie";
 import { useInfobulleTactile } from "@/hooks/useInfobulleTactile";
 import { BandeauMoisNonComparables } from "@/components/ui/BandeauMoisNonComparables";
 
@@ -211,7 +213,15 @@ const colonnesDetail = (couleurs: Couleurs) => [
   },
   {
     key: "cat3" as const,
-    label: "Marchand",
+    label: "Enseigne",
+    sortable: true,
+    render: (v: unknown) => (
+      <span className="text-text-sec md:max-w-[140px] md:truncate md:block">{String(v || "—")}</span>
+    ),
+  },
+  {
+    key: "cat4" as const,
+    label: "Événement",
     sortable: true,
     render: (v: unknown) => (
       <span className="text-text-sec md:max-w-[140px] md:truncate md:block">{String(v || "—")}</span>
@@ -239,7 +249,10 @@ const colonnesDetail = (couleurs: Couleurs) => [
 export default function Depenses() {
   const couleurs = useCouleurs();
   const { status } = useDataStore();
-  useFilterSync({ month: "selMonth", cat2: "selCat2", type: "selType", org: "selOrg" });
+  useFilterSync({
+    month: "selMonth", cat2: "selCat2", type: "selType", org: "selOrg",
+    enseigne: "selEnseignes", evenement: "selEvenements",
+  });
 
   // ── Stores & hooks ────────────────────────────────────────────────────
   const {
@@ -247,8 +260,16 @@ export default function Depenses() {
     selCat2, setSelCat2,
     selType, setSelType,
     selOrg, setSelOrg,
+    selEnseignes, setSelEnseignes,
+    selEvenements, setSelEvenements,
+    period, setPeriod,
     clearDepFilters,
   } = useFilterStore();
+
+  // Listes Enseigne / Événement : construites sur TOUTES les transactions,
+  // pas sur la période (voir calculs/optionsCategorie.ts). Une liste sans
+  // aucune valeur n'est pas affichée (décision D6, sur le jeu complet).
+  const { enseignes, evenements } = useOptionsCategorie();
 
   // Lot 1.2 — dimensions de graphique pilotées par le palier d'affichage.
   // Sur les 3 graphiques à barres horizontales, l'axe Y figé et la marge
@@ -328,7 +349,12 @@ export default function Depenses() {
     return { total, nb, moyMois, curTotal, prevTotal };
   }, [filteredTx, allMonthsInRange, currentMonth, prevMonth, regles]);
 
-  const hasFilters = selMonth || selCat2 || selType || selOrg;
+  const hasFilters = selMonth || selCat2 || selType || selOrg
+    || selEnseignes.length > 0 || selEvenements.length > 0;
+  /** Une enseigne ou un événement choisi, mais aucune dépense sur la période. */
+  const choixSansDepense = (selEnseignes.length > 0 || selEvenements.length > 0) && kpis.nb === 0;
+  /** Valeurs affichées dans le message « rien sur la période ». */
+  const choixLibelle = [...selEnseignes, ...selEvenements].join(" · ");
 
   if (status !== "success") return <SkeletonPage />;
 
@@ -339,6 +365,31 @@ export default function Depenses() {
     // mieux que six posés en parallèle.
     <div className="flex flex-col gap-6" {...infobulle.handlers}>
       <PageHeader title="Dépenses" subtitle="Analyse détaillée de vos dépenses" />
+
+      {/* Listes Enseigne / Événement. `relative` : sous 768 px, le panneau
+          ouvert se cale sur ce conteneur et prend toute la largeur. */}
+      {(enseignes.length > 0 || evenements.length > 0) && (
+        <div className="relative -mt-3 grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
+          {enseignes.length > 0 && (
+            <ListeRecherche
+              libelle="Enseigne"
+              libelleTous="Toutes"
+              options={enseignes}
+              valeurs={selEnseignes}
+              onChange={setSelEnseignes}
+            />
+          )}
+          {evenements.length > 0 && (
+            <ListeRecherche
+              libelle="Événement"
+              libelleTous="Tous"
+              options={evenements}
+              valeurs={selEvenements}
+              onChange={setSelEvenements}
+            />
+          )}
+        </div>
+      )}
 
       {/* Filtres actifs */}
       {hasFilters && (
@@ -357,10 +408,32 @@ export default function Depenses() {
           )}
           <button
             onClick={clearDepFilters}
-            className="text-xs text-indigo-text hover:underline ml-1"
+            className="text-xs text-indigo-text hover:underline ml-1 max-md:min-h-[44px] max-md:px-1"
           >
             Effacer tout
           </button>
+        </div>
+      )}
+
+      {/* Enseigne / Événement choisi, mais rien sur la période : on le dit,
+          au lieu d'une page de zéros sans explication. */}
+      {choixSansDepense && (
+        <div role="status" className="card border-dashed text-center py-5">
+          <div className="text-sm font-semibold text-text">Aucune dépense sur cette période</div>
+          <div className="text-xs text-text-sec mt-1">
+            {period === "all"
+              ? `Aucune dépense ne correspond à « ${choixLibelle} » avec les filtres en cours.`
+              : `« ${choixLibelle} » peut exister sur d'autres mois.`}
+          </div>
+          {period !== "all" && (
+            <button
+              type="button"
+              onClick={() => setPeriod("all")}
+              className="mt-3 px-3 py-1.5 max-md:min-h-[44px] rounded-lg bg-indigo-deep text-white text-xs font-medium"
+            >
+              Passer à « Tout »
+            </button>
+          )}
         </div>
       )}
 
@@ -717,9 +790,9 @@ export default function Depenses() {
         emptyMessage="Aucune dépense trouvée"
       />
 
-      {/* Top 10 marchands */}
+      {/* Top 10 enseignes */}
       <div className="card">
-        <div className="text-sm font-medium text-text mb-3">Top 10 marchands</div>
+        <div className="text-sm font-medium text-text mb-3">Top 10 enseignes</div>
         {topMerchants.length === 0 ? (
           <EmptyState title="Aucune donnée" />
         ) : (

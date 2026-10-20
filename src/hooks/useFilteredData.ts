@@ -16,13 +16,16 @@ export function useFilteredData(): DonneesFiltrees {
   const {
     period, cat1Filter, showTransfers,
     selMonth, selCat2, selType, selOrg,
+    selEnseignes, selEvenements,
   } = useFilterStore();
   const regles = useRegles();
 
   return useMemo(
     () => filtrerDonnees(transactions, {
       period, cat1Filter, showTransfers, selMonth, selCat2, selType, selOrg,
+      selEnseignes, selEvenements,
     }, regles),
-    [transactions, period, cat1Filter, showTransfers, selMonth, selCat2, selType, selOrg, regles]
+    [transactions, period, cat1Filter, showTransfers, selMonth, selCat2, selType, selOrg,
+      selEnseignes, selEvenements, regles]
   );
 }

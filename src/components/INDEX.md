@@ -22,6 +22,7 @@ Composants partagés à travers les pages, regroupés en trois familles : layout
 | `Chip.tsx` | Chip / tag de filtre |
 | `PageHeader.tsx` | En-tête de page avec fil d'Ariane |
 | `EmptyState.tsx` | État vide (aucune donnée à afficher) |
+| `ListeRecherche.tsx` | Liste déroulante à choix multiples avec recherche (Enseigne / Événement, page Dépenses) — reprise du site privé |
 | `Skeleton.tsx` | Loaders animés (KPI, graphiques, donut, table) pour le chargement |
 
 ## `upload/` — Import de données

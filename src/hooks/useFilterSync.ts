@@ -20,6 +20,7 @@ import { useFilterStore } from "@/stores/useFilterStore";
 /** Clés de filtre du store qui peuvent être synchronisées avec l'URL */
 type SyncableFilterKey =
   | "selMonth" | "selCat2" | "selType" | "selOrg"
+  | "selEnseignes" | "selEvenements"
   | "selRecMonth" | "selRecType"
   | "selEpMonth" | "selEpType"
   | "selEntreprise" | "selYear"
@@ -34,6 +35,8 @@ const SETTER_MAP: Record<SyncableFilterKey, string> = {
   selCat2:       "setSelCat2",
   selType:       "setSelType",
   selOrg:        "setSelOrg",
+  selEnseignes:  "setSelEnseignes",
+  selEvenements: "setSelEvenements",
   selRecMonth:   "setSelRecMonth",
   selRecType:    "setSelRecType",
   selEpMonth:    "setSelEpMonth",
@@ -42,6 +45,13 @@ const SETTER_MAP: Record<SyncableFilterKey, string> = {
   selYear:       "setSelYear",
   period:        "setPeriod",
 };
+
+/**
+ * Clés à valeurs MULTIPLES : un paramètre répété par valeur
+ * (`?enseigne=Primeur&enseigne=Cinéma`). Un lien à une seule valeur
+ * (`?enseigne=Primeur`) reste valide.
+ */
+const CLES_MULTIPLES = new Set<SyncableFilterKey>(["selEnseignes", "selEvenements"]);
 
 /**
  * Synchronise les filtres Zustand avec les query params de l'URL.
@@ -63,12 +73,17 @@ export function useFilterSync(mapping: ParamMapping) {
 
     const storeState = useFilterStore.getState();
     for (const [urlParam, storeKey] of Object.entries(mapping)) {
+      const setterName = SETTER_MAP[storeKey];
+      const setter = (storeState as unknown as Record<string, unknown>)[setterName];
+      if (typeof setter !== "function") continue;
+      if (CLES_MULTIPLES.has(storeKey)) {
+        const valeurs = searchParams.getAll(urlParam).filter((v) => v !== "");
+        if (valeurs.length) (setter as (v: string[]) => void)(valeurs);
+        continue;
+      }
       const urlValue = searchParams.get(urlParam);
       if (urlValue && urlValue !== storeState[storeKey]) {
-        const setterName = SETTER_MAP[storeKey];
-        if (setterName && typeof (storeState as unknown as Record<string, unknown>)[setterName] === "function") {
-          (storeState as unknown as Record<string, (...args: unknown[]) => void>)[setterName](urlValue);
-        }
+        (setter as (v: string) => void)(urlValue);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -80,7 +95,9 @@ export function useFilterSync(mapping: ParamMapping) {
 
     for (const [urlParam, storeKey] of Object.entries(mapping)) {
       const value = store[storeKey];
-      if (value != null && value !== "") {
+      if (Array.isArray(value)) {
+        value.forEach((v) => params.append(urlParam, v));
+      } else if (value != null && value !== "") {
         params.set(urlParam, String(value));
       }
     }

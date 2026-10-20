@@ -33,6 +33,11 @@ démonstration et sur le classeur modèle.
 | `calculPret.ts` | Écran Prêt immobilier | `TYPE_PRET_CAPITAL`, `TYPE_PRET_INTERETS` |
 | `calculInsights.ts` | Hausses, baisses, récurrents | `TRANSFER_TYPES` |
 
+*Filtres Enseigne / Événement (20/10/2026)* : `filtrerDonnees.ts` porte
+`garderCategories`, LA fonction de filtre partagée par `filteredTx` et par les
+blocs 1 et 8 de `calculDepenses.ts`. Nouveau : `optionsCategorie.ts` construit
+les deux listes (toutes les transactions, sans vide ni « x », tri français).
+
 ## Ce qui n'a pas été déplacé, et pourquoi
 
 `useBudgetData`, `useSalaryPageData` et `useSalaryInflationData` lisent encore

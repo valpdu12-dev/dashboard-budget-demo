@@ -81,11 +81,15 @@ En-tête en ligne 1, données à partir de la ligne 2.
 | `Sens` | **oui** | `Débit` ou `Crédit` |
 | `Classe` | oui pour une **dépense** | `Dépense Fixe`, `Dépense Courante` ou `Dépense Occasionnelle` — vide sinon (§3.3) |
 | `Catégorie` | non, mais avertie | Poste de budget — c'est le niveau des objectifs (§3.7) |
-| `Sous-catégorie` | non | Détail |
-| `Détail` | non | Texte libre |
+| `Enseigne` | non | Chez qui, ou pour quoi. Alimente la liste « Enseigne » de la page Dépenses. Ancien nom accepté : `Sous-catégorie` |
+| `Événement` | non | Ce qui regroupe plusieurs dépenses (« Vacances d'été »). Alimente la liste « Événement ». Ancien nom accepté : `Détail` |
 | `Libellé` | non | Libellé bancaire brut |
 | `Ville` | non | Texte libre |
 | `Prévisionnel` | non | `x` marque une ligne à ignorer (voir §3.5) |
+
+`Enseigne` et `Sous-catégorie` sont deux noms de la même colonne : un fichier
+qui porte les deux est refusé, avec un message (il est ambigu). Même règle
+pour `Événement` et `Détail`.
 
 ### 3.1 Dates
 

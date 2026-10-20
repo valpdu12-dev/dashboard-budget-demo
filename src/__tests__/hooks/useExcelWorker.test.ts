@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useExcelWorker } from "@/hooks/useExcelWorker";
 import { useDataStore } from "@/stores/useDataStore";
+import { useFilterStore } from "@/stores/useFilterStore";
 import { CLE } from "@/services/jeuDonnees";
 import { lireProfil } from "@/services/profil";
 import { resetDataStore } from "../helpers/storeReset";
@@ -170,6 +171,20 @@ describe("useExcelWorker — apply()", () => {
     // configuration posée est VIDE, pas celle du jeu précédent.
     expect(store.config).toEqual({ init: {}, demo: false });
     expect(store.budgets).toEqual({ budgets: [] });
+  });
+
+  it("un nouveau fichier vide les listes Enseigne / Événement (pas de filtre fantôme)", () => {
+    useFilterStore.setState({ selEnseignes: ["Primeur"], selEvenements: ["Rentrée"] });
+    const { result } = renderHook(() => useExcelWorker());
+    act(() => { result.current.parse(new ArrayBuffer(4)); });
+    act(() => {
+      workerInstance?.simulateMessage({
+        type: "result", transactions: MOCK_RAW, salary: MOCK_SALARY, validation: MOCK_VALIDATION,
+      });
+    });
+    act(() => { result.current.apply(); });
+    const f = useFilterStore.getState();
+    expect([f.selEnseignes, f.selEvenements]).toEqual([[], []]);
   });
 
   it("ne fait rien quand aucune donnée n'a été lue", () => {

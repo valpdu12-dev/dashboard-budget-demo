@@ -15,14 +15,16 @@ export type {
 
 export function useExpenseData() {
   const { baseTx, filteredTx, allMonthsInRange } = useFilteredData();
-  const { selCat2, selType, selOrg } = useFilterStore();
+  const { selCat2, selType, selOrg, selEnseignes, selEvenements } = useFilterStore();
   const { transactions: allTransactions } = useDataStore();
   const regles = useRegles();
 
   return useMemo(
     () => calculerDepenses({
-      baseTx, filteredTx, allMonthsInRange, selCat2, selType, selOrg, allTransactions,
+      baseTx, filteredTx, allMonthsInRange, selCat2, selType, selOrg,
+      selEnseignes, selEvenements, allTransactions,
     }, regles),
-    [baseTx, filteredTx, allMonthsInRange, selCat2, selType, selOrg, allTransactions, regles]
+    [baseTx, filteredTx, allMonthsInRange, selCat2, selType, selOrg,
+      selEnseignes, selEvenements, allTransactions, regles]
   );
 }

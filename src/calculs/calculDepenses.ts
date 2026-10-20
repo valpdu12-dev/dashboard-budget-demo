@@ -9,6 +9,7 @@ import { mkLabel } from "@/utils/formatters";
 import type { Transaction } from "@/types";
 import type { Regles } from "@/calculs/regles";
 import { montantDepense, toucheDepenses } from "@/calculs/mouvements";
+import { garderCategories } from "@/calculs/filtrerDonnees";
 
 
 // ─── Types de retour ────────────────────────────────────────────────────
@@ -37,6 +38,8 @@ export interface DetailRow {
   type: string;
   cat2: string;
   cat3: string;
+  /** Événement (colonne « Événement », cat4). */
+  cat4: string;
   compte: string;
   montant: number;
 }
@@ -72,6 +75,10 @@ export interface EntreesDepenses {
   selCat2: string | null;
   selType: string | null;
   selOrg: string | null;
+  /** Enseignes cochées (cat3) : rejouées par les blocs 1 et 8. */
+  selEnseignes: readonly string[];
+  /** Événements cochés (cat4) : rejoués par les blocs 1 et 8. */
+  selEvenements: readonly string[];
   /** Le jeu COMPLET : les séries d'organismes ne doivent pas bouger au filtre. */
   allTransactions: Transaction[];
 }
@@ -83,7 +90,10 @@ export interface EntreesDepenses {
  * `transfert-interne`, déclarés par la source.
  */
 export function calculerDepenses(e: EntreesDepenses, regles: Regles) {
-  const { baseTx, filteredTx, allMonthsInRange, selCat2, selType, selOrg, allTransactions } = e;
+  const {
+    baseTx, filteredTx, allMonthsInRange, selCat2, selType, selOrg,
+    selEnseignes, selEvenements, allTransactions,
+  } = e;
 
 
   // Les organismes à tracer viennent des DONNÉES, pas d'une liste figée.
@@ -98,6 +108,8 @@ export function calculerDepenses(e: EntreesDepenses, regles: Regles) {
     let tx = baseTx;
     if (selCat2) tx = tx.filter((t) => t.cat2 === selCat2);
     if (selType) tx = tx.filter((t) => t.type === selType);
+    // Enseigne / Événement : même fonction que `filteredTx`.
+    tx = garderCategories(tx, selEnseignes, selEvenements);
 
     const rows = allMonthsInRange.map((mk) => {
       const mTx = tx.filter((t) => t.monthKey === mk && toucheDepenses(t, regles));
@@ -162,6 +174,7 @@ export function calculerDepenses(e: EntreesDepenses, regles: Regles) {
         type: t.type,
         cat2: t.cat2,
         cat3: t.cat3,
+        cat4: t.cat4,
         compte: t.compte,
         montant: montantDepense(t, regles),
       }));
@@ -170,7 +183,7 @@ export function calculerDepenses(e: EntreesDepenses, regles: Regles) {
   const detailTotal = ((() => detailRows.reduce((s, r) => s + r.montant, 0)
   ))();
 
-  // ── 5. Top 10 marchands (Cat3) ────────────────────────────────────
+  // ── 5. Top 10 enseignes (Cat3) ────────────────────────────────────
   const topMerchants = ((): TopItem[] => {
     const map: Record<string, number> = {};
     filteredTx
@@ -274,7 +287,8 @@ export function calculerDepenses(e: EntreesDepenses, regles: Regles) {
     // `filteredTx` ne porte que l'annee en cours : l'annee precedente est
     // reprise depuis les donnees completes, et les filtres de selection y
     // sont rejoues a l'identique.
-    const yPrev = allTransactions.filter(
+    // Enseigne / Événement : même fonction que `filteredTx`, rejouée ici.
+    const yPrev = garderCategories(allTransactions, selEnseignes, selEvenements).filter(
       (t) =>
         estDepense(t) &&
         t.date.startsWith(prevYear) &&

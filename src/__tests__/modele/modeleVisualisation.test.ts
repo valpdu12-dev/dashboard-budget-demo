@@ -35,6 +35,7 @@ const regles = construireRegles(config);
 const f = filtrerDonnees(tx, {
   period: "all", cat1Filter: "all", showTransfers: false,
   selMonth: null, selCat2: null, selType: null, selOrg: null,
+  selEnseignes: [], selEvenements: [],
 }, regles);
 const soldes = calculerSoldes(tx, f.allMonths, config.init ?? {}, regles);
 // Mois courant septembre, mois précédent août : les KPI « prev » sont ceux d'août.

@@ -145,8 +145,11 @@ const COLONNES_TX = {
   sens: "Sens",
   classe: "Classe",
   categorie: "Catégorie",
-  sousCategorie: "Sous-catégorie",
-  detail: "Détail",
+  // Filtres Enseigne / Événement (20/10/2026) : nouveaux noms en tête, anciens
+  // noms toujours acceptés — un modèle déjà téléchargé continue de marcher.
+  // Les deux noms dans le même fichier : refusé, le fichier est ambigu.
+  sousCategorie: ["Enseigne", "Sous-catégorie"],
+  detail: ["Événement", "Détail"],
   libelle: "Libellé",
   ville: "Ville",
   previsionnel: "Prévisionnel",
@@ -282,10 +285,18 @@ class Collecteur {
   }
 }
 
-/** Associe chaque colonne connue à son index, depuis la ligne 1. */
+/**
+ * Associe chaque colonne connue à son index, depuis la ligne 1.
+ *
+ * Un champ peut avoir PLUSIEURS noms (le nouveau, puis l'ancien) : on prend
+ * celui qui est présent. Les deux présents à la fois, c'est un conflit, pas
+ * un choix — « le premier gagne » serait silencieux.
+ * Exemple : « Enseigne » et « Sous-catégorie » dans la même feuille → refus.
+ */
 function indexerColonnes(
   entetes: unknown[],
-  dictionnaire: Record<string, string>
+  dictionnaire: Record<string, string | readonly string[]>,
+  feuille?: string
 ): Record<string, number> {
   const parNom = new Map<string, number>();
   entetes.forEach((e, i) => {
@@ -293,9 +304,17 @@ function indexerColonnes(
     if (cle && !parNom.has(cle)) parNom.set(cle, i);
   });
   const out: Record<string, number> = {};
-  for (const [champ, libelle] of Object.entries(dictionnaire)) {
-    const i = parNom.get(normaliserCle(libelle));
-    if (i !== undefined) out[champ] = i;
+  for (const [champ, libelles] of Object.entries(dictionnaire)) {
+    const noms: readonly string[] = typeof libelles === "string" ? [libelles] : libelles;
+    const trouves = noms.filter((n) => parNom.has(normaliserCle(n)));
+    if (trouves.length > 1) {
+      throw new ErreurClasseur(
+        `${feuille ? `Feuille « ${feuille} » : ` : ""}les colonnes « ${trouves.join(" » et « ")} » ` +
+          `sont toutes les deux présentes en ligne 1. Ce sont deux noms de la même colonne ` +
+          `(« ${noms[0]} » est le nouveau nom). Gardez-en une seule : le fichier est ambigu.`
+      );
+    }
+    if (trouves.length === 1) out[champ] = parNom.get(normaliserCle(trouves[0]))!;
   }
   return out;
 }
@@ -337,7 +356,7 @@ function lireTransactions(
       continue;
     }
 
-    const idx = indexerColonnes(rows[0] as unknown[], COLONNES_TX);
+    const idx = indexerColonnes(rows[0] as unknown[], COLONNES_TX, nom);
     const manquantes = OBLIGATOIRES_TX.filter((c) => idx[c] === undefined);
     if (manquantes.length) {
       throw new ErreurClasseur(

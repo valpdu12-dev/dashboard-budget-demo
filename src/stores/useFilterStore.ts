@@ -13,6 +13,13 @@ interface FilterState {
   selCat2: string | null;
   selType: string | null;
   selOrg: string | null;
+  /**
+   * Enseignes choisies (colonne « Enseigne », cat3), page Dépenses.
+   * Tableau vide = aucun filtre. Plusieurs valeurs = OU (l'une ou l'autre).
+   */
+  selEnseignes: string[];
+  /** Événements choisis (colonne « Événement », cat4). Même règle. */
+  selEvenements: string[];
 
   // Drill-down recettes
   selRecMonth: string | null;
@@ -34,6 +41,8 @@ interface FilterState {
   setSelCat2: (v: string | null) => void;
   setSelType: (v: string | null) => void;
   setSelOrg: (v: string | null) => void;
+  setSelEnseignes: (v: string[]) => void;
+  setSelEvenements: (v: string[]) => void;
   setSelRecMonth: (v: string | null) => void;
   setSelRecType: (v: string | null) => void;
   setSelEpMonth: (v: string | null) => void;
@@ -52,6 +61,7 @@ export const useFilterStore = create<FilterState>((set) => ({
   cat1Filter: "all",
   showTransfers: false,
   selMonth: null, selCat2: null, selType: null, selOrg: null,
+  selEnseignes: [], selEvenements: [],
   selRecMonth: null, selRecType: null,
   selEpMonth: null, selEpType: null,
   selEntreprise: null, selYear: null,
@@ -63,6 +73,8 @@ export const useFilterStore = create<FilterState>((set) => ({
   setSelCat2:       (v) => set({ selCat2: v }),
   setSelType:       (v) => set({ selType: v }),
   setSelOrg:        (v) => set({ selOrg: v }),
+  setSelEnseignes:  (v) => set({ selEnseignes: v }),
+  setSelEvenements: (v) => set({ selEvenements: v }),
   setSelRecMonth:   (v) => set({ selRecMonth: v }),
   setSelRecType:    (v) => set({ selRecType: v }),
   setSelEpMonth:    (v) => set({ selEpMonth: v }),
@@ -70,12 +82,16 @@ export const useFilterStore = create<FilterState>((set) => ({
   setSelEntreprise: (v) => set({ selEntreprise: v }),
   setSelYear:       (v) => set({ selYear: v }),
 
-  clearDepFilters: () => set({ selMonth: null, selCat2: null, selType: null, selOrg: null }),
+  clearDepFilters: () => set({
+    selMonth: null, selCat2: null, selType: null, selOrg: null,
+    selEnseignes: [], selEvenements: [],
+  }),
   clearRecFilters: () => set({ selRecMonth: null, selRecType: null }),
   clearEpFilters:  () => set({ selEpMonth: null, selEpType: null }),
   clearRevFilters: () => set({ selEntreprise: null, selYear: null }),
   clearAllFilters: () => set({
     selMonth: null, selCat2: null, selType: null, selOrg: null,
+    selEnseignes: [], selEvenements: [],
     selRecMonth: null, selRecType: null,
     selEpMonth: null, selEpType: null,
     selEntreprise: null, selYear: null,

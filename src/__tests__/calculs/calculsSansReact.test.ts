@@ -38,6 +38,7 @@ const MOIS = ["2026-01", "2026-02"];
 const FILTRES: EtatFiltres = {
   period: "all", cat1Filter: "all", showTransfers: false,
   selMonth: null, selCat2: null, selType: null, selOrg: null,
+  selEnseignes: [], selEvenements: [],
 };
 
 describe("les calculs s'appellent sans React", () => {
@@ -90,7 +91,8 @@ describe("les calculs s'appellent sans React", () => {
   it("calculerDepenses rend ses tableaux depuis les seules données reçues", () => {
     const d = calculerDepenses({
       baseTx: TX, filteredTx: TX, allMonthsInRange: MOIS,
-      selCat2: null, selType: null, selOrg: null, allTransactions: TX,
+      selCat2: null, selType: null, selOrg: null,
+      selEnseignes: [], selEvenements: [], allTransactions: TX,
     }, R);
     expect(d.detailTotal).toBe(400);
     expect(d.expByCat2.map((c) => c.name).sort()).toEqual(["Alimentation", "Logement"]);

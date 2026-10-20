@@ -67,6 +67,14 @@ describe("DataTable — sortie du décompte de zones de défilement", () => {
     expect(container.querySelector("table")).toBeNull();
   });
 
+  it("au-dessus de 768 px, la zone qui défile est atteignable au clavier et nommée", () => {
+    setWindowWidth(DESKTOP);
+    render(<DataTable data={ROWS} columns={COLUMNS} title="Détail" />);
+    const zone = screen.getByRole("region", { name: "Tableau : Détail" });
+    expect(zone).toHaveAttribute("tabindex", "0");
+    expect(zone).toHaveClass("overflow-x-auto");
+  });
+
   it("conserve le conteneur overflow-x-auto ET la table au-dessus de 768 px", () => {
     setWindowWidth(DESKTOP);
     const { container } = render(<DataTable data={ROWS} columns={COLUMNS} />);

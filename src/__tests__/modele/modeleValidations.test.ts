@@ -117,7 +117,7 @@ const CONTRAT: Record<string, Record<string, Attendu>> = {
 };
 // Le texte libre, nommé : ce sont les seules colonnes à remplir sans règle.
 const LIBRE: Record<string, string[]> = {
-  Transactions: ["Sous-catégorie", "Détail", "Libellé", "Ville"],
+  Transactions: ["Enseigne", "Événement", "Libellé", "Ville"],
   Paie: [],
   Paramètres: ["Paramètre", "Valeur", "Compte", "Organisme", "Type", "Catégorie", "Employeur"],
 };

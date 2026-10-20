@@ -53,8 +53,8 @@ même chose.
 |---|---|---|---|
 | 1 | `cat1` | Cette dépense est-elle **compressible** ? | Dépense Fixe / Courante / Occasionnelle |
 | 2 | `cat2` | **Quel poste** de budget ? | Alimentation, Transport, Immobilier |
-| 3 | `cat3` | **Chez qui**, ou pour quoi ? | Supermarché, Cantine, Pharmacie |
-| 4 | `cat4` | Détail libre | — |
+| 3 | `cat3` | **Chez qui**, ou pour quoi ? (colonne « Enseigne ») | Supermarché, Cantine, Pharmacie |
+| 4 | `cat4` | Ce qui regroupe plusieurs dépenses (colonne « Événement ») | Vacances d'été, Rentrée |
 
 Le niveau 1 est celui qui compte pour décider. Un loyer et un restaurant sont
 deux « dépenses », mais un seul des deux se négocie. Les objectifs de budget

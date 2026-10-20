@@ -19,6 +19,8 @@ export function resetFilterStore() {
     selCat2: null,
     selType: null,
     selOrg: null,
+    selEnseignes: [],
+    selEvenements: [],
     selRecMonth: null,
     selRecType: null,
     selEpMonth: null,

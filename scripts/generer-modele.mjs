@@ -307,8 +307,8 @@ const NOTES = {
   Type: "Obligatoire. Choisissez dans la liste : les types déclarés dans Paramètres. Le type donne le sens, la classe et la catégorie.",
   "Montant brut": "Obligatoire. Le montant payé en entier, toujours positif. Ex. : 100. Sur un compte à 50 %, le Montant (colonne K) vaudra 50.",
   "Sens (si différent)": "Facultatif. Débit ou Crédit, seulement si la ligne fait exception au sens du type. Ex. : 15 € de courses remboursés → Crédit.",
-  "Sous-catégorie": "Facultatif. Texte libre. Ex. : Boulangerie.",
-  "Détail": "Facultatif. Texte libre.",
+  Enseigne: "Facultatif. Texte libre : chez qui, ou pour quoi. Ex. : Boulangerie. Alimente la liste « Enseigne » de la page Dépenses. Ancien nom : Sous-catégorie.",
+  "Événement": "Facultatif. Texte libre : ce qui regroupe plusieurs dépenses. Ex. : Vacances d'été. Alimente la liste « Événement » de la page Dépenses. Ancien nom : Détail.",
   "Libellé": "Facultatif. Le libellé du relevé. Ex. : Achat carte.",
   Ville: "Facultatif. Texte libre.",
   "Prévisionnel": "Facultatif. « x » pour une ligne prévue, pas encore passée. Elle compte dès que sa date atteint la Fin de relevé (Paramètres).",
@@ -437,7 +437,7 @@ const SAISIES = [
   // H.3b — Libellé en 2e colonne, pour le confort de saisie. Le lecteur
   // trouve les colonnes par leur nom : l'ordre est libre.
   "Date", "Libellé", "Compte", "Type", "Montant brut",
-  "Sens (si différent)", "Sous-catégorie", "Détail", "Ville", "Prévisionnel",
+  "Sens (si différent)", "Enseigne", "Événement", "Ville", "Prévisionnel",
 ];
 const CALCULEES = [
   "Montant", "Sens", "Classe", "Catégorie", "Compté", "Remboursement",
@@ -538,7 +538,7 @@ legende(wsTx, 1, SAISIES.length + CALCULEES.length + 2);
 noterEnTetes(wsTx, 1, NOTES);
 
 // H.2 — une liste ou une validation sur chaque colonne à remplir, sauf le
-// texte libre : Sous-catégorie, Détail, Libellé, Ville.
+// texte libre : Enseigne, Événement, Libellé, Ville.
 const TX_PLAGE = (col) => `${col}2:${col}${DERNIERE}`;
 valider(wsTx, TX_PLAGE("A"), DATE_PLAUSIBLE, "Date", MSG_DATE);
 valider(wsTx, TX_PLAGE("C"), LISTE_TABLEAU(F, "D", P_COMPTES), "Compte inconnu",

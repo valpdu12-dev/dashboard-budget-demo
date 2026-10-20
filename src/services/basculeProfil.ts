@@ -9,6 +9,19 @@
 
 import { loadDashboardData } from "@/services/loadDashboardData";
 import { ecrireProfil, effacerDonneesPersonnelles } from "@/services/profil";
+import { useFilterStore } from "@/stores/useFilterStore";
+
+/**
+ * Vide les listes Enseigne / Événement de la page Dépenses.
+ *
+ * Une enseigne de la démonstration n'existe pas chez le visiteur (et
+ * inversement) : gardée après une bascule, elle filtrerait sur du vide —
+ * un « filtre fantôme », page de zéros sans raison visible.
+ */
+export function viderFiltresCategorie(): void {
+  useFilterStore.getState().setSelEnseignes([]);
+  useFilterStore.getState().setSelEvenements([]);
+}
 
 /**
  * Afficher la démonstration, SANS rien effacer.
@@ -18,12 +31,14 @@ import { ecrireProfil, effacerDonneesPersonnelles } from "@/services/profil";
  */
 export async function afficherDemo(): Promise<void> {
   ecrireProfil("demo");
+  viderFiltresCategorie();
   await loadDashboardData();
 }
 
 /** Réafficher le jeu importé mémorisé sur cet appareil. */
 export async function afficherMesDonnees(): Promise<void> {
   ecrireProfil("personnel");
+  viderFiltresCategorie();
   await loadDashboardData();
 }
 
@@ -36,5 +51,6 @@ export async function afficherMesDonnees(): Promise<void> {
  */
 export async function effacerMesDonnees(): Promise<void> {
   effacerDonneesPersonnelles();
+  viderFiltresCategorie();
   await loadDashboardData();
 }

@@ -27,6 +27,7 @@ import { calculerKPIs } from "@/calculs/calculKPIs";
 import { calculerEpargne } from "@/calculs/calculEpargne";
 import { calculerPret } from "@/calculs/calculPret";
 import { filtrerDonnees, type EtatFiltres } from "@/calculs/filtrerDonnees";
+import { construireOptions } from "@/calculs/optionsCategorie";
 import { construireRegles } from "@/calculs/regles";
 import { normaliserCle } from "@/services/lectureValeurs";
 import { rubriquesDisponibles } from "@/hooks/useRubriques";
@@ -97,6 +98,7 @@ const MOIS = ["2026-01", "2026-02"];
 const FILTRES: EtatFiltres = {
   period: "all", cat1Filter: "all", showTransfers: false,
   selMonth: null, selCat2: null, selType: null, selOrg: null,
+  selEnseignes: [], selEvenements: [],
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -306,6 +308,31 @@ describe("sans déclaration, l'outil n'invente pas les règles de l'auteur", () 
       MOIS, { "Caisse de bord": 1000, "Coffre du quai": 500 }, sansCompte
     );
     expect(s.sortiesNonCreditees).toEqual({ lignes: 1, montant: 80 });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// ENSEIGNE / ÉVÉNEMENT — UN FICHIER SANS AUCUN ÉVÉNEMENT
+// ═══════════════════════════════════════════════════════════════════════
+
+describe("Enseigne / Événement sur un jeu sans Événement", () => {
+  const JEU = [
+    tx({ cat3: "Voilerie", montant: 80 }),
+    tx({ cat3: "Avitailleur", montant: 30 }),
+    tx({ cat3: "x", montant: 5 }),
+  ];
+
+  it("la liste Événement est vide (elle ne sera pas affichée)", () => {
+    expect(construireOptions(JEU, "cat4")).toEqual([]);
+  });
+
+  it("la liste Enseigne vient du fichier, sans « x »", () => {
+    expect(construireOptions(JEU, "cat3").map((o) => o.valeur)).toEqual(["Avitailleur", "Voilerie"]);
+  });
+
+  it("une enseigne cochée filtre ce jeu comme la démonstration", () => {
+    const d = filtrerDonnees(JEU, { ...FILTRES, selEnseignes: ["Voilerie"] }, R);
+    expect(d.filteredTx.map((t) => t.montant)).toEqual([80]);
   });
 });
 

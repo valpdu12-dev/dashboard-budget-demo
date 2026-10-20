@@ -62,8 +62,10 @@ protection de la feuille**. Aucun mot de passe n'est demandé.
 **Les en-têtes bleu nuit ne sont pas verrouillés** — sinon Excel refuse de
 trier. **Ne les renommez pas** : l'outil trouve chaque colonne par son nom.
 Renommer `Date`, `Compte` ou `Type` fait refuser la feuille, avec un message.
-Mais renommer une colonne facultative — `Libellé`, `Sous-catégorie`,
-`Détail`, `Ville`, `Prévisionnel` — la fait **ignorer sans message**. Pour
+Mais renommer une colonne facultative — `Libellé`, `Enseigne`,
+`Événement`, `Ville`, `Prévisionnel` — la fait **ignorer sans message**.
+Seule exception : les anciens noms `Sous-catégorie` et `Détail` restent
+lus comme `Enseigne` et `Événement` (un ancien modèle continue de marcher). Pour
 `Prévisionnel`, c'est grave : vos lignes à venir compteraient comme passées.
 
 **Essayé dans Excel pour Mac.** LibreOffice et Numbers n'ont pas été essayés :
@@ -106,8 +108,9 @@ donc rien à changer à un fichier existant.
 Dans le classeur modèle, c'est `Montant brut` que vous saisissez, et la
 colonne `Montant` se calcule toute seule avec le taux du compte.
 
-**Les autres colonnes sont facultatives** : `Catégorie`, `Sous-catégorie`,
-`Détail`, `Libellé`, `Ville`, `Prévisionnel`.
+**Les autres colonnes sont facultatives** : `Catégorie`, `Enseigne`,
+`Événement`, `Libellé`, `Ville`, `Prévisionnel`. `Enseigne` et `Événement`
+alimentent les deux listes de la page Dépenses.
 
 Un exemple complet :
 

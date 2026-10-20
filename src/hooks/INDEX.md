@@ -9,7 +9,8 @@ Chaque hook isole le calcul et la dérivation des données d'une page ou d'une f
 | Fichier | Rôle |
 |---|---|
 | `useFilteredData.ts` | Connecte FilterStore + DataStore → jeu de données filtré |
-| `useFilterSync.ts` | Synchronise les filtres Zustand ↔ URL (bidirectionnel) |
+| `useFilterSync.ts` | Synchronise les filtres Zustand ↔ URL (bidirectionnel ; paramètre répété pour Enseigne / Événement) |
+| `useOptionsCategorie.ts` | Options des listes Enseigne / Événement (calcul dans `calculs/optionsCategorie.ts`) |
 | `useBalances.ts` | Calcule les soldes des comptes (optimisé via Map groupBy) |
 | `useKPIs.ts` | Calcule les KPIs globaux |
 | `useInsights.ts` | Calcule les insights (hausses/baisses, récurrents) |

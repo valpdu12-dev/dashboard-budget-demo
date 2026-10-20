@@ -11,6 +11,7 @@ import {
   oublierJeu,
 } from "@/services/jeuDonnees";
 import { ecrireProfil } from "@/services/profil";
+import { viderFiltresCategorie } from "@/services/basculeProfil";
 import { decodeTransactions } from "@/utils/decode";
 import type { RapportImport, FormatDetecte } from "@/services/lectureClasseur";
 import type { Transaction, RawTransactionsJSON, SalaryData } from "@/types";
@@ -170,6 +171,9 @@ export function useExcelWorker(): ExcelWorkerState {
       // Ce qui est affiché vient désormais de la personne : le profil suit,
       // sans quoi la prochaine ouverture repartirait sur la démonstration.
       ecrireProfil("personnel");
+      // Nouveau jeu : une enseigne cochée sur l'ancien n'y existe peut-être
+      // pas. Les listes repartent vides (pas de filtre fantôme).
+      viderFiltresCategorie();
 
       if (!memoriser) {
         // Lot B.6 — la case a été décochée. Il ne suffit pas de ne rien

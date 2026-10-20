@@ -533,3 +533,44 @@ describe("fichier sans rien d'exploitable", () => {
     ).toThrow(/2 ligne\(s\) rejetée\(s\)/);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════
+// Enseigne / Événement (20/10/2026) — nouveaux noms, anciens acceptés
+// ═══════════════════════════════════════════════════════════════════════
+
+describe("colonnes Enseigne / Événement", () => {
+  /** Une feuille avec deux colonnes facultatives en plus, nommées au choix. */
+  function feuille(nom3: string, nom4: string, v3: string, v4: string) {
+    return classeur({ Transactions: [[...EN_TETE, nom3, nom4], [...ligneOK(), v3, v4]] });
+  }
+
+  it("lit « Enseigne » en cat3 et « Événement » en cat4", () => {
+    const r = lireClasseurPublic(feuille("Enseigne", "Événement", "Boulangerie", "Anniversaire"));
+    expect(r.transactions.map((t) => [t.cat3, t.cat4])).toEqual([["Boulangerie", "Anniversaire"]]);
+  });
+
+  it("un ancien modèle (« Sous-catégorie » / « Détail ») marche toujours", () => {
+    const r = lireClasseurPublic(feuille("Sous-catégorie", "Détail", "Boulangerie", "Anniversaire"));
+    expect(r.transactions.map((t) => [t.cat3, t.cat4])).toEqual([["Boulangerie", "Anniversaire"]]);
+  });
+
+  it("insensible à la casse et aux accents, comme les autres en-têtes", () => {
+    const r = lireClasseurPublic(feuille("ENSEIGNE", "evenement", "Boulangerie", "Anniversaire"));
+    expect(r.transactions.map((t) => [t.cat3, t.cat4])).toEqual([["Boulangerie", "Anniversaire"]]);
+  });
+
+  it("refuse « Enseigne » ET « Sous-catégorie » dans le même fichier, en les nommant", () => {
+    const wb = classeur({
+      Transactions: [[...EN_TETE, "Enseigne", "Sous-catégorie"], [...ligneOK(), "A", "B"]],
+    });
+    expect(() => lireClasseurPublic(wb)).toThrow(ErreurClasseur);
+    expect(() => lireClasseurPublic(wb)).toThrow(/Enseigne.*Sous-catégorie.*ambigu/);
+  });
+
+  it("refuse « Événement » ET « Détail » dans le même fichier", () => {
+    const wb = classeur({
+      Transactions: [[...EN_TETE, "Détail", "Événement"], [...ligneOK(), "A", "B"]],
+    });
+    expect(() => lireClasseurPublic(wb)).toThrow(/Événement.*Détail|Détail.*Événement/);
+  });
+});

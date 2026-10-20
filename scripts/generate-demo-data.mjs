@@ -762,6 +762,59 @@ const budgets = [
 ].map((b) => ({ ...b, updated_at: `${CONSULTE_LE}T09:00:00.000Z` }));
 
 // ═══════════════════════════════════════════════════════════════════════
+// 8 bis. ÉVÉNEMENTS (colonne « Événement », cat4) — 20/10/2026
+// ═══════════════════════════════════════════════════════════════════════
+//
+// Une passe ajoutée À LA FIN, qui ne tire AUCUN nombre au hasard : elle ne
+// fait que lire la date et le type de chaque dépense déjà créée. La suite
+// aléatoire ne bouge donc pas, et tous les montants restent identiques.
+//
+// Six événements inventés (scénario A, décision D5). Une ligne prend le
+// premier événement dont la période ET la règle lui correspondent.
+// Exemple : un « Restaurant » le 20/12/2025 → « Fêtes de fin d'année ».
+
+const EVENEMENTS = [
+  {
+    nom: "Vacances d'été",
+    periodes: [["2025-08-01", "2025-08-31"], ["2026-07-01", "2026-07-31"]],
+    regle: (t) => ["Restaurant", "Loisirs", "Essence", "courses"].includes(t.type),
+  },
+  {
+    nom: "Week-end montagne",
+    periodes: [["2025-01-10", "2025-01-19"], ["2026-02-06", "2026-02-15"]],
+    regle: (t) => ["Restaurant", "Loisirs", "Essence", "courses"].includes(t.type),
+  },
+  {
+    nom: "Travaux cuisine",
+    periodes: [["2025-03-01", "2025-06-30"]],
+    regle: (t) => ["Équipement", "CB"].includes(t.type) || MARCHANDS_MAISON.includes(t.cat3),
+  },
+  {
+    nom: "Anniversaire",
+    periodes: [["2024-10-01", "2024-10-31"], ["2025-10-01", "2025-10-31"], ["2026-04-01", "2026-04-30"]],
+    regle: (t) => ["Cadeaux", "Restaurant", "Loisirs"].includes(t.type),
+  },
+  {
+    nom: "Rentrée",
+    periodes: [["2024-09-01", "2024-09-20"], ["2025-09-01", "2025-09-20"], ["2026-09-01", "2026-09-15"]],
+    regle: (t) => ["Vêtement courant", "Équipement", "Loisirs", "CB"].includes(t.type),
+  },
+  {
+    nom: "Fêtes de fin d'année",
+    periodes: [["2024-12-10", "2024-12-31"], ["2025-12-10", "2025-12-31"]],
+    regle: (t) => ["Cadeaux", "Restaurant", "Loisirs", "courses", "CB"].includes(t.type),
+  },
+];
+
+for (const t of transactions) {
+  if (t.dc !== "Débit" || !t.cat1) continue; // seulement les dépenses
+  const ev = EVENEMENTS.find(
+    (e) => e.regle(t) && e.periodes.some(([du, au]) => t.date >= du && t.date <= au)
+  );
+  if (ev) t.cat4 = ev.nom;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // 9. ENCODAGE DICTIONNAIRE (format attendu par src/utils/decode.ts)
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -842,6 +895,7 @@ const moisAvecDepense = new Set(
 console.log(`Graine ${GRAINE} — mêmes fichiers à chaque exécution.\n`);
 console.log(`Transactions   ${transactions.length} lignes, ${MOIS_TX.length} mois (${TX_PREMIER_MOIS} → ${TX_DERNIER_MOIS})`);
 console.log(`Table de chaînes ${table.length} entrées`);
+console.log(`Événements     ${transactions.filter((t) => t.cat4).length} lignes, ${new Set(transactions.map((t) => t.cat4).filter(Boolean)).size} événements`);
 console.log(`Paie           ${paie.length} mois (${PAIE_PREMIER_MOIS} → ${PAIE_DERNIER_MOIS}), ${EMPLOYEURS.length} employeurs`);
 console.log(`Prêt           ${PRET.montant} € à ${(PRET.tauxAnnuel * 100).toFixed(2)} % sur ${PRET.echeances} mois, 1re en ${PRET.premiereEcheance} → ${PRET.mensualite} €/mois`);
 console.log(`Mois sans aucune dépense : ${MOIS_TX.filter((m) => !moisAvecDepense.has(m)).join(", ") || "aucun"}`);
