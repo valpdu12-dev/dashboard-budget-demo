@@ -14,7 +14,7 @@ tsconfig.tsbuildinfo
 #
 # Tout public/data/ est ignoré PAR DÉFAUT : c'est là qu'atterrirait un
 # export de vraies données, et un oubli y coûterait cher.
-# Les cinq fichiers produits par scripts/generate-demo-data.mjs sont
+# Les six fichiers produits par scripts/generate-demo-data.mjs sont
 # ré-autorisés nommément : la démo est statique, elle ne s'affiche que si
 # ses données sont publiées avec elle.
 public/data/*
@@ -23,6 +23,7 @@ public/data/*
 !public/data/config.json
 !public/data/budgets.json
 !public/data/references.json
+!public/data/patrimoine.json
 
 # Classeurs — lot F.5. Aucun .xlsx n'est versionné, où qu'il soit : un
 # classeur réel déposé par erreur ne part pas. Seul le modèle fabriqué par

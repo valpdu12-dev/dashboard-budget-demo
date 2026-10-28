@@ -1,0 +1,1670 @@
+{
+  "_lisez_moi": "Jeu de démonstration — soldes fictifs, comptes génériques. Voir scripts/generate-demo-data.mjs, section 8 ter. Relevés arrêtés à la fin de relevé de la démo (2026-09-15) : les lignes à venir de l'échéancier sont seulement comptées.",
+  "releves": [
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2024-09",
+      "date": "2024-09-30",
+      "montant": 2350.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2024-09",
+      "date": "2024-09-30",
+      "montant": 1820
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2024-09",
+      "date": "2024-09-30",
+      "montant": 6000
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2024-09",
+      "date": "2024-09-30",
+      "montant": 3500
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2024-09",
+      "date": "2024-09-30",
+      "montant": 1000
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2024-09",
+      "date": "2024-09-30",
+      "montant": 2000
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2024-09",
+      "date": "2024-09-30",
+      "montant": 15228.41
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2024-10",
+      "date": "2024-10-31",
+      "montant": 2395.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2024-10",
+      "date": "2024-10-31",
+      "montant": 1850
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2024-10",
+      "date": "2024-10-31",
+      "montant": 6150
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2024-10",
+      "date": "2024-10-31",
+      "montant": 3700
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2024-10",
+      "date": "2024-10-31",
+      "montant": 1080
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2024-10",
+      "date": "2024-10-31",
+      "montant": 2100
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2024-10",
+      "date": "2024-10-31",
+      "montant": 15874.89
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2024-11",
+      "date": "2024-11-30",
+      "montant": 2440.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2024-11",
+      "date": "2024-11-30",
+      "montant": 1880
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2024-11",
+      "date": "2024-11-30",
+      "montant": 6300
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2024-11",
+      "date": "2024-11-30",
+      "montant": 3900
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2024-11",
+      "date": "2024-11-30",
+      "montant": 1160
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2024-11",
+      "date": "2024-11-30",
+      "montant": 2200
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2024-11",
+      "date": "2024-11-30",
+      "montant": 16522.34
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2024-12",
+      "date": "2024-12-31",
+      "montant": 2485.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2024-12",
+      "date": "2024-12-31",
+      "montant": 1910
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2024-12",
+      "date": "2024-12-31",
+      "montant": 6450
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2024-12",
+      "date": "2024-12-31",
+      "montant": 4100
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2024-12",
+      "date": "2024-12-31",
+      "montant": 1240
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2024-12",
+      "date": "2024-12-31",
+      "montant": 2300
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2024-12",
+      "date": "2024-12-31",
+      "montant": 17170.76
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2025-01",
+      "date": "2025-01-31",
+      "montant": 2530.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2025-01",
+      "date": "2025-01-31",
+      "montant": 1820
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2025-01",
+      "date": "2025-01-31",
+      "montant": 6600
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-01",
+      "date": "2025-01-31",
+      "montant": 4300
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-01",
+      "date": "2025-01-31",
+      "montant": 1320
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-01",
+      "date": "2025-01-31",
+      "montant": 2400
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2025-01",
+      "date": "2025-01-31",
+      "montant": 17820.16
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2025-02",
+      "date": "2025-02-28",
+      "montant": 2575.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2025-02",
+      "date": "2025-02-28",
+      "montant": 1850
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2025-02",
+      "date": "2025-02-28",
+      "montant": 6750
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-02",
+      "date": "2025-02-28",
+      "montant": 4500
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-02",
+      "date": "2025-02-28",
+      "montant": 1400
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-02",
+      "date": "2025-02-28",
+      "montant": 2500
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2025-02",
+      "date": "2025-02-28",
+      "montant": 18470.53
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2025-03",
+      "date": "2025-03-31",
+      "montant": 2350.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2025-03",
+      "date": "2025-03-31",
+      "montant": 1880
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2025-03",
+      "date": "2025-03-31",
+      "montant": 6900
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-03",
+      "date": "2025-03-31",
+      "montant": 4700
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-03",
+      "date": "2025-03-31",
+      "montant": 1480
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-03",
+      "date": "2025-03-31",
+      "montant": 2600
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2025-03",
+      "date": "2025-03-31",
+      "montant": 19121.88
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2025-04",
+      "date": "2025-04-30",
+      "montant": 2395.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2025-04",
+      "date": "2025-04-30",
+      "montant": 1910
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2025-04",
+      "date": "2025-04-30",
+      "montant": 7050
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-04",
+      "date": "2025-04-30",
+      "montant": 4900
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-04",
+      "date": "2025-04-30",
+      "montant": 1560
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-04",
+      "date": "2025-04-30",
+      "montant": 5000
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-04",
+      "date": "2025-04-30",
+      "montant": 2700
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2025-04",
+      "date": "2025-04-30",
+      "montant": 19774.2
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2025-05",
+      "date": "2025-05-31",
+      "montant": 2440.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2025-05",
+      "date": "2025-05-31",
+      "montant": 1820
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2025-05",
+      "date": "2025-05-31",
+      "montant": 7200
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-05",
+      "date": "2025-05-31",
+      "montant": 5100
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-05",
+      "date": "2025-05-31",
+      "montant": 1640
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-05",
+      "date": "2025-05-31",
+      "montant": 5120
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-05",
+      "date": "2025-05-31",
+      "montant": 2800
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2025-05",
+      "date": "2025-05-31",
+      "montant": 20427.5
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2025-06",
+      "date": "2025-06-30",
+      "montant": 2485.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2025-06",
+      "date": "2025-06-30",
+      "montant": 1850
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2025-06",
+      "date": "2025-06-30",
+      "montant": 7350
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-06",
+      "date": "2025-06-30",
+      "montant": 5300
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-06",
+      "date": "2025-06-30",
+      "montant": 1720
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-06",
+      "date": "2025-06-30",
+      "montant": 5240
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-06",
+      "date": "2025-06-30",
+      "montant": 2900
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2025-06",
+      "date": "2025-06-30",
+      "montant": 21081.78
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2025-07",
+      "date": "2025-07-31",
+      "montant": 2530.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2025-07",
+      "date": "2025-07-31",
+      "montant": 1880
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2025-07",
+      "date": "2025-07-31",
+      "montant": 7500
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-07",
+      "date": "2025-07-31",
+      "montant": 5500
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-07",
+      "date": "2025-07-31",
+      "montant": 1800
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-07",
+      "date": "2025-07-31",
+      "montant": 5360
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-07",
+      "date": "2025-07-31",
+      "montant": 3000
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2025-07",
+      "date": "2025-07-31",
+      "montant": 21737.04
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2025-08",
+      "date": "2025-08-31",
+      "montant": 2575.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2025-08",
+      "date": "2025-08-31",
+      "montant": 1910
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2025-08",
+      "date": "2025-08-31",
+      "montant": 7650
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-08",
+      "date": "2025-08-31",
+      "montant": 5700
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-08",
+      "date": "2025-08-31",
+      "montant": 1880
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-08",
+      "date": "2025-08-31",
+      "montant": 5480
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-08",
+      "date": "2025-08-31",
+      "montant": 3100
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2025-08",
+      "date": "2025-08-31",
+      "montant": 22393.29
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2025-09",
+      "date": "2025-09-30",
+      "montant": 2350.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2025-09",
+      "date": "2025-09-30",
+      "montant": 1820
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2025-09",
+      "date": "2025-09-30",
+      "montant": 7800
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-09",
+      "date": "2025-09-30",
+      "montant": 5900
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-09",
+      "date": "2025-09-30",
+      "montant": 1960
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-09",
+      "date": "2025-09-30",
+      "montant": 5600
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-09",
+      "date": "2025-09-30",
+      "montant": 3200
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2025-09",
+      "date": "2025-09-30",
+      "montant": 23050.52
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2025-10",
+      "date": "2025-10-31",
+      "montant": 2395.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2025-10",
+      "date": "2025-10-31",
+      "montant": 1850
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2025-10",
+      "date": "2025-10-31",
+      "montant": 7950
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-10",
+      "date": "2025-10-31",
+      "montant": 6100
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-10",
+      "date": "2025-10-31",
+      "montant": 2040
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-10",
+      "date": "2025-10-31",
+      "montant": 5720
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-10",
+      "date": "2025-10-31",
+      "montant": 3300
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2025-10",
+      "date": "2025-10-31",
+      "montant": 23708.74
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2025-11",
+      "date": "2025-11-30",
+      "montant": 2440.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2025-11",
+      "date": "2025-11-30",
+      "montant": 1880
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-11",
+      "date": "2025-11-30",
+      "montant": 6300
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-11",
+      "date": "2025-11-30",
+      "montant": 2120
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-11",
+      "date": "2025-11-30",
+      "montant": 5840
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-11",
+      "date": "2025-11-30",
+      "montant": 3400
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2025-11",
+      "date": "2025-11-30",
+      "montant": 24367.94
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2025-12",
+      "date": "2025-12-31",
+      "montant": 2485.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2025-12",
+      "date": "2025-12-31",
+      "montant": 1910
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2025-12",
+      "date": "2025-12-31",
+      "montant": 8250
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-12",
+      "date": "2025-12-31",
+      "montant": 6500
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-12",
+      "date": "2025-12-31",
+      "montant": 2200
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2025-12",
+      "date": "2025-12-31",
+      "montant": 5960
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2025-12",
+      "date": "2025-12-31",
+      "montant": 3500
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2025-12",
+      "date": "2025-12-31",
+      "montant": 25028.13
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2026-01",
+      "date": "2026-01-31",
+      "montant": 2530.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2026-01",
+      "date": "2026-01-31",
+      "montant": 1820
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2026-01",
+      "date": "2026-01-31",
+      "montant": 8400
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-01",
+      "date": "2026-01-31",
+      "montant": 6700
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-01",
+      "date": "2026-01-31",
+      "montant": 2280
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-01",
+      "date": "2026-01-31",
+      "montant": 6080
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-01",
+      "date": "2026-01-31",
+      "montant": 3600
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2026-01",
+      "date": "2026-01-31",
+      "montant": 25689.31
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2026-02",
+      "date": "2026-02-28",
+      "montant": 2575.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2026-02",
+      "date": "2026-02-28",
+      "montant": 1850
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2026-02",
+      "date": "2026-02-28",
+      "montant": 8550
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-02",
+      "date": "2026-02-28",
+      "montant": 6900
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-02",
+      "date": "2026-02-28",
+      "montant": 2360
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-02",
+      "date": "2026-02-28",
+      "montant": 6200
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-02",
+      "date": "2026-02-28",
+      "montant": 3700
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2026-02",
+      "date": "2026-02-28",
+      "montant": 26351.48
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2026-03",
+      "date": "2026-03-31",
+      "montant": 2350.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2026-03",
+      "date": "2026-03-31",
+      "montant": 1880
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2026-03",
+      "date": "2026-03-31",
+      "montant": 8700
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-03",
+      "date": "2026-03-31",
+      "montant": 7100
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-03",
+      "date": "2026-03-31",
+      "montant": 2440
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-03",
+      "date": "2026-03-31",
+      "montant": 6320
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-03",
+      "date": "2026-03-31",
+      "montant": 3800
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2026-03",
+      "date": "2026-03-31",
+      "montant": 27014.65
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2026-04",
+      "date": "2026-04-30",
+      "montant": 2395.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2026-04",
+      "date": "2026-04-30",
+      "montant": 1910
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2026-04",
+      "date": "2026-04-30",
+      "montant": 8850
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-04",
+      "date": "2026-04-30",
+      "montant": 7300
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-04",
+      "date": "2026-04-30",
+      "montant": 2520
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-04",
+      "date": "2026-04-30",
+      "montant": 6440
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-04",
+      "date": "2026-04-30",
+      "montant": 3900
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2026-04",
+      "date": "2026-04-30",
+      "montant": 27678.81
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2026-05",
+      "date": "2026-05-31",
+      "montant": 2440.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2026-05",
+      "date": "2026-05-31",
+      "montant": 1820
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2026-05",
+      "date": "2026-05-31",
+      "montant": 9000
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-05",
+      "date": "2026-05-31",
+      "montant": 7500
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-05",
+      "date": "2026-05-31",
+      "montant": 2600
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-05",
+      "date": "2026-05-31",
+      "montant": 6560
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-05",
+      "date": "2026-05-31",
+      "montant": 4000
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2026-05",
+      "date": "2026-05-31",
+      "montant": 28343.97
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2026-06",
+      "date": "2026-06-30",
+      "montant": 2485.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2026-06",
+      "date": "2026-06-30",
+      "montant": 1850
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2026-06",
+      "date": "2026-06-30",
+      "montant": 9150
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-06",
+      "date": "2026-06-30",
+      "montant": 7700
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-06",
+      "date": "2026-06-30",
+      "montant": 2680
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-06",
+      "date": "2026-06-30",
+      "montant": 6680
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-06",
+      "date": "2026-06-30",
+      "montant": 4100
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2026-06",
+      "date": "2026-06-30",
+      "montant": 29010.13
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2026-07",
+      "date": "2026-07-31",
+      "montant": 2530.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2026-07",
+      "date": "2026-07-31",
+      "montant": 1880
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2026-07",
+      "date": "2026-07-31",
+      "montant": 9300
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-07",
+      "date": "2026-07-31",
+      "montant": 7900
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-07",
+      "date": "2026-07-31",
+      "montant": 2760
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-07",
+      "date": "2026-07-31",
+      "montant": 6800
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-07",
+      "date": "2026-07-31",
+      "montant": 4200
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2026-07",
+      "date": "2026-07-31",
+      "montant": 29677.29
+    },
+    {
+      "ordre": 1,
+      "compte": "Banque A - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque A",
+      "mk": "2026-08",
+      "date": "2026-08-31",
+      "montant": 2575.4
+    },
+    {
+      "ordre": 2,
+      "compte": "Banque B - Courant",
+      "nature": "Liquidité",
+      "banque": "Banque B",
+      "mk": "2026-08",
+      "date": "2026-08-31",
+      "montant": 1910
+    },
+    {
+      "ordre": 3,
+      "compte": "Banque A - Livret",
+      "nature": "Epargne",
+      "banque": "Banque A",
+      "mk": "2026-08",
+      "date": "2026-08-31",
+      "montant": 9450
+    },
+    {
+      "ordre": 4,
+      "compte": "Banque C - Livret",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-08",
+      "date": "2026-08-31",
+      "montant": 8100
+    },
+    {
+      "ordre": 4.1,
+      "compte": "Banque B - Compte titres",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-08",
+      "date": "2026-08-31",
+      "montant": 2840
+    },
+    {
+      "ordre": 5,
+      "compte": "Assurance-vie Banque B",
+      "nature": "Epargne",
+      "banque": "Banque B",
+      "mk": "2026-08",
+      "date": "2026-08-31",
+      "montant": 6920
+    },
+    {
+      "ordre": 6,
+      "compte": "Retraite Banque C",
+      "nature": "Epargne",
+      "banque": "Banque C",
+      "mk": "2026-08",
+      "date": "2026-08-31",
+      "montant": 4300
+    },
+    {
+      "ordre": 7,
+      "compte": "Appartement - capital remboursé",
+      "nature": "Immobilier",
+      "banque": "Immobilier",
+      "mk": "2026-08",
+      "date": "2026-08-31",
+      "montant": 30345.45
+    }
+  ],
+  "nbComptes": 8,
+  "dernierMois": "2026-08",
+  "compteurs": {
+    "lignesLues": 208,
+    "gardees": 184,
+    "futures": 16,
+    "nonSaisies": 8,
+    "ignorees": 0
+  }
+}

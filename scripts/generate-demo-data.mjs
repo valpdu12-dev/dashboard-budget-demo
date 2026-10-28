@@ -10,6 +10,7 @@
  *   config.json        soldes de départ, prêt, couverture déclarée
  *   budgets.json       objectifs de budget par catégorie
  *   references.json    inflation INSEE et SMIC — données publiques, sourcées
+ *   patrimoine.json    soldes de fin de mois par compte (feuille Patrimoine)
  *
  * ── DEUX RÈGLES NON NÉGOCIABLES ─────────────────────────────────────────
  *
@@ -815,6 +816,136 @@ for (const t of transactions) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// 8 ter. PATRIMOINE — soldes de fin de mois (D-3, 28/10/2026)
+// ═══════════════════════════════════════════════════════════════════════
+//
+// Une passe qui ne tire AUCUN nombre au hasard : chaque solde est une
+// formule écrite ici. La suite aléatoire ne bouge pas, et les cinq autres
+// fichiers restent identiques à l'octet.
+//
+// Forme : exactement celle que rend le lecteur de la feuille « Patrimoine »
+// (`lirePatrimoine`, src/services/lectureClasseur.ts) — releves, nbComptes,
+// dernierMois, compteurs. Le profil Démo et un classeur importé pourront
+// donc être traités pareil.
+//
+// Méthode : on écrit d'abord une FEUILLE (une ligne par compte et par mois,
+// montants vides compris, échéancier du prêt prérempli), puis on lui
+// applique les règles du lecteur avec une date du jour FIGÉE : la fin de
+// relevé de la démo (15/09/2026). Jamais l'horloge : sinon le relevé du
+// 30/09/2026 compterait dès octobre, et les chiffres de la démo bougeraient
+// avec le temps (décision D-3, option a). Les lignes futures ne sont donc
+// pas dans le fichier : elles sont seulement comptées.
+//
+// Cas voulus, chacun vérifié par src/__tests__/data/patrimoineDemo.test.ts :
+//   ① un bien en nature Immobilier : le capital remboursé du prêt de la démo ;
+//   ② un compte qui démarre tard : l'assurance-vie, en avril 2025 ;
+//   ③ un oubli de saisie : le livret de la banque A, vide en novembre 2025 ;
+//   ④ l'échéancier du prêt prérempli jusqu'en décembre 2027 : 16 lignes futures ;
+//   ⑤ un ordre décimal (4.1), comme dans un vrai classeur ;
+//   ⑥ septembre 2026 pas encore saisi pour les comptes ordinaires.
+// Exemple : août 2026 = 66 440,85 € (liquidités 4 485,40 ; épargne 31 610 ;
+// immobilier 30 345,45).
+
+/** La date du jour du lecteur, FIGÉE à la fin de relevé de la démo. */
+const PAT_AUJOURDHUI = config.couverture.fin; // "2026-09-15"
+const PAT_PREMIER_MOIS = TX_PREMIER_MOIS; // septembre 2024 : k = 0
+const PAT_MOIS_EN_COURS = TX_DERNIER_MOIS; // septembre 2026 : pas encore saisi
+const PAT_PRET_JUSQUA = "2027-12"; // échéancier prérempli
+const PAT_MOIS_OUBLIE = "2025-11";
+
+/** Fin du mois « AAAA-MM », en ISO. */
+const finDeMoisMk = (mk) => `${mk}-${String(joursDansMois(mk)).padStart(2, "0")}`;
+
+/** Capital remboursé cumulé du prêt de la démo, à la fin de chaque mois. */
+const capitalRembourse = new Map();
+{
+  let cumul = 0;
+  for (const l of amortissement) {
+    cumul = euros(cumul + l.capital);
+    capitalRembourse.set(l.mk, cumul);
+  }
+}
+
+/** k = nombre de mois depuis septembre 2024. */
+const PAT_MOIS = listerMois(PAT_PREMIER_MOIS, PAT_PRET_JUSQUA);
+const rangDuMois = (mk) => PAT_MOIS.indexOf(mk);
+
+const PAT_COMPTES = [
+  { ordre: 1, compte: COMPTE_PRINCIPAL, nature: "Liquidité", banque: "Banque A",
+    depuis: PAT_PREMIER_MOIS, solde: (k) => 2350.4 + 45 * (k % 6) },
+  { ordre: 2, compte: COMPTE_B_COURANT, nature: "Liquidité", banque: "Banque B",
+    depuis: PAT_PREMIER_MOIS, solde: (k) => 1820 + 30 * (k % 4) },
+  { ordre: 3, compte: "Banque A - Livret", nature: "Epargne", banque: "Banque A",
+    depuis: PAT_PREMIER_MOIS, oubli: PAT_MOIS_OUBLIE, solde: (k) => 6000 + 150 * k },
+  { ordre: 4, compte: "Banque C - Livret", nature: "Epargne", banque: "Banque C",
+    depuis: PAT_PREMIER_MOIS, solde: (k) => 3500 + 200 * k },
+  { ordre: 4.1, compte: "Banque B - Compte titres", nature: "Epargne", banque: "Banque B",
+    depuis: PAT_PREMIER_MOIS, solde: (k) => 1000 + 80 * k },
+  { ordre: 5, compte: "Assurance-vie Banque B", nature: "Epargne", banque: "Banque B",
+    depuis: "2025-04", solde: (k) => 5000 + 120 * (k - 7) },
+  { ordre: 6, compte: "Retraite Banque C", nature: "Epargne", banque: "Banque C",
+    depuis: PAT_PREMIER_MOIS, solde: (k) => 2000 + 100 * k },
+  { ordre: 7, compte: "Appartement - capital remboursé", nature: "Immobilier", banque: "Immobilier",
+    depuis: PAT_PREMIER_MOIS, jusqua: PAT_PRET_JUSQUA, prerempli: true,
+    solde: (_k, mk) => capitalRembourse.get(mk) },
+];
+
+// La feuille : mois par mois, puis compte par compte, comme un vrai classeur.
+const feuillePatrimoine = [];
+for (const mk of PAT_MOIS) {
+  for (const c of PAT_COMPTES) {
+    if (mk < c.depuis || mk > (c.jusqua ?? PAT_MOIS_EN_COURS)) continue;
+    const vide = mk === c.oubli || (!c.prerempli && mk === PAT_MOIS_EN_COURS);
+    const montant = vide ? null : euros(c.solde(rangDuMois(mk), mk));
+    if (montant !== null && !Number.isFinite(montant)) {
+      throw new Error(`Patrimoine : pas de solde pour « ${c.compte} » en ${mk}.`);
+    }
+    feuillePatrimoine.push({ ...c, date: finDeMoisMk(mk), montant });
+  }
+}
+
+// Les règles du lecteur, dans son ordre : montant vide, puis date à venir.
+const patCompteurs = { lignesLues: 0, gardees: 0, futures: 0, nonSaisies: 0, ignorees: 0 };
+const relevesPatrimoine = [];
+const vusPatrimoine = new Set();
+for (const l of feuillePatrimoine) {
+  patCompteurs.lignesLues++;
+  if (l.montant === null) { patCompteurs.nonSaisies++; continue; }
+  if (l.date >= PAT_AUJOURDHUI) { patCompteurs.futures++; continue; }
+  if (!["Epargne", "Liquidité", "Immobilier"].includes(l.nature)) {
+    throw new Error(`Patrimoine : nature « ${l.nature} » hors des trois natures du lecteur.`);
+  }
+  const mk = l.date.slice(0, 7);
+  if (vusPatrimoine.has(`${l.compte}|${mk}`)) {
+    throw new Error(`Patrimoine : deux soldes pour « ${l.compte} » en ${mk}.`);
+  }
+  vusPatrimoine.add(`${l.compte}|${mk}`);
+  relevesPatrimoine.push({
+    ordre: l.ordre, compte: l.compte, nature: l.nature, banque: l.banque,
+    mk, date: l.date, montant: l.montant,
+  });
+}
+// Même tri que le lecteur : mois, puis ordre, puis nom (comparaison simple,
+// sans dépendre de la langue de la machine).
+relevesPatrimoine.sort((a, b) =>
+  (a.mk < b.mk ? -1 : a.mk > b.mk ? 1 : 0) ||
+  a.ordre - b.ordre ||
+  (a.compte < b.compte ? -1 : a.compte > b.compte ? 1 : 0)
+);
+patCompteurs.gardees = relevesPatrimoine.length;
+
+const patrimoine = {
+  _lisez_moi:
+    "Jeu de démonstration — soldes fictifs, comptes génériques. Voir scripts/generate-demo-data.mjs, " +
+    `section 8 ter. Relevés arrêtés à la fin de relevé de la démo (${PAT_AUJOURDHUI}) : ` +
+    "les lignes à venir de l'échéancier sont seulement comptées.",
+  releves: relevesPatrimoine,
+  nbComptes: new Set(relevesPatrimoine.map((r) => r.compte)).size,
+  dernierMois: relevesPatrimoine.length ? relevesPatrimoine[relevesPatrimoine.length - 1].mk : "",
+  compteurs: patCompteurs,
+};
+
+// ═══════════════════════════════════════════════════════════════════════
 // 9. ENCODAGE DICTIONNAIRE (format attendu par src/utils/decode.ts)
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -882,6 +1013,7 @@ const tailles = {
   "config.json": ecrire("config.json", config),
   "budgets.json": ecrire("budgets.json", budgets),
   "references.json": ecrire("references.json", references),
+  "patrimoine.json": ecrire("patrimoine.json", patrimoine),
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -900,6 +1032,7 @@ console.log(`Paie           ${paie.length} mois (${PAIE_PREMIER_MOIS} → ${PAIE
 console.log(`Prêt           ${PRET.montant} € à ${(PRET.tauxAnnuel * 100).toFixed(2)} % sur ${PRET.echeances} mois, 1re en ${PRET.premiereEcheance} → ${PRET.mensualite} €/mois`);
 console.log(`Mois sans aucune dépense : ${MOIS_TX.filter((m) => !moisAvecDepense.has(m)).join(", ") || "aucun"}`);
 console.log(`Mois volontairement incomplets : ${[...MOIS_INCOMPLETS].join(", ")}`);
+console.log(`Patrimoine     ${patrimoine.compteurs.gardees} relevés, ${patrimoine.nbComptes} comptes, jusqu'en ${patrimoine.dernierMois} (${patrimoine.compteurs.futures} futurs, ${patrimoine.compteurs.nonSaisies} non saisis)`);
 console.log(`Mois comparables attendus : ${MOIS_TX.length - 2} (bornes exclues)\n`);
 for (const [nom, octets] of Object.entries(tailles)) {
   console.log(`  ${nom.padEnd(20)} ${String(octets).padStart(8)} o`);

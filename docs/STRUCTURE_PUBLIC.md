@@ -15,13 +15,14 @@ Servis tels quels par Vite, copiés dans `dist/` au build, sans transformation.
 | `data/config.json` | Soldes de départ, prêt, bornes de couverture |
 | `data/budgets.json` | Objectifs de budget livrés avec la démonstration |
 | `data/references.json` | Inflation INSEE et SMIC — données publiques réelles, sourcées |
+| `data/patrimoine.json` | Soldes de fin de mois par compte (sous-onglet Patrimoine) — jeu de démonstration |
 | `manifest.webmanifest` | Manifeste PWA (nom, icônes, couleurs de l'app installable) |
 | `sw.js` | Service Worker (cache offline, PWA) |
 | `favicon.svg` | Favicon du site |
 | `icons/icon-192.svg`, `icons/icon-512.svg` | Icônes PWA (écran d'accueil) |
 | `_redirects` | Repli SPA de l'hébergeur |
 
-Les cinq fichiers de `data/` sont **produits** par
+Les six fichiers de `data/` sont **produits** par
 `scripts/generate-demo-data.mjs`. Ils ne se modifient pas à la main : toute
 correction se fait dans le générateur, puis on le rejoue.
 

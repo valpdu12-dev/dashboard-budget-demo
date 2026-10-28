@@ -140,7 +140,7 @@ const BUILD_AUTORISE = [
   { motif: /^assets\/[\w.-]+\.(js|css)$/, quoi: "bundle Vite" },
   { motif: /^assets\/[\w.-]+\.woff2$/, quoi: "police embarquée" },
   {
-    motif: /^data\/(transactions|salary|config|budgets|references)\.json$/,
+    motif: /^data\/(transactions|salary|config|budgets|references|patrimoine)\.json$/,
     quoi: "données de démonstration",
   },
   // F4 — UN classeur, nommé. Son contenu est vérifié par `npm run modele`.
