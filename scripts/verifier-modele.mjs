@@ -35,6 +35,11 @@ const MODELE_PUBLIE = "public/modele/Budget_modele.xlsx";
 const PUBLIE = join(RACINE, MODELE_PUBLIE);
 const GENERATEUR = join(ICI, "generer-modele.mjs");
 
+// Patrimoine D-2 (plan 33) — les feuilles du modèle, dans l'ordre des onglets.
+// « Patrimoine » est facultative pour le visiteur, mais le modèle la porte :
+// un générateur qui l'oublierait ne passe pas.
+const FEUILLES = ["Lisez-moi", "Transactions", "Paie", "Patrimoine", "Paramètres", "Référentiel", "Visualisation"];
+
 function echouer(message) {
   console.error(`\n✗ Modèle : ${message}\n`);
   process.exit(1);
@@ -105,6 +110,13 @@ try {
         (manquants.length ? `\n  manquant : ${manquants.join(", ")}` : "")
     );
   }
+  // 3a. Les feuilles, lues dans xl/workbook.xml du fichier refait.
+  const classeur = attendu.get("xl/workbook.xml")?.toString("utf8") ?? "";
+  const feuilles = [...classeur.matchAll(/<sheet [^>]*name="([^"]+)"/g)].map((m) => m[1]);
+  if (feuilles.join("|") !== FEUILLES.join("|")) {
+    echouer(`feuilles du modèle : ${feuilles.join(", ")}.\n  attendu : ${FEUILLES.join(", ")}.`);
+  }
+
   for (const nom of noms(attendu)) {
     const a = attendu.get(nom);
     const b = publie.get(nom);
@@ -123,7 +135,7 @@ try {
   }
   console.log(
     `✓ Modèle : ${MODELE_PUBLIE} est refait à l'identique par le script ` +
-      `(${attendu.size} entrées, contenu décompressé).`
+      `(${attendu.size} entrées, contenu décompressé ; ${FEUILLES.length} feuilles dont Patrimoine).`
   );
 } finally {
   rmSync(temp, { recursive: true, force: true });

@@ -42,12 +42,13 @@ qui n'écrit que des formules, non.
 
 ---
 
-## 2. Les trois feuilles
+## 2. Les feuilles
 
 | Feuille | Obligatoire | Rôle |
 |---|---|---|
 | `Transactions` | **oui** | Les mouvements |
 | `Paie` | non | Les bulletins de salaire, un par mois |
+| `Patrimoine` | non | Le solde de chaque compte, un relevé par mois (§4 bis) |
 | `Paramètres` | non, mais recommandée | Vos comptes, vos types, vos catégories, vos soldes, les dates de relevé, le prêt |
 
 **Toute autre feuille est ignorée**, sans erreur : une feuille de notes, un
@@ -268,6 +269,59 @@ cotisations (part salariale, part patronale) ont besoin d'une ligne par ligne de
 bulletin. Le format public ne les fournit pas. Ces deux graphiques afficheront
 un message qui l'explique — pas des tirets muets. L'adaptateur de l'ancien
 format, lui, continue de les alimenter.
+
+---
+
+## 4 bis. Feuille `Patrimoine`
+
+*Ajoutée en v2.3 (Patrimoine D-1 et D-2, plan 33). Facultative.*
+
+Le **solde** de chaque compte, en fin de mois : **une ligne = un compte à une
+date**. Ce n'est pas un mouvement : c'est ce que le relevé affiche ce jour-là.
+
+| Colonne | Obligatoire | Contenu |
+|---|---|---|
+| `Ordre` | non | Nombre (1, 2, 4.1…). Sert seulement à l'ordre d'affichage |
+| `Transaction` | **oui** | Le nom du compte, écrit pareil chaque mois |
+| `Epargne/Liquidité` | **oui** | `Epargne`, `Liquidité` ou `Immobilier` (casse et accents libres) |
+| `Banque` | **oui** (la colonne) | L'établissement. Pour un bien : `Immobilier` |
+| `Date` | **oui** | La date du solde, en fin de mois. Seul le mois est retenu : 01/06 et 30/06 = juin |
+| `Montant` | **oui** | Le solde. Négatif possible (découvert) |
+
+**L'en-tête est cherché**, contrairement aux autres feuilles : c'est la
+première des **50 premières lignes** qui porte `Transaction` et `Montant`. Un
+titre ou des segments de filtre Excel au-dessus du tableau ne gênent donc pas.
+Les colonnes `Date dépassée`, `Annee` et `mois` d'un classeur personnel sont
+ignorées : l'outil refait leur calcul. Le modèle ne les porte pas.
+
+**Montant vide = pas encore saisi.** La ligne attend, **jamais 0**, et sans
+message : les mois à venir sont souvent préparés vides.
+
+**Montant écrit en texte** : lu comme dans `Transactions` (§3.2). « 1 234,56 »
+tapé en texte est **lu** (1 234,56 €). Un texte illisible (« mille »,
+« 12 abc ») est écarté **avec un avertissement** — jamais remplacé par 0.
+
+**Seules les dates dépassées comptent.** Une ligne dont la date n'est pas
+encore passée est mise de côté, sans message : c'est le cas d'un échéancier de
+prêt rempli à l'avance.
+
+⚠️ **Exception à la règle « jamais l'horloge ».** Partout ailleurs, l'outil ne
+lit pas la date du jour : une ligne prévisionnelle se juge sur la `Fin de
+relevé` (§3.5), et le même fichier donne les mêmes chiffres tous les jours.
+Ici, « date dépassée » se juge sur **la date du jour**, comme la colonne
+`Date dépassée` d'Excel (`AUJOURDHUI() > Date`). Exemple : le 28/10/2026, un
+solde daté du 31/10/2026 n'est pas pris ; il l'est à partir du 01/11/2026.
+
+**Un relevé par compte et par mois.** Deux soldes pour le même compte le même
+mois : le plus récent est gardé, avec un avertissement qui cite les deux
+lignes. Un **compte clôturé** : écrivez un dernier relevé à 0.
+
+**Rien ne bloque l'import.** Tout problème de cette feuille est un
+**avertissement** nommé (feuille, ligne, colonne) : nature inconnue, date ou
+montant illisible, doublon, colonne absente. Deux feuilles `Patrimoine` à la
+casse près : la feuille est ignorée, avec un avertissement, et le reste du
+fichier passe. Sans feuille `Patrimoine`, le rapport d'import est identique à
+avant.
 
 ---
 
@@ -605,3 +659,4 @@ un échec constaté, jamais.
 | **v2** | **17/09/2026** | **Lot C.** Le fichier déclare son paramétrage. `Transactions` gagne **`Montant brut`** et le taux de participation (§3.4). `Paramètres` passe de deux à **cinq tableaux** (§5) : `Compte` élargi à huit colonnes, plus `Type`, `Catégorie` et `Employeur`. La limite « comptes inconnus sans solde » est **levée** (§5.6). Aucune colonne existante n'a changé de sens : **un fichier v1 se lit sans être retouché et donne les mêmes chiffres**, vérifié par le rapprochement à zéro écart des étapes C.3 à C.6. |
 | **v2.1** | **22/09/2026** | **Lot E.0.** Le bloc Prêt gagne une **forme « taux »** : `date de début`, `taux annuel`, `durée (mois)` — la mensualité est **calculée** (§5.1). L'ancienne forme (`mensualité`, `nombre d'échéances`) reste lue ; les deux présentes doivent concorder à 1 € près, sinon refus. Aucune ligne existante détournée : un fichier v2 se lit sans être retouché. |
 | **v2.2** | **24–25/09/2026** | **Lot F.** `Prêt — date de début` **obligatoire** pour la forme « taux », `première échéance` en synonyme ; échéancier calculé depuis cette date, et contrôlé par les transactions (§5.1). Ligne prévisionnelle échue comptée jusqu'à la `Fin de relevé` (§3.5). `Montant` et `Montant brut` remplis : comparés (§3.4). Un crédit sur un type de dépense est un remboursement (§3.3). Un type de sortie d'épargne déclaré comme compte : ligne ignorée, et dit (§5.6). Un fichier v2.1 se lit sans être retouché, sauf une forme « taux » sans date, désormais refusée. |
+| **v2.3** | **28/10/2026** | **Patrimoine D-1 / D-2.** Nouvelle feuille facultative **`Patrimoine`** (§4 bis) : un solde par compte et par mois, nature `Epargne`, `Liquidité` ou `Immobilier`. En-tête cherché dans les 50 premières lignes. « Date dépassée » jugée sur la date du jour — seule exception à la règle « jamais l'horloge ». Montant en texte lu comme dans `Transactions`. Tout problème est un avertissement : la feuille ne bloque jamais l'import. Le modèle porte la feuille, avec des lignes d'exemple. Un fichier v2.2 se lit sans être retouché et donne les mêmes chiffres. |

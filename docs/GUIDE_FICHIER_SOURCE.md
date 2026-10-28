@@ -15,8 +15,8 @@ on s'en sert.
 1. Ouvrez le tableau de bord, cliquez sur **Importer .xlsx**.
 2. Cliquez sur **Télécharger le modèle**. Vous obtenez un classeur
    `Budget_modele.xlsx` : deux ans d'exemple, des listes déroulantes, des
-   formules, une feuille `Visualisation` et un mode d'emploi en première
-   feuille.
+   formules, une feuille `Patrimoine` pour vos soldes, une feuille
+   `Visualisation` et un mode d'emploi en première feuille.
 3. Remplacez les lignes d'exemple par les vôtres. Dans le modèle, vous ne
    remplissez que les colonnes à **en-tête bleu** ; les colonnes à en-tête gris
    se calculent. Gardez les en-têtes tels quels.
@@ -35,7 +35,8 @@ un en-tête gris : calculé, n'écrivez rien. Chaque feuille le rappelle en haut
 écrire.
 
 **Des listes.** `Compte`, `Type`, `Sens` et `Prévisionnel` se choisissent dans
-une liste ; dans `Paie`, le `Mois` et l'`Employeur` aussi. Les comptes et les
+une liste ; dans `Paie`, le `Mois` et l'`Employeur` aussi ; dans `Patrimoine`,
+la colonne `Epargne/Liquidité`. Les comptes et les
 types viennent de vos tableaux de `Paramètres` : déclarez d'abord, choisissez
 ensuite. Une valeur hors liste est refusée, avec un message qui dit quoi faire.
 Seul un employeur non déclaré est accepté, avec un avertissement. Les dates
@@ -171,6 +172,32 @@ ne s'affichent pas vides.
 À savoir : le détail des cotisations, ligne à ligne, n'entre pas dans ce
 format. Les deux graphiques qui en dépendent vous diront pourquoi ils sont
 vides plutôt que d'afficher des tirets.
+
+---
+
+## 4 bis. La feuille `Patrimoine` — facultative
+
+Le **solde** de chaque compte en fin de mois : une ligne par compte et par
+mois. Colonnes : `Ordre` (facultatif, l'ordre d'affichage), `Transaction` (le
+nom du compte), `Epargne/Liquidité` (à choisir dans la liste : `Epargne`,
+`Liquidité` ou `Immobilier`), `Banque`, `Date` (fin de mois, ex. 31/03/2026) et
+`Montant` (le solde, négatif possible).
+
+- **Montant vide = pas encore saisi.** La ligne attend ; elle ne compte jamais
+  pour 0.
+- **Seules les dates dépassées comptent.** Un échéancier de prêt rempli à
+  l'avance reste de côté jusqu'à sa date. ⚠️ C'est la **seule** règle de
+  l'outil qui dépend de la date du jour : le 28/10/2026, un solde daté du
+  31/10/2026 n'est pas encore pris ; il le sera dès le 01/11/2026.
+- **Un relevé par compte et par mois.** Un compte clôturé : un dernier relevé
+  à 0.
+- « 1 234,56 » tapé en texte est lu. « mille » ne l'est pas : la ligne est
+  écartée, et l'aperçu d'import vous le dit.
+
+Cette feuille ne bloque **jamais** l'import : un problème y est un simple
+avertissement. **Sans cette feuille, le reste du fichier marche pareil.** Dans
+le modèle, elle porte un filtre mais ne se trie pas : la colonne `Ordre` range
+vos comptes.
 
 ---
 

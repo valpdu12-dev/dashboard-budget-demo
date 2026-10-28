@@ -396,13 +396,22 @@ const LISEZ_MOI = [
   "     Chaque tableau a son encadré « comment remplir », juste au-dessus.",
   "  2. Transactions : un mouvement par ligne, colonnes A à J. Les listes proposent vos comptes et vos types.",
   "  3. Paie (facultative) : un bulletin par mois.",
-  "  4. Visualisation : choisissez un mois en B1. Tout suit vos Paramètres.",
+  "  4. Patrimoine (facultative) : le solde de chaque compte, un relevé par mois.",
+  "  5. Visualisation : choisissez un mois en B1. Tout suit vos Paramètres.",
   "     Soldes et recettes à gauche ; épargne et rapprochement bancaire au milieu ; dépenses par catégorie à droite.",
   "     En dessous, les dépenses du mois, ligne à ligne.",
   "",
   "Besoin d'aide sur une colonne ?",
   "  Passez la souris sur son en-tête : une note dit quoi écrire, avec un exemple, et si c'est obligatoire.",
   "  Une valeur refusée ? Le message d'Excel dit pourquoi, et quoi mettre à la place.",
+  "",
+  // Patrimoine D-2 (plan 33) — les règles de la feuille, dites une fois.
+  "Feuille Patrimoine (facultative)",
+  "  Le solde de chaque compte en fin de mois : une ligne par compte et par mois.",
+  "  Montant vide = pas encore saisi : la ligne attend, elle ne compte jamais pour 0.",
+  "  Seules les dates dépassées comptent : un échéancier de prêt rempli à l'avance reste de côté jusqu'à sa date.",
+  "  Un compte clôturé : écrivez un dernier relevé à 0.",
+  "  Sans cette feuille, le reste du fichier marche pareil.",
   "",
   "Ce qui est verrouillé",
   "  Les cellules grises, sans mot de passe. Vous pouvez filtrer, élargir une colonne,",
@@ -597,6 +606,91 @@ valider(wsPaie, PAIE_PLAGE("B"), LISTE_TABLEAU(F, "V", P_EMPLOYEURS), "Employeur
 [["C", "Brut"], ["D", "Cotisations salariales"], ["E", "Indemnités"], ["F", "Autres retenues"]]
   .forEach(([col, nom]) => valider(wsPaie, PAIE_PLAGE(col), ZERO_OU_PLUS, nom,
     "Un montant positif ou nul, sans signe. Le Net se calcule : brut − cotisations + indemnités − autres retenues."));
+
+// ─────────────────────────────────────────────────────────────────────────
+// 4.3b Patrimoine — Patrimoine D-2 (plan 33) : les soldes de fin de mois
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Feuille FACULTATIVE, lue par `lirePatrimoine` (D-1) : colonnes trouvées par
+// leur NOM, une ligne = un compte à une date. Six colonnes, toutes à remplir.
+// Pas de colonnes « Date dépassée », « Annee », « mois » (décision D-2) : le
+// lecteur les ignore, et `AUJOURDHUI()` changerait la valeur en cache d'un
+// jour à l'autre — le modèle ne serait plus refait à l'identique (F4).
+//
+// Les lignes d'exemple sont INVENTÉES et à dates FIXES (aucune horloge ici) :
+// 4 comptes de juin à août 2026 (la fin de la démonstration) ; septembre 2026
+// pas encore saisi (montant vide) ; l'immobilier prérempli jusqu'en décembre
+// 2027, pour montrer qu'une date pas encore passée reste de côté. Aucune ne
+// déclenche d'alerte à la relecture : `modelePatrimoine.test.ts` le vérifie,
+// compteurs calculés à la main.
+
+const wsPat = wb.addWorksheet("Patrimoine");
+const PAT_DERNIERE = 2001; // 2 000 relevés préparés (22 comptes × 7 ans ≈ 1 850)
+const PAT_COLONNES = ["Ordre", "Transaction", "Epargne/Liquidité", "Banque", "Date", "Montant"];
+const NATURES_PATRIMOINE = ["Epargne", "Liquidité", "Immobilier"];
+const NOTES_PATRIMOINE = {
+  Ordre: "Facultatif. Le rang du compte dans les tableaux et graphiques. Ex. : 1, 2, 4.1.",
+  Transaction: "Obligatoire. Le nom du compte, écrit pareil chaque mois. Ex. : Livret Banque A.",
+  "Epargne/Liquidité": "Obligatoire. Choisissez dans la liste : Epargne, Liquidité ou Immobilier. Ex. : Liquidité pour un compte courant.",
+  Banque: "Obligatoire. L'établissement qui tient le compte. Ex. : Banque A. Pour un bien : Immobilier.",
+  Date: "Obligatoire. La date du solde, en fin de mois. Ex. : 31/03/2026. Seules les dates dépassées comptent.",
+  Montant: "Obligatoire. Le solde à cette date. Ex. : 1520,40. Négatif possible (découvert). Vide = pas encore saisi, jamais compté 0.",
+};
+PAT_COLONNES.forEach((_, i) => colonneSaisie(wsPat, i + 1));
+enTete(wsPat, PAT_COLONNES, PAT_COLONNES.map(() => BLEU));
+
+/** Dernier jour du mois « AAAA-MM », en ISO. */
+const finDeMois = (mk) => {
+  const [a, m] = mk.split("-").map(Number);
+  return new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10);
+};
+const PAT_COMPTES = [
+  { ordre: 1, compte: "Compte courant Banque A", nature: "Liquidité", banque: "Banque A", soldes: [1850, 2120.4, 1640.75] },
+  { ordre: 2, compte: "Livret Banque A", nature: "Epargne", banque: "Banque A", soldes: [6000, 6150, 6300] },
+  { ordre: 3, compte: "Assurance-vie Banque B", nature: "Epargne", banque: "Banque B", soldes: [12400, 12480.55, 12530.1] },
+  { ordre: 4, compte: "Appartement - capital remboursé", nature: "Immobilier", banque: "Immobilier", soldes: [38000, 38620, 39245] },
+];
+const PAT_MOIS_SAISIS = ["2026-06", "2026-07", "2026-08"];
+const PAT_IMMO_MENSUEL = 625; // capital remboursé chaque mois, échéancier prérempli
+const relevesExemple = [];
+PAT_MOIS_SAISIS.forEach((mk, i) => {
+  for (const c of PAT_COMPTES) relevesExemple.push({ ...c, date: finDeMois(mk), montant: c.soldes[i] });
+});
+// Septembre 2026 : pas encore saisi (montant vide), sauf l'immobilier, prérempli
+// comme les 15 mois suivants (jusqu'en décembre 2027).
+for (const c of PAT_COMPTES.slice(0, 3)) relevesExemple.push({ ...c, date: finDeMois("2026-09"), montant: null });
+const immo = PAT_COMPTES[3];
+for (let k = 1; k <= 16; k++) {
+  const mk = moisDecaleMk("2026-08", k);
+  relevesExemple.push({ ...immo, date: finDeMois(mk), montant: arrondir(immo.soldes[2] + PAT_IMMO_MENSUEL * k) });
+}
+function moisDecaleMk(mk, n) {
+  const [a, m] = mk.split("-").map(Number);
+  const k = a * 12 + (m - 1) + n;
+  return `${Math.floor(k / 12)}-${String((k % 12) + 1).padStart(2, "0")}`;
+}
+if (relevesExemple.length > PAT_DERNIERE - 1) echouer(`${relevesExemple.length} relevés pour ${PAT_DERNIERE - 1} lignes.`);
+relevesExemple.forEach((l, i) => {
+  if (!NATURES_PATRIMOINE.includes(l.nature)) echouer(`Patrimoine : nature « ${l.nature} » hors de la liste.`);
+  wsPat.getRow(i + 2).values = [l.ordre, l.compte, l.nature, l.banque, dateUTC(l.date), l.montant];
+});
+for (let r = 2; r <= PAT_DERNIERE; r++) {
+  wsPat.getRow(r).getCell(5).numFmt = DATE;
+  wsPat.getRow(r).getCell(6).numFmt = EUROS;
+}
+[8, 34, 18, 16, 12, 14].forEach((w, i) => { wsPat.getColumn(i + 1).width = w; });
+legende(wsPat, 1, PAT_COLONNES.length + 2); // colonne G vide, légende en H–J
+noterEnTetes(wsPat, 1, NOTES_PATRIMOINE);
+
+const PAT_PLAGE = (col) => `${col}2:${col}${PAT_DERNIERE}`;
+valider(wsPat, PAT_PLAGE("A"), ZERO_OU_PLUS, "Ordre",
+  "Un nombre positif ou nul, par exemple 1, 2 ou 4.1. Il sert seulement à l'ordre d'affichage.");
+valider(wsPat, PAT_PLAGE("C"), LISTE(`"${NATURES_PATRIMOINE.join(",")}"`), "Nature",
+  "Choisissez Epargne, Liquidité ou Immobilier.");
+valider(wsPat, PAT_PLAGE("E"), DATE_PLAUSIBLE, "Date",
+  "Une date entre 2000 et 2099, en fin de mois, par exemple 31/03/2026.");
+valider(wsPat, PAT_PLAGE("F"), UN_NOMBRE, "Montant",
+  "Un nombre, par exemple 1520,40. Négatif possible (découvert). Laissez vide si le solde n'est pas encore connu.");
 
 // ─────────────────────────────────────────────────────────────────────────
 // 4.4 Paramètres — cinq tableaux côte à côte, séparés par une colonne vide
@@ -1436,6 +1530,10 @@ wsLisez.getCell("A1").font = { name: "Arial", size: 13, bold: true };
 // verrouillés.
 wsTx.autoFilter = `A1:${lettre(SAISIES.length)}${DERNIERE}`;
 wsPaie.autoFilter = `A1:F${PAIE_DERNIERE}`;
+// Patrimoine D-2 — filtre oui, tri non : le tri n'est permis que dans
+// Transactions et Paie (`modeleProtection.test.ts`). La colonne Ordre range
+// déjà les comptes.
+wsPat.autoFilter = `A1:F${PAT_DERNIERE}`;
 for (const [ws, n] of [[wsTx, SAISIES.length], [wsPaie, 6]]) {
   for (let col = 1; col <= n; col++) ws.getRow(1).getCell(col).protection = OUVERT;
 }
@@ -1456,6 +1554,7 @@ console.log(`Modèle écrit : ${sortie}`);
 console.log(`  Transactions  ${lignes.length} lignes (formules jusqu'à la ligne ${DERNIERE})`);
 console.log(`  Types         ${TYPES.length}, comptes ${P.comptes.length}, catégories ${P.categories.length}`);
 console.log(`  Paie          ${salary.months.length} mois`);
+console.log(`  Patrimoine    ${relevesExemple.length} relevés d'exemple, ${PAT_COMPTES.length} comptes`);
 console.log(`  Visualisation ${MOIS_DEFAUT.slice(0, 7)} — dépenses ${totalDepenses} €, recettes ${totalRecettes} €`);
 for (const c of avecSolde) {
   console.log(`    ${c.padEnd(34)} fin du mois ${soldeJS(c, (l) => l.compte1 === 1 && l.date < MOIS_FIN)} €`);

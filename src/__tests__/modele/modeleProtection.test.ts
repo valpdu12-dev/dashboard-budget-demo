@@ -88,8 +88,10 @@ const retouche = (feuille: string, de: RegExp | string, vers: string) =>
   ({ ...xml, [feuille]: xml[feuille].replace(de, vers) });
 
 describe("le verrou du modèle publié (lot H.5)", () => {
-  it("six feuilles, toutes protégées sans mot de passe ; filtre et tri là où il faut : 0 écart", () => {
-    expect(Object.keys(xml).filter((n) => n !== "(classeur)")).toHaveLength(6);
+  it("sept feuilles, toutes protégées sans mot de passe ; filtre et tri là où il faut : 0 écart", () => {
+    // Patrimoine D-2 (plan 33, décision du 28/10/2026) : 6 → 7, la
+    // feuille « Patrimoine » s'ajoute. Elle est contrôlée comme les autres.
+    expect(Object.keys(xml).filter((n) => n !== "(classeur)")).toHaveLength(7);
     expect(ecarts(octets, xml)).toEqual([]);
   });
 
