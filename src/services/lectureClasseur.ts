@@ -73,6 +73,67 @@ export interface PaieLue {
   net: number;
 }
 
+// ── Patrimoine (soldes mensuels par compte) — D-1, plan 33 ─────────────
+
+/** Colonne « Epargne/Liquidité » de la feuille `Patrimoine`. */
+export type NaturePatrimoine = "Epargne" | "Liquidité" | "Immobilier";
+
+/** Le solde d'un compte à une fin de mois : une ligne gardée. */
+export interface ReleveSoldeLu {
+  /** Colonne « Ordre » (1, 2… 4.1) : ordre d'affichage. `null` si absente. */
+  ordre: number | null;
+  /** Colonne « Transaction » : le nom du compte. */
+  compte: string;
+  nature: NaturePatrimoine;
+  /** Colonne « Banque » — « Immobilier » peut y figurer aussi. */
+  banque: string;
+  /** Mois du relevé, « 2026-09 ». Le jour est ignoré : 01/06 et 30/06 = juin. */
+  mk: string;
+  /** Date du relevé, « 2026-09-30 ». */
+  date: string;
+  /** Le solde, au centime. Peut être négatif (découvert). */
+  montant: number;
+}
+
+/**
+ * Ce que la feuille `Patrimoine` a donné, ligne par ligne.
+ *
+ * Toujours : lignesLues = gardees + futures + nonSaisies + ignorees.
+ * Une ligne sans nom de compte n'est pas comptée (ligne vide, total…).
+ */
+export interface CompteursPatrimoine {
+  /** Lignes sous l'en-tête qui portent un nom de compte. */
+  lignesLues: number;
+  /** Relevés gardés (un par compte et par mois). */
+  gardees: number;
+  /** Date pas encore dépassée : l'échéancier du prêt, prérempli. */
+  futures: number;
+  /** Montant vide : pas encore saisi. Jamais compté comme 0. */
+  nonSaisies: number;
+  /** Écartées AVEC un avertissement : montant, date ou nature illisible, doublon. */
+  ignorees: number;
+}
+
+/** La feuille `Patrimoine`, lue. */
+export interface PatrimoineLu {
+  /** Triés par mois, puis par ordre, puis par nom de compte. */
+  releves: ReleveSoldeLu[];
+  /** Comptes distincts parmi les relevés gardés. */
+  nbComptes: number;
+  /** Mois du dernier relevé gardé, « 2026-09 » ; « » s'il n'y en a aucun. */
+  dernierMois: string;
+  compteurs: CompteursPatrimoine;
+}
+
+/** Réglages de la lecture. Utilisés par les tests ; l'application n'en passe aucun. */
+export interface OptionsLecture {
+  /**
+   * « Aujourd'hui », en AAAA-MM-JJ. Par défaut : la date du jour, en heure
+   * locale. Seule la feuille `Patrimoine` s'en sert (règle « date dépassée »).
+   */
+  aujourdhui?: string;
+}
+
 /** Ce que la feuille `Paramètres` a déclaré. Chaque champ peut manquer. */
 export interface ParametresLus {
   versionFormat: number | null;
@@ -121,6 +182,15 @@ export interface RapportImport {
   compteurs: CompteursImport;
   /** Feuilles lues, dans l'ordre. */
   feuillesLues: string[];
+  /**
+   * D-1 — la feuille `Patrimoine`, FACULTATIVE.
+   *
+   * ⚠️ La clé n'existe que si la feuille existe. Sans elle, le rapport est
+   * exactement celui d'avant : pas de clé, pas d'anomalie, mêmes compteurs.
+   * Feuille présente mais illisible → clé présente, relevés vides, et un
+   * avertissement qui dit pourquoi.
+   */
+  patrimoine?: PatrimoineLu;
 }
 
 /** Une erreur qui empêche toute lecture. Le fichier n'est pas exploitable. */
@@ -168,6 +238,32 @@ const COLONNES_PAIE = {
 } as const;
 
 const OBLIGATOIRES_PAIE = ["mois", "employeur", "brut", "cotisations"] as const;
+
+/**
+ * Feuille `Patrimoine` — trouvées par leur NOM, l'ordre est libre.
+ * « Date dépassée », « Annee » et « mois » (formules du classeur) ne sont pas
+ * lues : l'outil refait leur calcul.
+ */
+const COLONNES_PATRIMOINE = {
+  ordre: "Ordre",
+  compte: "Transaction",
+  nature: "Epargne/Liquidité",
+  banque: "Banque",
+  date: "Date",
+  montant: "Montant",
+} as const;
+
+/** « Ordre » est facultatif : il ne sert qu'à l'ordre d'affichage. */
+const OBLIGATOIRES_PATRIMOINE = ["compte", "nature", "banque", "date", "montant"] as const;
+
+/** La ligne d'en-tête est cherchée dans ces premières lignes. */
+const LIGNES_ENTETE_PATRIMOINE = 50;
+
+const NATURES_PATRIMOINE = new Map<string, NaturePatrimoine>([
+  ["epargne", "Epargne"],
+  ["liquidite", "Liquidité"],
+  ["immobilier", "Immobilier"],
+]);
 
 // ─────────────────────────────────────────────────────────────────────────
 // RECONNAISSANCE DES FEUILLES
@@ -1059,6 +1155,200 @@ function signalerPretIncoherent(
   });
 }
 
+/** La date du jour en heure LOCALE, comme AUJOURDHUI() d'Excel. */
+function aujourdhuiLocal(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * D-1 — lit la feuille `Patrimoine`, si elle existe. Son absence n'est pas une
+ * erreur : rend `null`, et le rapport ne change pas.
+ *
+ * Recopié du site privé (`parsePatrimoineSheet`, après P6), au style de ce
+ * lecteur : chaque ligne écartée pour une raison anormale est NOMMÉE (feuille,
+ * ligne, colonne). La feuille est facultative : tout est AVERTISSEMENT, rien ne
+ * bloque l'import.
+ *
+ * Une ligne est gardée si : nom du compte rempli ET montant lisible ET date
+ * dépassée ET nature connue.
+ *
+ * ⚠️ « DATE DÉPASSÉE » SE JUGE SUR L'HORLOGE — décision Q1 du plan 33.
+ * C'est l'exception à la règle de F12 (« jamais l'horloge ») : la feuille
+ * porte sa propre colonne « Date dépassée », `AUJOURDHUI() > Date`, et l'outil
+ * refait le même calcul. Le 28/10/2026, le relevé du 31/10/2026 n'est pas pris ;
+ * il le sera le 01/11/2026. L'échéancier du prêt, prérempli jusqu'en 2042,
+ * reste donc de côté.
+ *
+ * Montant vide = « pas encore saisi » : jamais 0, et pas de message — les
+ * lignes des mois à venir sont préparées vides, c'est normal. Montant écrit
+ * mais illisible : écarté AVEC un avertissement (constat P5 du privé). Il est
+ * lu par `lireNombre`, comme une transaction : « 1 234,56 » tapé en texte est
+ * lu (décision Q2).
+ */
+function lirePatrimoine(
+  wb: XLSX.WorkBook,
+  col: Collecteur,
+  aujourdhui: string
+): PatrimoineLu | null {
+  const candidats = wb.SheetNames.filter((n) => normNom(n) === normNom("Patrimoine"));
+  if (!candidats.length) return null;
+
+  const compteurs: CompteursPatrimoine = {
+    lignesLues: 0, gardees: 0, futures: 0, nonSaisies: 0, ignorees: 0,
+  };
+  const vide = (): PatrimoineLu => ({ releves: [], nbComptes: 0, dernierMois: "", compteurs });
+
+  // Q3 — deux feuilles à la casse près : la feuille est ignorée, l'import
+  // passe. (Pour la paie, le fichier entier est refusé ; mais cette feuille-ci
+  // est facultative, elle ne doit jamais bloquer.)
+  if (candidats.length > 1) {
+    col.ajouter({
+      gravite: "avertissement", feuille: candidats.join(" / "),
+      message:
+        `Deux feuilles portent le même nom à la casse près : « ${candidats.join(" » et « ")} ». ` +
+        `Les soldes ne sont pas lus. Renommez-en une.`,
+    });
+    return vide();
+  }
+
+  const nom = candidats[0];
+  const ws = wb.Sheets[nom];
+  const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, raw: true, defval: null });
+  // Numéro de ligne tel que le tableur l'affiche, même si la plage de la
+  // feuille ne commence pas en ligne 1 (segments Excel au-dessus du tableau).
+  const premiere = ws?.["!ref"] ? XLSX.utils.decode_range(ws["!ref"]).s.r + 1 : 1;
+
+  // Ligne d'en-tête CHERCHÉE : la première qui porte « Transaction » ET
+  // « Montant ». Les lignes au-dessus (titre, segments) sont ignorées.
+  const iEntete = rows.slice(0, LIGNES_ENTETE_PATRIMOINE).findIndex((r) => {
+    const cles = (r ?? []).map(normaliserCle);
+    return cles.includes(normaliserCle(COLONNES_PATRIMOINE.compte)) &&
+      cles.includes(normaliserCle(COLONNES_PATRIMOINE.montant));
+  });
+  if (iEntete < 0) {
+    col.ajouter({
+      gravite: "avertissement", feuille: nom,
+      message:
+        `Les soldes ne sont pas lus : ligne d'en-tête introuvable. Il faut, dans les ` +
+        `${LIGNES_ENTETE_PATRIMOINE} premières lignes, une ligne avec les colonnes ` +
+        `« ${COLONNES_PATRIMOINE.compte} » et « ${COLONNES_PATRIMOINE.montant} ».`,
+    });
+    return vide();
+  }
+
+  const idx = indexerColonnes(rows[iEntete] as unknown[], COLONNES_PATRIMOINE, nom);
+  const manquantes = OBLIGATOIRES_PATRIMOINE.filter((c) => idx[c] === undefined);
+  if (manquantes.length) {
+    col.ajouter({
+      gravite: "avertissement", feuille: nom, ligne: premiere + iEntete,
+      message:
+        `Les soldes ne sont pas lus : colonne(s) absente(s) de la ligne d'en-tête — ` +
+        `${manquantes.map((m) => COLONNES_PATRIMOINE[m]).join(", ")}.`,
+    });
+    return vide();
+  }
+
+  const lire = (r: unknown[], champ: keyof typeof COLONNES_PATRIMOINE) =>
+    idx[champ] === undefined ? null : r[idx[champ]];
+
+  const parCompteMois = new Map<string, { releve: ReleveSoldeLu; ligne: number }>();
+
+  for (let i = iEntete + 1; i < rows.length; i++) {
+    const r = (rows[i] ?? []) as unknown[];
+    const ligne = premiere + i;
+
+    const compte = nettoyerTexte(lire(r, "compte"));
+    if (!compte) continue;
+    compteurs.lignesLues++;
+
+    const ecarter = (colonne: string, message: string) => {
+      compteurs.ignorees++;
+      col.ajouter({ gravite: "avertissement", feuille: nom, ligne, colonne, message });
+    };
+
+    const brutMontant = lire(r, "montant");
+    if (brutMontant == null || nettoyerTexte(brutMontant) === "") {
+      compteurs.nonSaisies++;
+      continue;
+    }
+    const montant = lireNombre(brutMontant);
+    if (montant === null) {
+      ecarter(COLONNES_PATRIMOINE.montant,
+        `Montant illisible : « ${nettoyerTexte(brutMontant)} ». Il n'est PAS remplacé ` +
+        `par 0 : le solde de « ${compte} » est ignoré pour cette ligne.`);
+      continue;
+    }
+
+    const brutDate = lire(r, "date");
+    const date = lireDate(brutDate);
+    if (!date) {
+      ecarter(COLONNES_PATRIMOINE.date,
+        `Date illisible : « ${nettoyerTexte(brutDate) || "(vide)"} ». ` +
+        `Attendu une date, ou JJ/MM/AAAA, ou AAAA-MM-JJ.`);
+      continue;
+    }
+
+    // Date pas encore dépassée : l'échéancier du prêt, prérempli. Normal,
+    // donc compté sans message.
+    if (date >= aujourdhui) {
+      compteurs.futures++;
+      continue;
+    }
+
+    const brutNature = nettoyerTexte(lire(r, "nature"));
+    const nature = NATURES_PATRIMOINE.get(normaliserCle(brutNature));
+    if (!nature) {
+      ecarter(COLONNES_PATRIMOINE.nature,
+        `Nature inconnue : « ${brutNature || "(vide)"} ». Attendu Epargne, Liquidité ` +
+        `ou Immobilier.`);
+      continue;
+    }
+
+    const releve: ReleveSoldeLu = {
+      ordre: lireNombre(lire(r, "ordre")),
+      compte,
+      nature,
+      banque: nettoyerTexte(lire(r, "banque")),
+      mk: date.slice(0, 7),
+      date,
+      montant,
+    };
+
+    // Un seul solde par compte et par mois : le plus récent. À date égale,
+    // la ligne la plus basse (la dernière saisie).
+    const cle = `${compte}\u0000${releve.mk}`;
+    const deja = parCompteMois.get(cle);
+    if (deja) {
+      const garderNouveau = releve.date >= deja.releve.date;
+      const [gardee, ecartee] = garderNouveau ? [ligne, deja.ligne] : [deja.ligne, ligne];
+      compteurs.ignorees++;
+      col.ajouter({
+        gravite: "avertissement", feuille: nom, ligne: ecartee, colonne: COLONNES_PATRIMOINE.date,
+        message:
+          `Deux soldes pour « ${compte} » en ${releve.mk} (lignes ${Math.min(gardee, ecartee)} ` +
+          `et ${Math.max(gardee, ecartee)}). Seul le plus récent est gardé : ligne ${gardee}.`,
+      });
+      if (!garderNouveau) continue;
+    }
+    parCompteMois.set(cle, { releve, ligne });
+  }
+
+  const releves = [...parCompteMois.values()].map((v) => v.releve).sort((a, b) =>
+    a.mk.localeCompare(b.mk) ||
+    (a.ordre ?? Infinity) - (b.ordre ?? Infinity) ||
+    a.compte.localeCompare(b.compte)
+  );
+  compteurs.gardees = releves.length;
+
+  return {
+    releves,
+    nbComptes: new Set(releves.map((r) => r.compte)).size,
+    dernierMois: releves.length ? releves[releves.length - 1].mk : "",
+    compteurs,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // POINT D'ENTRÉE
 // ─────────────────────────────────────────────────────────────────────────
@@ -1070,7 +1360,10 @@ function signalerPretIncoherent(
  * non reconnu, colonne obligatoire absente, aucune transaction valide. Tout le
  * reste vit dans le rapport, ligne par ligne.
  */
-export function lireClasseurPublic(wb: XLSX.WorkBook): RapportImport {
+export function lireClasseurPublic(
+  wb: XLSX.WorkBook,
+  options: OptionsLecture = {}
+): RapportImport {
   const col = new Collecteur();
   const compteurs: CompteursImport = {
     lignesLues: 0, acceptees: 0, rejetees: 0, ignorees: 0, avertissements: 0,
@@ -1097,6 +1390,10 @@ export function lireClasseurPublic(wb: XLSX.WorkBook): RapportImport {
   // seule source, sinon les deux messages divergent le jour où l'un change.
   signalerPretIncoherent(transactions, parametres, col);
 
+  // D-1 — la feuille `Patrimoine`, lue EN DERNIER : ses avertissements ne
+  // peuvent pas chasser ceux des transactions du plafond d'affichage.
+  const patrimoine = lirePatrimoine(wb, col, options.aujourdhui ?? aujourdhuiLocal());
+
   compteurs.avertissements = col.avertissements;
 
   return {
@@ -1107,5 +1404,7 @@ export function lireClasseurPublic(wb: XLSX.WorkBook): RapportImport {
     anomaliesNonListees: col.nonListees,
     compteurs,
     feuillesLues: feuilles,
+    // Clé ajoutée SEULEMENT si la feuille existe : sans elle, rapport identique.
+    ...(patrimoine ? { patrimoine } : {}),
   };
 }
