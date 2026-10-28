@@ -38,6 +38,15 @@ démonstration et sur le classeur modèle.
 blocs 1 et 8 de `calculDepenses.ts`. Nouveau : `optionsCategorie.ts` construit
 les deux listes (toutes les transactions, sans vide ni « x », tri français).
 
+*Patrimoine D-4b (28/10/2026, plan 33)* : `calculPatrimoine.ts` — sous-onglet
+Patrimoine (soldes mensuels de la feuille `Patrimoine`) : grille mois × compte
+avec report du dernier solde, dernier mois complet, 6 KPI, séries des
+graphiques, interrupteur immobilier, filtre de page, mois du donut ;
+`calculerPatrimoine()` fait tout en un appel. Recopie du site privé (après
+P6), jamais importée. KPI 6 : dépense nette de la page Dépenses
+(`montantDepense`), sans les types `transfert-interne` déclarés. Ne lit
+jamais la date du jour. Hook : `useSoldesPatrimoine`.
+
 ## Ce qui n'a pas été déplacé, et pourquoi
 
 `useBudgetData`, `useSalaryPageData` et `useSalaryInflationData` lisent encore

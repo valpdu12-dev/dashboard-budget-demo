@@ -27,3 +27,4 @@ Chaque hook isole le calcul et la dérivation des données d'une page ou d'une f
 | `useSalaryInflationData.ts` | Salaire vs Inflation (pouvoir d'achat) |
 | `useSavingsData.ts` | Épargne |
 | `useMortgageData.ts` | Prêt Immobilier (inclut les constantes du prêt) |
+| `useSoldesPatrimoine.ts` | Patrimoine (soldes, D-4b) — calcul dans `calculs/calculPatrimoine.ts` ; états `absent` / `vide` / `pret` |
