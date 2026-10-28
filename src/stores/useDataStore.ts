@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { decodeTransactions } from "@/utils/decode";
 import type { Transaction, SalaryData, Config, BudgetData, DataOrigin } from "@/types";
 import type { JeuDonnees } from "@/services/jeuDonnees";
+import type { PatrimoineLu } from "@/services/lectureClasseur";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -11,6 +12,15 @@ interface DataState {
   salary: SalaryData | null;
   config: Config | null;
   budgets: BudgetData | null;
+  /**
+   * D-4a — soldes de la feuille `Patrimoine` du jeu affiché, ou `null` s'il
+   * n'en a pas.
+   *
+   * ⚠️ Toujours celui du jeu posé, jamais hérité : sans cela, les soldes de
+   * la démonstration resteraient affichés sous « Mes données » (et
+   * inversement) après une bascule de profil.
+   */
+  patrimoine: PatrimoineLu | null;
   status: Status;
   error: string | null;
   /**
@@ -52,6 +62,7 @@ export const useDataStore = create<DataState>((set) => ({
   salary: null,
   config: null,
   budgets: null,
+  patrimoine: null,
   status: "idle",
   error: null,
   origin: "inconnue",
@@ -63,7 +74,7 @@ export const useDataStore = create<DataState>((set) => ({
   // efface la trace de l'import précédent, sans quoi le bandeau annoncerait
   // une origine que les données affichées n'ont plus.
   setData: (tx, sal, cfg, origin = "inconnue") => set({
-    transactions: tx, salary: sal, config: cfg,
+    transactions: tx, salary: sal, config: cfg, patrimoine: null,
     status: "success", error: null, origin,
     importedAt: null, importFileName: null,
   }),
@@ -81,6 +92,8 @@ export const useDataStore = create<DataState>((set) => ({
     },
     config: jeu.config,
     budgets: { budgets: jeu.budgets },
+    // D-4a — remplacé à chaque pose, `null` si le jeu n'en porte pas.
+    patrimoine: jeu.patrimoine ?? null,
     status: "success",
     error: null,
     origin: jeu.origine,
@@ -90,7 +103,7 @@ export const useDataStore = create<DataState>((set) => ({
   setBudgets: (budgets) => set({ budgets }),
   setError: (msg) => set({ status: "error", error: msg }),
   reset: () => set({
-    transactions: [], salary: null, config: null, budgets: null,
+    transactions: [], salary: null, config: null, budgets: null, patrimoine: null,
     status: "idle", error: null, origin: "inconnue",
     importedAt: null, importFileName: null,
   }),

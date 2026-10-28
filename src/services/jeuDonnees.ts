@@ -11,6 +11,11 @@
 // bloc, et il porte une VERSION DE SCHÉMA — sans elle, un contenu écrit par
 // une version antérieure se relit à moitié, ce qui est pire que de ne pas le
 // relire du tout.
+//
+// D-4a (plan 33) — le jeu porte aussi, s'il y en a, les soldes de la feuille
+// `Patrimoine` : champ FACULTATIF `patrimoine`. Pas de clé = pas de
+// patrimoine, qu'il s'agisse d'un fichier sans cette feuille ou d'un jeu
+// mémorisé avant D-4a. Le sous-onglet Patrimoine (D-4c) s'en servira.
 
 import { encodeTransactions } from "@/utils/decode";
 import type {
@@ -21,7 +26,12 @@ import type {
   SalaryData,
   Transaction,
 } from "@/types";
-import type { RapportImport } from "@/services/lectureClasseur";
+import type {
+  NaturePatrimoine,
+  PatrimoineLu,
+  RapportImport,
+  ReleveSoldeLu,
+} from "@/services/lectureClasseur";
 
 /**
  * Version du schéma mémorisé.
@@ -30,6 +40,12 @@ import type { RapportImport } from "@/services/lectureClasseur";
  * 2 — `budget.jeu.v2`    : le jeu entier, transactions ENCODÉES.
  * 3 — `budget.jeu.v3`    : le jeu entier + la CONFIGURATION déclarée par le
  *                          fichier source (`config.parametrage`) — lot C.
+ *
+ * D-4a — le champ facultatif `patrimoine` s'ajoute SANS changer de version
+ * (décision du 28/10/2026). Un jeu v3 écrit avant D-4a n'a pas ce champ, et
+ * c'est exactement ce qui veut dire « pas de patrimoine » : il se relit tel
+ * quel, sans migration et sans perte. Passer en 4 aurait demandé une
+ * migration pour obtenir le même résultat.
  */
 export const VERSION_SCHEMA = 3;
 
@@ -60,6 +76,16 @@ export interface JeuDonnees {
   salary: SalaryData;
   config: Config;
   budgets: BudgetTarget[];
+  /**
+   * D-4a — les soldes de la feuille `Patrimoine`, tels que le lecteur les a
+   * rendus (ou `public/data/patrimoine.json` pour la démonstration).
+   *
+   * ⚠️ La clé n'existe que s'il y a un patrimoine. Jamais un patrimoine vide
+   * inventé : un fichier sans feuille `Patrimoine` donne un jeu SANS cette
+   * clé. Une feuille présente mais illisible, elle, donne la clé avec zéro
+   * relevé — c'est ce que le lecteur a constaté.
+   */
+  patrimoine?: PatrimoineLu;
 }
 
 /**
@@ -119,6 +145,8 @@ export function construireJeuDepuisRapport(
     // Le format public v1 ne porte pas d'objectifs de budget. Hériter de ceux
     // de la démonstration afficherait les plafonds de quelqu'un d'autre.
     budgets: [],
+    // D-4a — transporté seulement si le classeur a une feuille `Patrimoine`.
+    ...(rapport.patrimoine ? { patrimoine: rapport.patrimoine } : {}),
   };
 }
 
@@ -152,12 +180,19 @@ export function construireJeuAncienFormat(
   };
 }
 
-/** Construit un jeu depuis les fichiers du site (mode statique). */
+/**
+ * Construit un jeu depuis les fichiers du site (mode statique).
+ *
+ * `patrimoine` (D-4a) : les soldes de `public/data/patrimoine.json`, déjà
+ * vérifiés par `lirePatrimoineStocke`. Facultatif : `null` ou absent → jeu
+ * sans patrimoine, comme avant.
+ */
 export function construireJeuStatique(
   transactions: Transaction[] | RawTransactionsJSON,
   salary: SalaryData,
   config: Config,
-  budgets: BudgetTarget[]
+  budgets: BudgetTarget[],
+  patrimoine: PatrimoineLu | null = null
 ): JeuDonnees {
   return {
     version: VERSION_SCHEMA,
@@ -170,7 +205,108 @@ export function construireJeuStatique(
     salary,
     config,
     budgets,
+    ...(patrimoine ? { patrimoine } : {}),
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PATRIMOINE — contrôle de forme (D-4a)
+// ─────────────────────────────────────────────────────────────────────────
+
+const NATURES_PATRIMOINE: readonly NaturePatrimoine[] = ["Epargne", "Liquidité", "Immobilier"];
+const FORME_MOIS = /^\d{4}-\d{2}$/;
+const FORME_JOUR = /^\d{4}-\d{2}-\d{2}$/;
+
+function estNombre(v: unknown): v is number {
+  return typeof v === "number" && Number.isFinite(v);
+}
+
+/**
+ * Vérifie un patrimoine venu de l'extérieur du code — `patrimoine.json` du
+ * site, ou un jeu relu sur l'appareil — et le rend dans la forme exacte du
+ * lecteur, ou `null`.
+ *
+ * Un seul contrôle pour les deux chemins : une règle écrite deux fois finit
+ * par en donner deux versions.
+ *
+ * ⚠️ TOUT OU RIEN : un seul relevé mal formé et c'est tout le patrimoine qui
+ * est refusé. Un patrimoine à moitié lu donnerait des totaux faux sans que
+ * rien ne le dise.
+ *
+ * Seules les clés connues sont recopiées : la clé `_lisez_moi` du fichier de
+ * démonstration (et toute autre clé inconnue) disparaît ici.
+ */
+export function lirePatrimoineStocke(o: unknown): PatrimoineLu | null {
+  if (!o || typeof o !== "object" || Array.isArray(o)) return null;
+  const p = o as Record<string, unknown>;
+  if (!Array.isArray(p.releves) || !estNombre(p.nbComptes)) return null;
+  if (typeof p.dernierMois !== "string") return null;
+  if (p.dernierMois !== "" && !FORME_MOIS.test(p.dernierMois)) return null;
+
+  const c = p.compteurs;
+  if (!c || typeof c !== "object") return null;
+  const cpt = c as Record<string, unknown>;
+  if (
+    !estNombre(cpt.lignesLues) || !estNombre(cpt.gardees) || !estNombre(cpt.futures) ||
+    !estNombre(cpt.nonSaisies) || !estNombre(cpt.ignorees)
+  ) return null;
+
+  const releves: ReleveSoldeLu[] = [];
+  for (const r of p.releves) {
+    if (!r || typeof r !== "object") return null;
+    const x = r as Record<string, unknown>;
+    if (!(x.ordre === null || estNombre(x.ordre))) return null;
+    if (typeof x.compte !== "string" || x.compte === "") return null;
+    if (!NATURES_PATRIMOINE.includes(x.nature as NaturePatrimoine)) return null;
+    if (typeof x.banque !== "string") return null;
+    if (typeof x.mk !== "string" || !FORME_MOIS.test(x.mk)) return null;
+    // Le mois est celui de la date (règle du lecteur) : sinon, l'un des deux ment.
+    if (typeof x.date !== "string" || !FORME_JOUR.test(x.date) || x.date.slice(0, 7) !== x.mk) {
+      return null;
+    }
+    if (!estNombre(x.montant)) return null;
+    releves.push({
+      ordre: x.ordre as number | null,
+      compte: x.compte,
+      nature: x.nature as NaturePatrimoine,
+      banque: x.banque,
+      mk: x.mk,
+      date: x.date,
+      montant: x.montant,
+    });
+  }
+
+  return {
+    releves,
+    nbComptes: p.nbComptes,
+    dernierMois: p.dernierMois,
+    compteurs: {
+      lignesLues: cpt.lignesLues,
+      gardees: cpt.gardees,
+      futures: cpt.futures,
+      nonSaisies: cpt.nonSaisies,
+      ignorees: cpt.ignorees,
+    },
+  };
+}
+
+/**
+ * Un jeu relu de l'appareil, dont le patrimoine éventuel est vérifié.
+ *
+ * Patrimoine absent → jeu rendu tel quel (jeu d'avant D-4a, ou fichier sans
+ * feuille). Patrimoine abîmé → le jeu est GARDÉ sans lui : transactions,
+ * paie et configuration valent plus que les soldes, et les jeter avec eux
+ * ferait perdre bien plus. Le sous-onglet Patrimoine disparaît ; réimporter
+ * le classeur le ramène.
+ */
+function avecPatrimoineVerifie(jeu: JeuDonnees): JeuDonnees {
+  if (!("patrimoine" in jeu)) return jeu;
+  const patrimoine = lirePatrimoineStocke(jeu.patrimoine);
+  if (patrimoine) return { ...jeu, patrimoine };
+  console.warn("[Budget] Patrimoine mémorisé illisible — jeu relu sans lui.");
+  const { patrimoine: _abime, ...sansPatrimoine } = jeu;
+  void _abime;
+  return sansPatrimoine;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -265,7 +401,7 @@ export function lireJeuMemorise(): LectureStockage {
     const brut = localStorage.getItem(CLE);
     if (brut) {
       const o: unknown = JSON.parse(brut);
-      if (jeuValide(o)) return { jeu: o, avis: null };
+      if (jeuValide(o)) return { jeu: avecPatrimoineVerifie(o), avis: null };
       return {
         jeu: null,
         avis: {

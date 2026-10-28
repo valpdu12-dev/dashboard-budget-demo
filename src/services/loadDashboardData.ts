@@ -7,13 +7,22 @@
 // uns après les autres, mais un JEU complet : transactions, paie,
 // configuration, objectifs, couverture et origine. Un import ne peut donc plus
 // laisser derrière lui la configuration du jeu précédent.
+//
+// PATRIMOINE (D-4a, plan 33). `/data/patrimoine.json` porte les soldes
+// fictifs du profil Démo. Il est FACULTATIF : absent, illisible ou mal formé,
+// la démonstration se charge comme avant, sans patrimoine.
 
 import { useDataStore } from "@/stores/useDataStore";
 import { lireObjectifsLocaux } from "@/services/budgetsLocaux";
-import { construireJeuStatique, lireJeuMemorise } from "@/services/jeuDonnees";
+import {
+  construireJeuStatique,
+  lireJeuMemorise,
+  lirePatrimoineStocke,
+} from "@/services/jeuDonnees";
 import { useUIStore } from "@/stores/useUIStore";
 import { lireProfil } from "@/services/profil";
 import type { BudgetTarget, Config, RawTransactionsJSON, SalaryData } from "@/types";
+import type { PatrimoineLu } from "@/services/lectureClasseur";
 
 const SOURCES = [
   "/data/transactions.json",
@@ -34,6 +43,9 @@ const REFERENCES_SOURCE = "/data/references.json";
 
 /** Objectifs de budget livrés avec la démo. */
 const BUDGETS_SOURCE = "/data/budgets.json";
+
+/** Soldes du profil Démo (D-4a) — même forme que la feuille `Patrimoine` lue. */
+const PATRIMOINE_SOURCE = "/data/patrimoine.json";
 
 async function lireJSON(url: string) {
   const res = await fetch(url);
@@ -95,6 +107,24 @@ async function chargerBudgets(): Promise<BudgetTarget[]> {
 }
 
 /**
+ * Soldes de démonstration — best-effort, comme les références et les objectifs.
+ *
+ * ⚠️ Ne lève JAMAIS : un 404, un JSON illisible ou une forme inattendue
+ * donnent `null`, et le reste de la démonstration se charge normalement. Ce
+ * fichier n'entre pas dans le chargement des trois fichiers principaux.
+ */
+async function chargerPatrimoine(): Promise<PatrimoineLu | null> {
+  try {
+    const patrimoine = lirePatrimoineStocke(await lireJSON(PATRIMOINE_SOURCE));
+    if (!patrimoine) console.warn("[Budget] Soldes de démonstration mal formés — ignorés.");
+    return patrimoine;
+  } catch (err) {
+    console.warn("[Budget] Soldes de démonstration indisponibles.", err);
+    return null;
+  }
+}
+
+/**
  * Remplit le store depuis les fichiers du site. Idempotent — peut être rejoué
  * à tout moment (le bouton « Revenir aux données par défaut » s'en sert).
  *
@@ -121,11 +151,12 @@ export async function loadDashboardData(): Promise<void> {
   setLoading();
   try {
     const data = await chargerFichiers();
-    const [sal, budgets] = await Promise.all([
+    const [sal, budgets, patrimoine] = await Promise.all([
       attacherReferences(data.sal),
       chargerBudgets(),
+      chargerPatrimoine(),
     ]);
-    poserJeu(construireJeuStatique(data.rawTx, sal, data.cfg, budgets));
+    poserJeu(construireJeuStatique(data.rawTx, sal, data.cfg, budgets, patrimoine));
   } catch (err) {
     // Sans jeu mémorisé, il n'y a rien à montrer : on remonte l'erreur.
     // Avec, mieux vaut afficher les données de la personne qu'un écran vide.

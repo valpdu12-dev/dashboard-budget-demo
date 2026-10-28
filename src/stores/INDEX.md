@@ -4,6 +4,6 @@
 
 | Fichier | Rôle |
 |---|---|
-| `useDataStore.ts` | Données chargées (transactions, salaires…) depuis l'API |
+| `useDataStore.ts` | Données chargées (transactions, salaires…) depuis l'API ; `patrimoine` (D-4a) : soldes de la feuille Patrimoine du jeu affiché, `null` sans feuille |
 | `useFilterStore.ts` | Filtres globaux (période, comptes, catégories…) |
 | `useUIStore.ts` | État d'interface (onglet actif, modales, préférences d'affichage) |
