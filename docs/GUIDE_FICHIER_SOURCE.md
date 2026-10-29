@@ -195,7 +195,10 @@ nom du compte), `Epargne/Liquidité` (à choisir dans la liste : `Epargne`,
   écartée, et l'aperçu d'import vous le dit.
 
 Cette feuille ne bloque **jamais** l'import : un problème y est un simple
-avertissement. **Sans cette feuille, le reste du fichier marche pareil.** Dans
+avertissement. **Sans cette feuille, le sous-onglet Patrimoine n'apparaît
+pas** ; le reste du fichier marche pareil. Un classeur importé avant l'arrivée
+de ce sous-onglet doit être **importé de nouveau** pour le faire apparaître :
+l'ancien import mémorisé ne contient pas les soldes. Dans
 le modèle, elle porte un filtre mais ne se trie pas : la colonne `Ordre` range
 vos comptes.
 

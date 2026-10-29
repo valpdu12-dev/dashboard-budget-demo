@@ -3,17 +3,18 @@
 // Style aligné sur le composant Chip (cohérence visuelle).
 import { NavLink, useLocation } from "react-router-dom";
 import { SUB_NAV_CONFIG } from "@/config/constants";
-import { useRubriques } from "@/hooks/useRubriques";
+import { useDisponibilites, type Disponibilite } from "@/hooks/useDisponibilites";
 
 type SubNavKey = keyof typeof SUB_NAV_CONFIG;
 
 export function SubNav() {
   const { pathname } = useLocation();
-  const rubriques = useRubriques();
+  // Patrimoine D-4c : les rubriques + `soldes` (feuille Patrimoine).
+  const rubriques = useDisponibilites();
   // Segment de tête de l'URL : "/revenus/salaire" -> "revenus"
   const tabId = pathname.split("/")[1] as SubNavKey;
   const toutes = SUB_NAV_CONFIG[tabId] as readonly {
-    label: string; path: string; end?: boolean; rubrique?: "paie" | "pret" | "epargne";
+    label: string; path: string; end?: boolean; rubrique?: Disponibilite;
   }[] | undefined;
 
   // Lot B.4 : une pill dont la rubrique n'existe pas dans le jeu complet est

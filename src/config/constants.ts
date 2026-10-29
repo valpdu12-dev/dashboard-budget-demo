@@ -40,13 +40,17 @@ export const PERIOD_OPTIONS = [
  * disparaît : `Patrimoine` sans épargne ni prêt n'ouvrait qu'une page qui
  * renvoyait aussitôt à l'accueil — l'application se dérobait sous le doigt,
  * sans un mot. C'est le défaut du B.5, à un autre endroit.
+ *
+ * Patrimoine D-4c — `soldes` (une feuille Patrimoine dans le jeu) suffit
+ * aussi : un jeu qui n'a que des soldes garde son onglet. Voir
+ * `hooks/useDisponibilites.ts`.
  */
 export const NAV_TABS = [
   { id: "comptes",    label: "Comptes",    icon: "BarChart3",    path: "/" },
   { id: "depenses",   label: "Dépenses",   icon: "TrendingDown", path: "/depenses" },
   { id: "revenus",    label: "Revenus",    icon: "TrendingUp",   path: "/revenus" },
   { id: "patrimoine", label: "Patrimoine", icon: "PiggyBank",    path: "/patrimoine",
-    rubriques: ["epargne", "pret"] },
+    rubriques: ["epargne", "pret", "soldes"] },
   { id: "insights",   label: "Insights",   icon: "Lightbulb",    path: "/insights" },
 ] as const;
 
@@ -73,5 +77,7 @@ export const SUB_NAV_CONFIG = {
   patrimoine: [
     { label: "Épargne",    path: "/patrimoine",      end: true, rubrique: "epargne" },
     { label: "Prêt Immo.", path: "/patrimoine/pret", rubrique: "pret" },
+    // Patrimoine D-4c : les soldes mois par mois. Pas de feuille → pas de pill.
+    { label: "Patrimoine", path: "/patrimoine/soldes", rubrique: "soldes" },
   ],
 } as const;

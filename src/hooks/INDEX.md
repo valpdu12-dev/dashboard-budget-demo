@@ -28,3 +28,4 @@ Chaque hook isole le calcul et la dérivation des données d'une page ou d'une f
 | `useSavingsData.ts` | Épargne |
 | `useMortgageData.ts` | Prêt Immobilier (inclut les constantes du prêt) |
 | `useSoldesPatrimoine.ts` | Patrimoine (soldes, D-4b) — calcul dans `calculs/calculPatrimoine.ts` ; états `absent` / `vide` / `pret` |
+| `useDisponibilites.ts` | Navigation (D-4c) — `useRubriques` + `soldes` (le jeu a une feuille Patrimoine). Lu par la sous-navigation, les onglets et `RouteSiRubrique` ; `Rubriques` reste inchangé |

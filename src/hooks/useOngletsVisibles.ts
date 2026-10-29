@@ -6,10 +6,11 @@
 
 import { useMemo } from "react";
 import { NAV_TABS } from "@/config/constants";
-import { useRubriques } from "@/hooks/useRubriques";
+// Patrimoine D-4c : les rubriques + `soldes` (feuille Patrimoine).
+import { useDisponibilites } from "@/hooks/useDisponibilites";
 
 export function useOngletsVisibles(): typeof NAV_TABS[number][] {
-  const rubriques = useRubriques();
+  const rubriques = useDisponibilites();
   return useMemo(
     () =>
       NAV_TABS.filter(

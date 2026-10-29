@@ -7,7 +7,7 @@ import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { SkeletonPage } from "@/components/ui/Skeleton";
 import { useDataStore } from "@/stores/useDataStore";
-import { useRubriques } from "@/hooks/useRubriques";
+import { useDisponibilites, type Disponibilite } from "@/hooks/useDisponibilites";
 
 const Comptes          = lazy(() => import("@/pages/Comptes"));
 const Depenses         = lazy(() => import("@/pages/Depenses"));
@@ -17,6 +17,7 @@ const Salaire          = lazy(() => import("@/pages/Salaire"));
 const SalaireInflation = lazy(() => import("@/pages/SalaireInflation"));
 const Epargne          = lazy(() => import("@/pages/Epargne"));
 const PretImmobilier   = lazy(() => import("@/pages/PretImmobilier"));
+const PatrimoineSoldes = lazy(() => import("@/pages/PatrimoineSoldes"));
 const Insights         = lazy(() => import("@/pages/Insights"));
 const Parametres       = lazy(() => import("@/pages/Parametres"));
 
@@ -34,12 +35,18 @@ const Parametres       = lazy(() => import("@/pages/Parametres"));
  * adresse profonde — le jeu n'est pas encore là, donc la rubrique paraît
  * absente. Le défaut serait intermittent, donc invisible en test rapide.
  */
+/** Une adresse de repli, valable si sa rubrique existe. */
+interface Repli {
+  rubrique: Disponibilite;
+  chemin: string;
+}
+
 export function RouteSiRubrique({
   rubrique,
   versSi,
   children,
 }: {
-  rubrique: "paie" | "pret" | "epargne";
+  rubrique: Disponibilite;
   /**
    * Où aller quand la rubrique manque, si ce n'est pas l'accueil.
    *
@@ -48,15 +55,19 @@ export function RouteSiRubrique({
    * d'épargne voyait l'onglet Patrimoine le ramener à l'accueil à chaque
    * clic, sans un mot. Il est désormais conduit à l'écran qui, lui, a
    * quelque chose à montrer.
+   *
+   * Patrimoine D-4c : une LISTE est acceptée, essayée dans l'ordre. Sans
+   * épargne : le prêt s'il existe, sinon les soldes, sinon l'accueil.
    */
-  versSi?: { rubrique: "paie" | "pret" | "epargne"; chemin: string };
+  versSi?: Repli | Repli[];
   children: ReactNode;
 }) {
   const status = useDataStore((s) => s.status);
-  const rubriques = useRubriques();
+  const rubriques = useDisponibilites();
 
   if (status === "success" && !rubriques[rubrique]) {
-    const repli = versSi && rubriques[versSi.rubrique] ? versSi.chemin : "/";
+    const replis = versSi ? (Array.isArray(versSi) ? versSi : [versSi]) : [];
+    const repli = replis.find((r) => rubriques[r.rubrique])?.chemin ?? "/";
     return <Navigate to={repli} replace />;
   }
   return <>{children}</>;
@@ -107,13 +118,16 @@ export function AppRouter() {
             element={<RouteSiRubrique rubrique="paie"><SalaireInflation /></RouteSiRubrique>}
           />
 
-          {/* Patrimoine : épargne + prêt */}
+          {/* Patrimoine : épargne + prêt + soldes */}
           <Route
             path="patrimoine"
             element={
               <RouteSiRubrique
                 rubrique="epargne"
-                versSi={{ rubrique: "pret", chemin: "/patrimoine/pret" }}
+                versSi={[
+                  { rubrique: "pret", chemin: "/patrimoine/pret" },
+                  { rubrique: "soldes", chemin: "/patrimoine/soldes" },
+                ]}
               >
                 <Epargne />
               </RouteSiRubrique>
@@ -122,6 +136,12 @@ export function AppRouter() {
           <Route
             path="patrimoine/pret"
             element={<RouteSiRubrique rubrique="pret"><PretImmobilier /></RouteSiRubrique>}
+          />
+          {/* Patrimoine D-4c : soldes mois par mois. Sans feuille Patrimoine,
+              l'adresse renvoie ailleurs, comme la pill disparaît. */}
+          <Route
+            path="patrimoine/soldes"
+            element={<RouteSiRubrique rubrique="soldes"><PatrimoineSoldes /></RouteSiRubrique>}
           />
 
           <Route path="insights" element={<Insights />} />

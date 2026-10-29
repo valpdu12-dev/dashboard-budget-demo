@@ -12,5 +12,6 @@ Une page par onglet. Chaque page assemble des composants UI et consomme un hook 
 | `Insights.tsx` | Insights | Top hausses/baisses + dépenses récurrentes |
 | `Parametres.tsx` | (hors navigation) | Lot C.2 — ce que l'outil a lu dans la feuille `Paramètres`, en **lecture seule**. Atteint depuis l'en-tête. |
 | `PretImmobilier.tsx` | Prêt Immobilier | KPIs + progression + projection du prêt |
+| `PatrimoineSoldes.tsx` | Patrimoine (soldes, D-4c) | `/patrimoine/soldes`, 3e pill du menu Patrimoine. Soldes mois par mois : 6 KPI, interrupteur immobilier, Évolution (légende = filtre de la page), répartition, variations, tableau des comptes. Aucun calcul : tout vient de `useSoldesPatrimoine`. Pill absente sans feuille Patrimoine |
 | `Salaire.tsx` | Salaire | Historique des salaires par entreprise, KPIs, projection |
 | `SalaireInflation.tsx` | Salaire vs Inflation | Pouvoir d'achat : indices base 100 (net / inflation / SMIC) |
