@@ -10,7 +10,7 @@
 **➜ Voir la démonstration : https://dashboard-budget-demo.pages.dev/**
 
 Version publique et statique d'un tableau de bord de finances personnelles.
-React 18, TypeScript, Vite, Tailwind, Zustand, Recharts. 975 tests.
+React 18, TypeScript, Vite, Tailwind, Zustand, Recharts. 1 265 tests.
 
 ![Page Comptes](docs/captures/desktop-01-comptes.png)
 
@@ -144,12 +144,12 @@ qui ne replie sur rien n'est pas une sécurité, c'est un appel voué à l'éche
 chaque ouverture, visible dans l'onglet Réseau, et qui contredirait le bandeau
 affiché en haut de l'écran.
 
-**Vérifié en navigateur réel** — chargement des 9 pages en 1440 px puis en
+**Vérifié en navigateur réel** — chargement des 10 pages en 1366 px puis en
 412 px :
 
 ```
-Requêtes réseau distinctes : 50
-  vers le site      : 50
+Requêtes réseau distinctes : 56
+  vers le site      : 56
   vers l'extérieur  : 0
 Erreurs console : 0
 ```
@@ -280,7 +280,7 @@ téléphone.
 
 | Contrôle | Résultat |
 |---|---|
-| Accessibilité (axe-core, WCAG 2 A/AA et bonnes pratiques) | 0 défaut sur les 11 écrans et la fenêtre d'import |
+| Accessibilité (axe-core, WCAG 2 A/AA et bonnes pratiques) | 0 défaut sur les 11 écrans et la fenêtre d'import, puis sur l'écran Patrimoine ajouté ensuite |
 | Clavier seul | tout le parcours, import compris ; focus visible, piégé dans la fenêtre, rendu à la fermeture |
 | Fichiers piégés (vide, CSV renommé, .xls, chiffré, colonne manquante) | un message juste pour chacun, aucun écran blanc |
 | Réseau pendant l'import | 0 requête hors du site |
@@ -304,7 +304,7 @@ s'écartait d'un centime de celui d'Excel. Tous corrigés, et verrouillés par d
 | ![Salaire vs inflation](docs/captures/desktop-06-salaire-inflation.png) | ![Prêt immobilier](docs/captures/desktop-08-pret-immobilier.png) |
 | **Salaire vs inflation** — pouvoir d'achat | **Prêt immobilier** — amortissement et simulation |
 
-Les neuf écrans, en 1440 px et en 412 px, sont dans
+Les dix écrans, en 1440 px et en 412 px, sont dans
 [`docs/captures/`](docs/captures/). Toutes les captures sont prises sur cette
 démonstration, avec ses données.
 
@@ -350,7 +350,7 @@ choix d'affichage partent ensemble.
 Deux natures, volontairement séparées :
 
 **Inventées** — `transactions.json`, `salary.json`, `config.json`,
-`budgets.json`. Libellés, marchands, employeurs, villes et montants sont
+`budgets.json`, `patrimoine.json`. Libellés, marchands, employeurs, villes et montants sont
 écrits dans le générateur, jamais dérivés de données réelles.
 
 **Réelles et publiques** — `references.json` : inflation INSEE et SMIC, avec
@@ -364,6 +364,10 @@ Le jeu couvre 25 mois et contient trois cas choisis pour être visibles :
 - deux **mois volontairement incomplets** ;
 - un **dernier mois partiel**, donc exclu des moyennes, comme le veut la règle
   de couverture.
+
+Les soldes (`patrimoine.json`) couvrent 24 mois et 8 comptes, avec un bien
+immobilier, un compte ouvert en cours de route et un relevé oublié — repris
+du mois précédent, et signalé.
 
 Le générateur est à **graine fixe** : deux exécutions produisent des fichiers
 identiques, octet pour octet. La CI le rejoue et échoue si le résultat diffère
@@ -396,7 +400,7 @@ Aucun fichier `.env` : ni API, ni jeton, ni secret.
 
 | Commande | Rôle |
 |---|---|
-| `npm run donnees` | régénère les cinq fichiers de `public/data/` |
+| `npm run donnees` | régénère les six fichiers de `public/data/` |
 | `npm run verif` | contrôle de publication — **bloquant** |
 | `npm run modele` | refait le classeur modèle et le compare au fichier publié |
 | `npm run preview` | sert le build sur `http://localhost:4173` |
@@ -429,6 +433,7 @@ Aucun fichier `.env` : ni API, ni jeton, ni secret.
 | **H** | Modèle facile à remplir : deux couleurs, listes, consignes et notes, Visualisation, verrou sans mot de passe, tri par date | ✅ |
 | **D** | Recette de diffusion — clone propre, dépendances du site sans alerte, CI sur Node 22, accessibilité, clavier, erreurs, mobile, arrondi comme Excel | ✅ |
 | **O** | Outils à jour — Vite 8, Vitest 5, ESLint 10 ; plus aucune alerte `npm audit`, outillage compris | ✅ |
+| **P** | Sous-onglet Patrimoine : feuille facultative lue par noms de colonnes, soldes mois par mois, 6 indicateurs, masqué sans la feuille | ✅ |
 
 ---
 
@@ -461,6 +466,11 @@ l'adaptateur de l'ancien format, et affichent un message dans l'autre cas.
 **Le mois courant de la démonstration est figé** à septembre 2026. C'est le
 prix du déterminisme du générateur : un jeu qui bouge à chaque exécution
 rendrait tout écart de test ininterprétable.
+
+**Le sous-onglet Patrimoine lit la date du jour.** Seuls les relevés datés
+avant aujourd'hui comptent : un prêt prérempli jusqu'en 2042 ne compte pas
+d'avance. C'est la seule règle qui dépend de l'horloge ; le jeu de
+démonstration, lui, s'arrête à sa fin de relevé et ne bouge pas.
 
 **Le contrôle d'accessibilité n'est pas dans la CI.** Il a été passé à la
 main, écran par écran, au lot D. Une régression future ne serait vue qu'à la
