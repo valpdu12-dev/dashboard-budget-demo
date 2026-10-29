@@ -45,6 +45,7 @@ import { SkeletonPage } from "@/components/ui/Skeleton";
 import { useDataStore } from "@/stores/useDataStore";
 import { useSoldesPatrimoine } from "@/hooks/useSoldesPatrimoine";
 import { moisPrecedent, type SelectionPatrimoine } from "@/calculs/calculPatrimoine";
+import { fmtAxe } from "@/utils/axeEuros";
 import type { CompteursPatrimoine } from "@/services/lectureClasseur";
 import { useChartSize } from "@/hooks/useChartSize";
 import { useInfobulleTactile } from "@/hooks/useInfobulleTactile";
@@ -482,7 +483,7 @@ export default function PatrimoineSoldes() {
           >
             <CartesianGrid stroke="#1F2937" strokeDasharray="3 3" />
             <XAxis dataKey="label" tick={{ fill: "#6B7280", fontSize: 12 }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={16} />
-            <YAxis tick={{ fill: "#6B7280", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => fmtShort(v)} />
+            <YAxis tick={{ fill: "#6B7280", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => fmtAxe(v)} />
             <Tooltip active={infobulle.active} content={<ChartTooltip formatter={fmt} showPrev={false} />} />
             {series.map((s) => (
               <Area
@@ -540,7 +541,7 @@ export default function PatrimoineSoldes() {
             <ComposedChart data={donneesComptes}>
               <CartesianGrid stroke="#1F2937" strokeDasharray="3 3" />
               <XAxis dataKey="label" tick={{ fill: "#6B7280", fontSize: 12 }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={16} />
-              <YAxis tick={{ fill: "#6B7280", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => fmtShort(v)} />
+              <YAxis tick={{ fill: "#6B7280", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => fmtAxe(v)} />
               <Tooltip active={infobulle.active} content={<ChartTooltip formatter={fmt} showPrev={false} />} />
               <Legend wrapperStyle={{ fontSize: 12, color: "#6B7280" }} />
               {p.comptesSerie.map((c) => (
@@ -633,7 +634,7 @@ export default function PatrimoineSoldes() {
               <BarChart data={donneesG3}>
                 <CartesianGrid stroke="#1F2937" strokeDasharray="3 3" />
                 <XAxis dataKey="label" tick={{ fill: "#6B7280", fontSize: 12 }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={16} />
-                <YAxis tick={{ fill: "#6B7280", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => fmtShort(v)} />
+                <YAxis tick={{ fill: "#6B7280", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => fmtAxe(v)} />
                 <Tooltip active={infobulle.active} content={<ChartTooltip formatter={fmtSigne} showPrev={false} />} />
                 <Bar dataKey="variation" name="Variation" radius={[4, 4, 0, 0]}>
                   {donneesG3.map((v) => (
