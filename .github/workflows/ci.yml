@@ -37,37 +37,55 @@ jobs:
       # avertissement — acceptable sur un poste de travail, pas ici.
       GITLEAKS_REQUIS: "1"
       GITLEAKS_VERSION: "8.24.3"
-      # Lot G — la liste des noms interdits ne vit pas dans le dépôt. Elle
-      # arrive par un secret. Absente ou tronquée, tests et contrôle de
-      # publication ÉCHOUENT : rien n'est sauté en silence.
-      LISTE_NOIRE: ${{ secrets.LISTE_NOIRE }}
+      # DM-01 (A2) — empreinte SHA-256 de l'archive linux_x64 de cette
+      # version, relevée le 07/11/2026 dans gitleaks_8.24.3_checksums.txt et
+      # recalculée sur l'archive téléchargée. Changer de version = changer
+      # aussi cette ligne.
+      GITLEAKS_SHA256: "9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c"
+      # DM-01 (A1) — le secret LISTE_NOIRE n'est PLUS donné à tout le
+      # travail. Seules les deux étapes qui le lisent le reçoivent : Tests et
+      # Contrôle de publication. npm ci, lint, build et les autres outils
+      # tournent sans lui.
 
     steps:
       # v5 et non v4 : les briques v4 tournent sur un Node que GitHub
       # déprécie, et il le signale à chaque exécution. v5 est la première
       # version qui corrige ce point — v7 existe, mais rien ici n'a besoin
       # de ce qu'elle apporte.
+      #
+      # DM-01 (A2) — briques épinglées par empreinte de commit, pas par
+      # étiquette : une étiquette peut être déplacée, une empreinte non.
+      # La version lisible est en commentaire, en fin de ligne.
       - name: Récupération du dépôt
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          # DM-01 (A1) — le jeton GitHub n'est pas laissé dans .git/config,
+          # où n'importe quel outil lancé ensuite pourrait le lire.
+          persist-credentials: false
 
       # Node 22 : c'est le plancher déclaré dans `engines`. La CI doit
       # éprouver la version la plus basse qu'on prétend supporter, pas la
       # plus confortable. Lot D (Q4) : Node 20 est en fin de vie depuis
       # avril 2026 ; le plancher monte à 22 (LTS).
       - name: Node 22
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: '22'
           cache: 'npm'
 
+      # DM-01 (A1) — aucun script d'installation des paquets ne s'exécute.
+      # Mesuré le 07/11/2026 : seul fsevents (macOS, facultatif) en a un,
+      # et il ne s'installe pas sous Linux. Un paquet piraté ne peut donc
+      # rien lancer à l'installation.
       - name: Installation reproductible
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Installation de gitleaks
         run: |
           set -euo pipefail
           curl -sSL -o /tmp/gitleaks.tar.gz \
             "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  /tmp/gitleaks.tar.gz" | sha256sum --check --strict
           tar -xzf /tmp/gitleaks.tar.gz -C /usr/local/bin gitleaks
           gitleaks version
 
@@ -77,8 +95,13 @@ jobs:
       - name: Types
         run: npm run typecheck
 
+      # Lot G — la liste des noms interdits ne vit pas dans le dépôt. Elle
+      # arrive par un secret. Absente ou tronquée, tests et contrôle de
+      # publication ÉCHOUENT : rien n'est sauté en silence.
       - name: Tests
         run: npm test
+        env:
+          LISTE_NOIRE: ${{ secrets.LISTE_NOIRE }}
 
       - name: Build
         run: npm run build
@@ -102,6 +125,8 @@ jobs:
       # build, extensions interdites, gitleaks.
       - name: Contrôle de publication
         run: npm run verif
+        env:
+          LISTE_NOIRE: ${{ secrets.LISTE_NOIRE }}
 
       # Lot D — les deux contrôles de `npm run check` que la CI ne rejouait
       # pas : aucun libellé de la démonstration dans le code, et le classeur
