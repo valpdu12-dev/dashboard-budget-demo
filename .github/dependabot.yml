@@ -1,0 +1,42 @@
+# DM-01 (A4) — Dependabot propose les mises à jour par demande de fusion (PR).
+#
+# Deux sources suivies :
+#   - npm : les paquets de package.json ;
+#   - github-actions : les briques de .github/workflows/ci.yml. Elles sont
+#     épinglées par empreinte de commit ; Dependabot met à jour l'empreinte
+#     ET le commentaire de version en fin de ligne.
+#
+# Une fois par semaine, regroupées, pour ne pas noyer le dépôt sous les PR.
+# Les correctifs de sécurité, eux, arrivent dès qu'une alerte est publiée,
+# quel que soit ce calendrier (il faut activer les alertes dans les réglages).
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    groups:
+      outils:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+      site:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+    ignore:
+      # SheetJS est livré en archive dans vendor/ (lot B) : le registre npm
+      # n'a pas la version corrigée. Sa mise à jour se fait à la main.
+      - dependency-name: "xlsx"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "Europe/Paris"
+    groups:
+      briques-ci:
+        patterns: ["*"]
