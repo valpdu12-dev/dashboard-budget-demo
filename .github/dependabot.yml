@@ -30,6 +30,13 @@ updates:
       # SheetJS est livré en archive dans vendor/ (lot B) : le registre npm
       # n'a pas la version corrigée. Sa mise à jour se fait à la main.
       - dependency-name: "xlsx"
+      # DM-01 (Q3) — pas de version majeure proposée d'office (Recharts 3,
+      # Tailwind 4, @types/node 26…). Elles changent le code et se font
+      # exprès, dans un chantier à part. Les correctifs de SÉCURITÉ, eux,
+      # arrivent quand même : cette règle ne vise que les mises à jour de
+      # version.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -40,3 +47,6 @@ updates:
     groups:
       briques-ci:
         patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
