@@ -122,7 +122,7 @@ export function calculerEpargne(e: EntreesEpargne, regles: Regles) {
   const donutData = ((): DonutSlice[] => {
     let src = epargneTx;
     if (selEpMonth) src = src.filter((t) => t.monthKey === selEpMonth);
-    const map: Record<string, number> = {};
+    const map: Record<string, number> = Object.create(null);
     src.forEach((t) => { map[t.type] = (map[t.type] || 0) + t.montant; });
     return Object.entries(map)
       .map(([name, value]) => ({ name, value }))

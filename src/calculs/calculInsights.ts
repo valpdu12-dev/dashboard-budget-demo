@@ -49,8 +49,8 @@ export function calculerInsights(
     : [];
 
   // Agrégation par Cat2
-  const curMap: Record<string, number> = {};
-  const prevMap: Record<string, number> = {};
+  const curMap: Record<string, number> = Object.create(null);
+  const prevMap: Record<string, number> = Object.create(null);
 
   for (const t of curTx) {
     if (t.cat2 && t.cat2 !== "x") {
@@ -93,7 +93,7 @@ export function calculerInsights(
   const txByKey: Record<
     string,
     { name: string; montant: number; months: Set<string> }
-  > = {};
+  > = Object.create(null);
 
   for (const t of transactions) {
     if (t.dc !== "Débit" || isTransfer(t) || t.montant <= 0) continue;

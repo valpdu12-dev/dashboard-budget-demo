@@ -16,6 +16,7 @@
 import type { Transaction, SalaryMonth, KPIs } from "@/types";
 import type { Regles } from "@/calculs/regles";
 import { montantDepense, estRecette } from "@/calculs/mouvements";
+import { dictionnaire } from "@/utils/dictionnaire";
 
 export function calculerKPIs(
   transactions: Transaction[],
@@ -39,8 +40,8 @@ export function calculerKPIs(
   }
 
   // ─── Soldes ───────────────────────────────────────────────────
-  const curBal = balancesByMonth[currentMonth] ?? {};
-  const prevBal = prevMonth ? (balancesByMonth[prevMonth] ?? {}) : {};
+  const curBal = balancesByMonth[currentMonth] ?? dictionnaire();
+  const prevBal = prevMonth ? (balancesByMonth[prevMonth] ?? dictionnaire()) : dictionnaire();
 
   // ─── Transactions du mois courant et précédent (hors transferts) ──
   const isTransfer = (t: Transaction) => regles.aNature(t.type, "transfert-interne");

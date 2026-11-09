@@ -30,7 +30,7 @@ export function lireObjectifsLocaux(): ObjectifsLocaux {
     if (!objet || typeof objet !== "object" || Array.isArray(objet)) return {};
     // On ne garde que les paires exploitables : un stockage corrompu ne doit
     // pas injecter de NaN dans les calculs de budget.
-    const propre: ObjectifsLocaux = {};
+    const propre: ObjectifsLocaux = Object.create(null);
     for (const [cat2, valeur] of Object.entries(objet as Record<string, unknown>)) {
       if (typeof valeur === "number" && Number.isFinite(valeur)) propre[cat2] = valeur;
     }

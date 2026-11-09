@@ -399,7 +399,7 @@ function indexerColonnes(
     const cle = normaliserCle(e);
     if (cle && !parNom.has(cle)) parNom.set(cle, i);
   });
-  const out: Record<string, number> = {};
+  const out: Record<string, number> = Object.create(null);
   for (const [champ, libelles] of Object.entries(dictionnaire)) {
     const noms: readonly string[] = typeof libelles === "string" ? [libelles] : libelles;
     const trouves = noms.filter((n) => parNom.has(normaliserCle(n)));
@@ -967,7 +967,7 @@ function lireParametres(wb: XLSX.WorkBook, col: Collecteur): ParametresLus {
   const { config, anomalies } = validerConfig(brute);
   for (const a of anomalies) col.ajouter(a);
 
-  const soldes: Record<string, number> = {};
+  const soldes: Record<string, number> = Object.create(null);
   for (const c of config.comptes) {
     if (c.soldeDepart !== null) soldes[c.libelle] = c.soldeDepart;
   }

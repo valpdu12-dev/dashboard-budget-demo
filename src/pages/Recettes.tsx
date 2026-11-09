@@ -35,6 +35,7 @@ import { useChartSize } from "@/hooks/useChartSize";
 import { fmt, fmtShort, fmtDate, mkLabel, pctChange } from "@/utils/formatters";
 import { DONUT_COLORS } from "@/config/colors";
 import type { Transaction } from "@/types";
+import { dictionnaire } from "@/utils/dictionnaire";
 
 // ─── Donut outer label (% only) ─────────────────────────────────────────
 function renderDonutLabel({
@@ -137,25 +138,25 @@ export default function Recettes() {
 
   // ── LineChart data (par mois × type) ──────────────────────────────────
   const { lineData, types } = useMemo(() => {
-    const map: Record<string, Record<string, number | string>> = {};
+    const map: Record<string, Record<string, number | string>> = Object.create(null);
     const typesSet = new Set<string>();
     recettes.forEach((t) => {
-      if (!map[t.monthKey]) map[t.monthKey] = { monthKey: t.monthKey };
+      if (!map[t.monthKey]) map[t.monthKey] = dictionnaire({ monthKey: t.monthKey });
       const tp = t.type || "Autre";
       typesSet.add(tp);
       map[t.monthKey][tp] = ((map[t.monthKey][tp] as number) || 0) + t.montant;
     });
     const types = Array.from(typesSet);
     const lineData = allMonthsInRange.map((mk, idx) => {
-      const row: Record<string, number | string> = {
+      const row: Record<string, number | string> = dictionnaire({
         monthKey: mk,
         label: mkLabel(mk),
         ...(map[mk] || {}),
-      };
+      });
       // prev_* pour comparaison N-1 dans tooltips
       if (idx > 0) {
         const prevMk = allMonthsInRange[idx - 1];
-        const prevRow = map[prevMk] || {};
+        const prevRow = map[prevMk] || dictionnaire();
         types.forEach((tp) => { row[`prev_${tp}`] = (prevRow[tp] as number) || 0; });
       }
       return row;
@@ -167,7 +168,7 @@ export default function Recettes() {
   const donutData = useMemo(() => {
     let src = recettes;
     if (selRecMonth) src = src.filter((t) => t.monthKey === selRecMonth);
-    const map: Record<string, number> = {};
+    const map: Record<string, number> = Object.create(null);
     src.forEach((t) => {
       const tp = t.type || "Autre";
       map[tp] = (map[tp] || 0) + t.montant;

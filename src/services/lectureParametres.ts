@@ -135,7 +135,7 @@ export function tableauColonnes(
       }
 
       // ── Champ → index de colonne ────────────────────────────────────
-      const index: Record<string, number> = {};
+      const index: Record<string, number> = Object.create(null);
       for (const [champ, libelle] of Object.entries(dictionnaire)) {
         const i = enTetes.findIndex((e) => normaliserCle(e) === normaliserCle(libelle));
         if (i !== -1) index[champ] = c + i;
@@ -149,7 +149,7 @@ export function tableauColonnes(
         // Un autre tableau commence ici : celui-ci est fini.
         if (EN_TETES_DE_TABLEAU.includes(normaliserCle(ligne[c]))) break;
 
-        const valeurs: Record<string, unknown> = {};
+        const valeurs: Record<string, unknown> = Object.create(null);
         for (const [champ, idx] of Object.entries(index)) valeurs[champ] = ligne[idx];
         lignes.push({ ligne: i + 1, valeurs });
       }

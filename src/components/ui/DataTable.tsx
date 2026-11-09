@@ -4,6 +4,7 @@ import { memo, useState, useMemo, useCallback, useId } from "react";
 import { Download } from "lucide-react";
 import { useResponsive } from "@/hooks/useResponsive";
 import { StackedRowCard, type CardField } from "./StackedRowCard";
+import { celluleCsv } from "@/utils/csv";
 
 export interface Column<T> {
   key: keyof T;
@@ -85,17 +86,11 @@ function DataTableInner<T extends Record<string, unknown>>({
   const exportCSV = useCallback(() => {
     if (sorted.length === 0) return;
     const sep = ";";
-    const header = columns.map((c) => c.label).join(sep);
+    // DM-01 (A7) — chaque cellule passe par `celluleCsv` : un texte qui
+    // commence par =, +, -, @ ne devient pas une formule à l'ouverture.
+    const header = columns.map((c) => celluleCsv(c.label, sep)).join(sep);
     const rows = sorted.map((row) =>
-      columns
-        .map((c) => {
-          const v = row[c.key];
-          const s = v == null ? "" : String(v);
-          return s.includes(sep) || s.includes('"') || s.includes("\n")
-            ? `"${s.replace(/"/g, '""')}"`
-            : s;
-        })
-        .join(sep)
+      columns.map((c) => celluleCsv(row[c.key], sep)).join(sep)
     );
     const bom = "\uFEFF";
     const blob = new Blob([bom + header + "\n" + rows.join("\n")], { type: "text/csv;charset=utf-8" });

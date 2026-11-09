@@ -6,6 +6,7 @@
 
 import { toOrganisme, organismesPresents } from "@/utils/organisme";
 import { mkLabel } from "@/utils/formatters";
+import { dictionnaire } from "@/utils/dictionnaire";
 import type { Transaction } from "@/types";
 import type { Regles } from "@/calculs/regles";
 import { montantDepense, toucheDepenses } from "@/calculs/mouvements";
@@ -113,7 +114,7 @@ export function calculerDepenses(e: EntreesDepenses, regles: Regles) {
 
     const rows = allMonthsInRange.map((mk) => {
       const mTx = tx.filter((t) => t.monthKey === mk && toucheDepenses(t, regles));
-      const row: MonthlyLineRow = { name: mkLabel(mk), mk, Total: 0 };
+      const row: MonthlyLineRow = dictionnaire({ name: mkLabel(mk), mk, Total: 0 } as MonthlyLineRow);
       organismes.forEach((org) => {
         row[org] = Math.round(
           mTx
@@ -135,7 +136,7 @@ export function calculerDepenses(e: EntreesDepenses, regles: Regles) {
 
   // ── 2. Répartition par Cat2 (Donut) ───────────────────────────────
   const expByCat2 = ((): Cat2Slice[] => {
-    const map: Record<string, number> = {};
+    const map: Record<string, number> = Object.create(null);
     filteredTx
       .filter((t) => toucheDepenses(t, regles) && t.cat2 && t.cat2 !== "x")
       .forEach((t) => {
@@ -148,7 +149,7 @@ export function calculerDepenses(e: EntreesDepenses, regles: Regles) {
 
   // ── 3. Détail par Type de dépense (BarChart horizontal) ───────────
   const expByType = ((): TypeSlice[] => {
-    const map: Record<string, number> = {};
+    const map: Record<string, number> = Object.create(null);
     filteredTx
       .filter((t) => toucheDepenses(t, regles) && t.type)
       .forEach((t) => {
@@ -185,7 +186,7 @@ export function calculerDepenses(e: EntreesDepenses, regles: Regles) {
 
   // ── 5. Top 10 enseignes (Cat3) ────────────────────────────────────
   const topMerchants = ((): TopItem[] => {
-    const map: Record<string, number> = {};
+    const map: Record<string, number> = Object.create(null);
     filteredTx
       .filter((t) => toucheDepenses(t, regles) && t.cat3 && t.cat3 !== "x")
       .forEach((t) => {
@@ -298,8 +299,8 @@ export function calculerDepenses(e: EntreesDepenses, regles: Regles) {
         (!selOrg || toOrganisme(t.compte, regles) === selOrg)
     );
 
-    const mCur: Record<string, number> = {};
-    const mPrev: Record<string, number> = {};
+    const mCur: Record<string, number> = Object.create(null);
+    const mPrev: Record<string, number> = Object.create(null);
     yCur.forEach((t) => { mCur[t.cat2] = (mCur[t.cat2] || 0) + montantDepense(t, regles); });
     yPrev.forEach((t) => { mPrev[t.cat2] = (mPrev[t.cat2] || 0) + montantDepense(t, regles); });
 

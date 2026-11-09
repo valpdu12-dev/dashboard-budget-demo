@@ -35,6 +35,7 @@ import type { PeriodKey, Transaction } from "@/types";
 import type { NaturePatrimoine, ReleveSoldeLu } from "@/services/lectureClasseur";
 import type { Regles } from "@/calculs/regles";
 import { montantDepense } from "@/calculs/mouvements";
+import { dictionnaire } from "@/utils/dictionnaire";
 
 /** Valeur de la colonne Banque pour un bien immobilier (format §4 bis). */
 export const BANQUE_IMMOBILIER = "Immobilier";
@@ -155,12 +156,12 @@ export function construireGrille(releves: ReleveSoldeLu[]): GrilleSoldes {
     (a, b) => (a.ordre ?? Infinity) - (b.ordre ?? Infinity) || a.compte.localeCompare(b.compte),
   );
   const mois = moisEntre(premier, dernier);
-  const soldes: GrilleSoldes["soldes"] = {};
-  const nbRepris: GrilleSoldes["nbRepris"] = {};
+  const soldes: GrilleSoldes["soldes"] = Object.create(null);
+  const nbRepris: GrilleSoldes["nbRepris"] = Object.create(null);
   const dernierConnu = new Map<string, number>();
 
   for (const mk of mois) {
-    const ligne: Record<string, CelluleSolde> = {};
+    const ligne: Record<string, CelluleSolde> = Object.create(null);
     let repris = 0;
     for (const c of comptes) {
       const releve = parCompte.get(c.compte)!.get(mk);
@@ -307,10 +308,10 @@ function serie(
   return grille.mois
     .filter((mk) => mk >= plage.from && mk <= plage.to)
     .map((mk) => {
-      const ligne: LigneSerie = {
+      const ligne: LigneSerie = dictionnaire({
         mk, total: totauxDuMois(grille, mk)!.total, soldesRepris: grille.nbRepris[mk],
-      };
-      const somme: Record<string, number> = Object.fromEntries(cles.map((k) => [k, 0]));
+      } as LigneSerie);
+      const somme: Record<string, number> = dictionnaire(Object.fromEntries(cles.map((k) => [k, 0])));
       for (const c of grille.comptes) {
         const cell = grille.soldes[mk][c.compte];
         if (cell) somme[cleDe(c)] += cell.montant;

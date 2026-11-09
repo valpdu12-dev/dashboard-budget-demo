@@ -36,6 +36,7 @@ import { normaliserCle } from "@/services/lectureValeurs";
 import type { Transaction } from "@/types";
 import type { Regles } from "@/calculs/regles";
 import { estRemboursement } from "@/calculs/mouvements";
+import { dictionnaire } from "@/utils/dictionnaire";
 
 export interface SoldesCalcules {
   balancesByMonth: Record<string, Record<string, number>>;
@@ -125,8 +126,8 @@ export function calculerSoldes(
   );
 
   // ── Soldes cumulatifs mois par mois ───────────────────────────────────
-  const balancesByMonth: Record<string, Record<string, number>> = {};
-  const running: Record<string, number> = {};
+  const balancesByMonth: Record<string, Record<string, number>> = Object.create(null);
+  const running: Record<string, number> = Object.create(null);
   for (const compte of comptesAvecSolde) running[compte] = initBalances[compte] ?? 0;
 
   const sortiesNonCreditees = { lignes: 0, montant: 0 };
@@ -176,7 +177,7 @@ export function calculerSoldes(
 
     // Seuls les comptes dont on connaît le point de départ entrent dans
     // l'instantané — et donc dans le total.
-    const instantane: Record<string, number> = {};
+    const instantane: Record<string, number> = Object.create(null);
     for (const c of comptesInitialises) instantane[c] = running[c];
     if (comptesInitialises.length > 0) {
       instantane.Total = comptesInitialises.reduce((somme, c) => somme + running[c], 0);
@@ -185,8 +186,8 @@ export function calculerSoldes(
   }
 
   // ── Variation cumulée, sans aucune règle ──────────────────────────────
-  const variationsByMonth: Record<string, Record<string, number>> = {};
-  const cumul: Record<string, number> = {};
+  const variationsByMonth: Record<string, Record<string, number>> = Object.create(null);
+  const cumul: Record<string, number> = Object.create(null);
   for (const c of comptesPresents) cumul[c] = 0;
 
   for (const mk of allMonths) {
@@ -194,7 +195,7 @@ export function calculerSoldes(
       if (!(t.compte in cumul)) continue;
       cumul[t.compte] += t.dc === "Crédit" ? t.montant : -t.montant;
     }
-    const instantane: Record<string, number> = { ...cumul };
+    const instantane: Record<string, number> = Object.assign(Object.create(null), cumul);
     instantane.Total = comptesPresents.reduce((s2, c) => s2 + cumul[c], 0);
     variationsByMonth[mk] = instantane;
   }
@@ -202,7 +203,7 @@ export function calculerSoldes(
   // ── Soldes du dernier mois (= soldes actuels) ─────────────────────────
   let currentBalances: Record<string, number>;
   if (!allMonths.length) {
-    const depart: Record<string, number> = {};
+    const depart: Record<string, number> = Object.create(null);
     for (const c of comptesInitialises) depart[c] = initBalances[c];
     if (comptesInitialises.length > 0) {
       depart.Total = comptesInitialises.reduce((s2, c) => s2 + initBalances[c], 0);
@@ -219,7 +220,7 @@ export function calculerSoldes(
   // et sans message. C'était le §2.2 du plan d'action.
   const balanceChartData = (monthsInRange: string[]) =>
     monthsInRange.map((mk) => {
-      const point: Record<string, number | string> = { monthKey: mk };
+      const point: Record<string, number | string> = dictionnaire({ monthKey: mk });
       for (const c of comptesAvecSolde) {
         point[c] = Math.round(balancesByMonth[mk]?.[c] ?? 0);
       }

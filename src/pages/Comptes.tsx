@@ -35,6 +35,7 @@ import { useChartSize } from "@/hooks/useChartSize";
 import { fmt, fmtShort, mkLabel } from "@/utils/formatters";
 import { projectMonthEnd, daysInMonthOf, lastTxDayOfMonth } from "@/utils/projection";
 import { useCouleurs } from "@/hooks/useCouleurs";
+import { dictionnaire } from "@/utils/dictionnaire";
 
 /** monthKey "YYYY-MM" → même mois l'année précédente. */
 function prevYearKey(mk: string): string {
@@ -136,7 +137,7 @@ export default function Comptes() {
   const variationChartData = useMemo(
     () =>
       allMonthsInRange.map((mk) => {
-        const ligne: Record<string, number | string> = { monthKey: mk };
+        const ligne: Record<string, number | string> = dictionnaire({ monthKey: mk });
         for (const c of comptesPresents) ligne[c] = Math.round(variationsByMonth[mk]?.[c] ?? 0);
         return ligne;
       }),
