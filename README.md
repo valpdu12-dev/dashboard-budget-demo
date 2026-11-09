@@ -337,7 +337,8 @@ politique de sécurité du contenu en `connect-src 'self'`, écrite dans
 destination extérieure, y compris si une dépendance en introduisait une.
 
 Avant d'appliquer, une case demande si vous voulez **garder ces données sur cet
-appareil** — cochée par défaut, à décocher sur un poste partagé. Ensuite, une
+appareil** — décochée par défaut : rien n'est gardé si vous ne la cochez pas.
+Ne la cochez pas sur un ordinateur partagé. Ensuite, une
 pastille dit ce qui est affiché, **Démo** ou **Mes données**, et bascule de
 l'un à l'autre sans rien effacer. « Effacer mes données » est un geste à part,
 confirmé, qui ne laisse aucun résidu : fichier importé, objectifs modifiés et

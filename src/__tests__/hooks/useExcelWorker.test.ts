@@ -227,8 +227,8 @@ describe("useExcelWorker — cleanup", () => {
 /**
  * Mémorisation sur choix explicite — lot B.6.
  *
- * La case « Garder ces données sur cet appareil » est cochée par défaut :
- * `apply()` sans second argument écrit, comme avant ce lot.
+ * DM-01 (A6) — la case « Garder ces données sur cet appareil » est
+ * DÉCOCHÉE par défaut : `apply()` sans second argument n'écrit rien.
  */
 describe("useExcelWorker — apply() et mémorisation (lot B.6)", () => {
   function lireJusquAuResultat() {
@@ -247,9 +247,18 @@ describe("useExcelWorker — apply() et mémorisation (lot B.6)", () => {
 
   beforeEach(() => localStorage.clear());
 
-  it("mémorise par défaut, et note le profil « personnel »", () => {
+  it("n'écrit rien par défaut (DM-01 A6)", () => {
     const { result } = lireJusquAuResultat();
     act(() => { result.current.apply("Budget.xlsx"); });
+
+    expect(useDataStore.getState().origin).toBe("upload");
+    expect(localStorage.getItem(CLE)).toBeNull();
+    expect(result.current.memorise).toBeNull();
+  });
+
+  it("mémorise quand la case est cochée, et note le profil « personnel »", () => {
+    const { result } = lireJusquAuResultat();
+    act(() => { result.current.apply("Budget.xlsx", true); });
 
     expect(localStorage.getItem(CLE)).not.toBeNull();
     expect(lireProfil()).toBe("personnel");

@@ -159,7 +159,9 @@ export function useExcelWorker(): ExcelWorkerState {
   const [memorise, setMemorise] = useState<boolean | null>(null);
 
   const apply = useCallback(
-    (fileName?: string, memoriser: boolean = true) => {
+    (fileName?: string, memoriser: boolean = false) => {
+      // DM-01 (A6) — rien n'est écrit sur l'appareil sans demande explicite :
+      // la valeur par défaut suit la case de la fenêtre d'import, décochée.
       if (!brut) return;
       // Deux chemins, un seul jeu. Le format public apporte sa configuration
       // (soldes, bornes, prêt) ; l'ancien format n'en porte aucune, et c'est

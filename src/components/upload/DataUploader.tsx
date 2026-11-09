@@ -386,11 +386,13 @@ export function DataUploader() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [applied, setApplied] = useState(false);
-  // Lot B.6 — « Garder ces donnees sur cet appareil », cochee par defaut.
-  // Cochee par defaut parce que fermer l'onglet et tout reperdre serait une
-  // surprise ; decochable parce que sur un poste partage, ecrire le budget de
-  // quelqu'un dans le navigateur sans le lui demander n'est pas acceptable.
-  const [garder, setGarder] = useState(true);
+  // Lot B.6 — « Garder ces donnees sur cet appareil ».
+  // DM-01 (A6, decision Q1 du 09/11/2026) — DECOCHEE par defaut. Avant, elle
+  // etait cochee : sur un ordinateur partage, le budget importe restait dans
+  // le navigateur pour la personne suivante. Rien n'est garde sans un geste
+  // explicite ; la contrepartie (reimporter apres fermeture de l'onglet) est
+  // dite sous la case.
+  const [garder, setGarder] = useState(false);
   const [confirmEffacement, setConfirmEffacement] = useState(false);
   // Un jeu importe est-il memorise ? Se lit dans le stockage, qui ne previent
   // personne : on relit apres chaque geste qui peut l'avoir change.
@@ -404,7 +406,7 @@ export function DataUploader() {
       setLocalError(null);
       setIsDragging(false);
       setApplied(false);
-      setGarder(true);
+      setGarder(false);
       setConfirmEffacement(false);
       setPersonnelDispo(jeuPersonnelDisponible());
     }
@@ -776,8 +778,8 @@ export function DataUploader() {
               {rapport && <RapportImportVue r={rapport} />}
               {/*
                 Lot B.6 — la memorisation devient un choix, montre avant
-                d'appliquer. Cochee par defaut : le comportement d'avant reste
-                celui qui se produit si on ne fait rien.
+                d'appliquer. DM-01 (A6) : decochee par defaut ; si on ne fait
+                rien, rien n'est garde sur l'appareil.
               */}
               {pendingData && !applied && (
                 <label className="flex items-start gap-2.5 mt-3 px-3.5 py-2.5 bg-border/20 border border-border rounded-lg cursor-pointer">
@@ -790,8 +792,9 @@ export function DataUploader() {
                   <span className="text-[12px] text-text-sec leading-relaxed">
                     <span className="text-text font-medium">Garder ces données sur cet appareil.</span>{" "}
                     Elles restent dans ce navigateur — rien n'est envoyé nulle part.
-                    Décochez sur un ordinateur partagé : le tableau de bord
-                    reviendra à la démonstration dès la fermeture de l'onglet.
+                    Sur un ordinateur partagé, ne cochez pas. Sans cette case,
+                    le tableau de bord reviendra à la démonstration dès la
+                    fermeture de l'onglet.
                   </span>
                 </label>
               )}
