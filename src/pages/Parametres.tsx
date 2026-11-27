@@ -34,7 +34,15 @@ function Section({
     <section className="mb-6">
       <h2 className="text-sm font-title font-bold text-text mb-1">{titre}</h2>
       {soustitre && <p className="text-xs text-text-sec mb-2">{soustitre}</p>}
-      <div className="border border-border rounded-lg overflow-x-auto">{children}</div>
+      {/* Zone qui défile = atteignable au clavier (axe : scrollable-region-focusable). */}
+      <div
+        className="border border-border rounded-lg overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo"
+        tabIndex={0}
+        role="region"
+        aria-label={`${titre} (défilement horizontal)`}
+      >
+        {children}
+      </div>
     </section>
   );
 }

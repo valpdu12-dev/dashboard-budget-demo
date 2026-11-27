@@ -1,23 +1,32 @@
 <!DOCTYPE html>
-<html lang="fr" class="dark">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <!-- viewport-fit=cover : indispensable pour que env(safe-area-inset-*)
          renvoie autre chose que 0 (barre de gestes Android, encoche iOS) -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Démonstration publique d'un tableau de bord budgétaire — données fictives" />
-    <meta name="theme-color" content="#1e293b" />
+    <!-- La barre du navigateur prend la couleur du fond du thème choisi
+         (Jour #f6f5f2, Nuit #0b0c0f) : theme.js et src/theme.ts changent son « content ». -->
+    <meta name="theme-color" content="#f6f5f2" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Barre d'état de l'appli installée sur iPhone : « default » = heure et
+         batterie foncées sur fond clair. Réglage fixe : iOS ne le relit pas
+         quand le thème change. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Budget Démo" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
 
-    <!-- Aucune police externe : DM Sans et IBM Plex Sans sont embarquées
-         et servies par le site (src/index.css, src/assets/fonts/). -->
+    <!-- Aucune police externe : Inter est embarquée et servie par le site
+         (src/index.css, src/assets/fonts/). -->
+
+    <!-- Le thème Auto · Jour · Nuit, posé AVANT l'affichage. Script du site
+         (CSP `script-src 'self'`), classique et bloquant exprès : il est minuscule. -->
+    <script src="/theme.js"></script>
 
     <title>Dashboard Budget — Démo</title>
   </head>

@@ -25,7 +25,9 @@ export function SubNav() {
   if (!pills || pills.length < 2) return null;
 
   return (
-    <nav aria-label="Écrans de la rubrique" className="flex shrink-0 gap-2 overflow-x-auto px-3 py-2.5 md:px-6 border-b border-border bg-surface">
+    // Au téléphone (max-md:), des pilules sans bande : fond de la page, pilule
+    // active pleine. Grand écran : inchangé.
+    <nav aria-label="Écrans de la rubrique" className="flex shrink-0 gap-2 overflow-x-auto px-3 py-2.5 md:px-6 border-b border-border bg-surface max-md:border-b-0 max-md:bg-transparent max-md:pt-3 max-md:pb-0">
       {pills.map((pill) => (
         <NavLink
           key={pill.path}
@@ -36,8 +38,8 @@ export function SubNav() {
             // rendu desktop conserve sa pilule compacte.
             `inline-flex items-center justify-center px-3 py-1 max-md:min-h-tap max-md:min-w-tap max-md:px-4 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
               isActive
-                ? "border-indigo bg-indigo/20 text-text"
-                : "border-border bg-surface text-text-sec hover:border-indigo/50"
+                ? "border-indigo bg-indigo/20 text-text max-md:border-indigo-deep max-md:bg-indigo-deep max-md:text-white max-md:font-semibold max-md:text-[13px]"
+                : "border-border bg-surface text-text-sec hover:border-indigo/50 max-md:text-text max-md:text-[13px]"
             }`
           }
         >

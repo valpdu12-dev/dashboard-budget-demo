@@ -34,6 +34,7 @@ import { useFilteredData } from "@/hooks/useFilteredData";
 import { useRegles } from "@/hooks/useRegles";
 import { useExpenseData } from "@/hooks/useExpenseData";
 import { useBudgetData } from "@/hooks/useBudgetData";
+import { useApparence } from "@/hooks/useApparence";
 import { useFilterSync } from "@/hooks/useFilterSync";
 import { useChartSize } from "@/hooks/useChartSize";
 import { useOptionsCategorie } from "@/hooks/useOptionsCategorie";
@@ -247,6 +248,8 @@ const colonnesDetail = (couleurs: Couleurs) => [
 
 // ─── Page Dépenses ──────────────────────────────────────────────────────
 export default function Depenses() {
+  // L'étiquette « Budget … » en rouge, lisible sur la carte (Jour comme Nuit).
+  const { contraste } = useApparence();
   const couleurs = useCouleurs();
   const { status } = useDataStore();
   useFilterSync({
@@ -583,7 +586,7 @@ export default function Depenses() {
                   label={{
                     value: `Budget ${fmtShort(budgetKpis.totalBudgeted)}`,
                     position: "right",
-                    fill: "#ef4444",
+                    fill: contraste("#ef4444"),
                     fontSize: 12,
                   }}
                 />

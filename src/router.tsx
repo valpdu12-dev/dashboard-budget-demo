@@ -82,7 +82,8 @@ export function PageIntrouvable() {
   const { pathname } = useLocation();
   return (
     <div className="p-6 max-w-xl">
-      <h1 className="text-xl font-title font-bold text-text">Page introuvable</h1>
+      {/* Au téléphone, le titre est déjà dans l'en-tête (EnTeteTelephone). */}
+      <h1 className="text-xl font-title font-bold text-text max-md:hidden">Page introuvable</h1>
       <p className="text-text-sec mt-2">
         L'adresse « {pathname} » ne correspond à aucun écran du tableau de bord.
       </p>

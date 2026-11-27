@@ -4,6 +4,7 @@ Fonctions pures réutilisables, sans état ni dépendance React.
 
 | Fichier | Rôle |
 |---|---|
+| `telephone.ts` | Mots de l'en-tête et des filtres au téléphone (titre de page, mois court, résumé des filtres, centimes à part) |
 | `dictionnaire.ts` | Objet sans propriétés héritées, pour regrouper par un nom choisi par l'utilisateur (`constructor`, `__proto__`… sans danger) — DM-01 A8 |
 | `csv.ts` | Une cellule d'export CSV : guillemets, et apostrophe devant un texte qui commence par `=`, `+`, `-`, `@` (pas d'injection de formule) — DM-01 A7 |
 | `decode.ts` | Décode les transactions JSON (encodage dictionnaire) ; extrait la liste des mois |

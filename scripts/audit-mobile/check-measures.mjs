@@ -58,6 +58,8 @@ for (const [name, route] of ROUTES) {
 
   const deplie = await probe();
   // Replier les filtres : le bouton porte un aria-expanded dans le header.
+  // HISTORIQUE : depuis la vue telephone (< 768 px), il n'existe plus (voir
+  // INDEX.md) ; la sortie dit alors « aucun bouton aria-expanded trouve ».
   const replie = await p.evaluate(() => {
     const btn = document.querySelector('header [aria-expanded="true"]');
     if (!btn) return null;

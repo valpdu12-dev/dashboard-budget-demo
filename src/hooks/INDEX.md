@@ -15,6 +15,7 @@ Chaque hook isole le calcul et la dérivation des données d'une page ou d'une f
 | `useKPIs.ts` | Calcule les KPIs globaux |
 | `useInsights.ts` | Calcule les insights (hausses/baisses, récurrents) |
 | `useResponsive.ts` | Détection responsive avec listener de resize |
+| `useApparence.ts` | Téléphone ? Nuit ? Le fond des cartes, l'accent en texte, et `contraste()` (couleur lisible sur la carte) |
 | `useExcelWorker.ts` | Pont Web Worker ↔ DataUploader ↔ DataStore (parsing Excel + rapport de validation) |
 
 ## Hooks par page

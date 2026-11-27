@@ -35,10 +35,10 @@ import { useCouleurs } from "@/hooks/useCouleurs";
 
 const STATUS_STYLES: Record<BudgetCat2Row["status"], { bg: string; text: string; label: string }> = {
   ok:        { bg: "bg-green/10", text: "text-green",   label: "OK" },
-  warning:   { bg: "bg-yellow-500/10", text: "text-yellow-400", label: "Attention" },
+  warning:   { bg: "bg-amber/10", text: "text-amber",       label: "Attention" }, // ambre du thème (le jaune fixe était illisible en Jour)
   // Lot D.5 — le rouge de marque sur son aplat tombait à 4,34:1 en 11 px ;
   // un rouge plus clair pour ce texte-là (6,5:1).
-  over:      { bg: "bg-red/[0.06]", text: "text-[#F87171]", label: "Dépassé" },
+  over:      { bg: "bg-red/10",   text: "text-red",     label: "Dépassé" },
   "no-budget": { bg: "bg-surface", text: "text-text-sec", label: "—" },
   // Pas de jugement : sans mois comparable, il n'y a pas de dépense connue.
   indisponible: { bg: "bg-surface", text: "text-text-sec", label: "Indisponible" },
@@ -246,7 +246,11 @@ export default function BudgetMensuel() {
           Le `overflow-x-auto` n'est rendu que sur le chemin tableau : le
           décompte de `audit.mjs:52-54` porte sur l'`overflowX` calculé, ne
           pas rendre le conteneur est le seul moyen d'en sortir à coup sûr. */}
-      <div className={`card ${isMobile ? "" : "overflow-x-auto"}`}>
+      {/* Sur le chemin tableau, la zone qui défile est atteignable au clavier (comme DataTable). */}
+      <div
+        className={`card ${isMobile ? "" : "overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo"}`}
+        {...(isMobile ? {} : { tabIndex: 0, role: "region", "aria-label": "Budget par catégorie (défilement horizontal)" })}
+      >
         <div className="text-sm font-medium text-text mb-3">Budget par catégorie</div>
         {rows.length === 0 ? (
           <EmptyState title="Aucune catégorie trouvée" />
@@ -331,7 +335,7 @@ export default function BudgetMensuel() {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.cat2} className="border-b border-border/50 hover:bg-white/[0.02] transition-colors">
+                <tr key={r.cat2} className="border-b border-border/50 hover:bg-text/[0.03] transition-colors">
                   {/* Catégorie */}
                   <td className="py-2.5 pr-3">
                     <span className="flex items-center gap-2">

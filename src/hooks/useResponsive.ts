@@ -38,11 +38,21 @@ function hasMatchMedia(): boolean {
 }
 
 function derive(width: number): Responsive {
+  // Avec matchMedia, les paliers sont lus par les MÊMES requêtes que le CSS
+  // (`min-width`), pas par `innerWidth`, qui est un nombre entier : avec un zoom
+  // (ex. 125 %), la largeur CSS peut valoir 767,2 px, et `innerWidth` un arrondi
+  // qui ne tombe pas toujours du même côté que le CSS. Pour une largeur entière,
+  // le résultat est le même qu'avant.
+  const au = (px: number) =>
+    hasMatchMedia() ? window.matchMedia(`(min-width: ${px}px)`).matches : width >= px;
+  const petit = !au(SMALL_BREAKPOINT);
+  const mobile = !au(MOBILE_BREAKPOINT);
+  const bureau = au(TABLET_BREAKPOINT);
   return {
-    isSmall:   width < SMALL_BREAKPOINT,
-    isMobile:  width < MOBILE_BREAKPOINT,
-    isTablet:  width >= MOBILE_BREAKPOINT && width < TABLET_BREAKPOINT,
-    isDesktop: width >= TABLET_BREAKPOINT,
+    isSmall:   petit,
+    isMobile:  mobile,
+    isTablet:  !mobile && !bureau,
+    isDesktop: bureau,
     width,
   };
 }

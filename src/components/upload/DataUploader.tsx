@@ -881,7 +881,7 @@ export function DataUploader() {
             {isSuccess && pendingData && !applied && (
               <button
                 onClick={handleApply}
-                className="flex items-center gap-1.5 px-5 py-2.5 max-md:min-h-tap rounded-lg bg-gradient-to-br from-indigo to-[#4F46E5] text-white text-sm font-semibold shadow-[0_4px_12px_rgba(99,102,241,0.3)] hover:opacity-90 transition-opacity"
+                className="flex items-center gap-1.5 px-5 py-2.5 max-md:min-h-tap rounded-lg bg-indigo-deep text-white text-sm font-semibold shadow-sm hover:opacity-90 transition-opacity"
               >
                 <Check size={16} />
                 Appliquer au dashboard

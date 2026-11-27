@@ -1,16 +1,18 @@
 // -- AppShell : layout principal (Header + Sidebar/BottomNav + contenu) --
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Header } from "./Header";
 import { BandeauDemo } from "@/components/ui/BandeauDemo";
 import { BandeauStockage } from "@/components/ui/BandeauStockage";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { SubNav } from "./SubNav";
+import { FiltresTelephone } from "./FiltresTelephone";
 import { DataUploader } from "@/components/upload/DataUploader";
 import { useResponsive } from "@/hooks/useResponsive";
 
 export function AppShell() {
   const { isMobile } = useResponsive();
+  const { pathname } = useLocation();
 
   return (
     <div className="flex flex-col h-screen bg-bg">
@@ -32,6 +34,12 @@ export function AppShell() {
           {/* pb-nav-safe remplace pb-20 : même marge qu'avant, plus le
               retrait de la barre de gestes Android (0 sur PC). */}
           <div className={isMobile ? "px-3 py-4 pb-nav-safe" : "p-6"}>
+            {/* Au téléphone, le bouton « Filtres (n) » remplace la rangée de filtres de l'en-tête. */}
+            {isMobile && !pathname.startsWith("/parametres") && (
+              <div className="mb-4">
+                <FiltresTelephone />
+              </div>
+            )}
             <Outlet />
           </div>
         </main>

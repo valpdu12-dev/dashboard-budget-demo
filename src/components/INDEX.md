@@ -7,7 +7,9 @@ Composants partagés à travers les pages, regroupés en trois familles : layout
 | Fichier | Rôle |
 |---|---|
 | `AppShell.tsx` | Layout principal : assemble Header + Sidebar/BottomNav + zone de contenu |
-| `Header.tsx` | En-tête sticky avec les filtres globaux |
+| `Header.tsx` | En-tête sticky avec les filtres globaux (au téléphone : `EnTeteTelephone`) |
+| `EnTeteTelephone.tsx` | En-tête au téléphone (< 768 px) : titre de la page + pastille « Démo · mois » ou « Mes données » |
+| `FiltresTelephone.tsx` | Bouton « Filtres (n) » au téléphone : période, classe, transferts, Paramètres, import, profil, apparence |
 | `Sidebar.tsx` | Navigation latérale (desktop), via React Router NavLink |
 | `BottomNav.tsx` | Navigation basse (mobile), via React Router NavLink |
 | `SubNav.tsx` | Sous-navigation contextuelle (pills), affichée seulement si l'onglet a des sous-vues |
@@ -20,7 +22,9 @@ Composants partagés à travers les pages, regroupés en trois familles : layout
 | `ChartTooltip.tsx` | Tooltip Recharts partagé, avec support comparaison N-1 |
 | `DataTable.tsx` | Table paginée, triable, exportable en CSV |
 | `Chip.tsx` | Chip / tag de filtre |
-| `PageHeader.tsx` | En-tête de page avec fil d'Ariane |
+| `PageHeader.tsx` | En-tête de page avec fil d'Ariane (titre caché au téléphone, `noteTelephone`) |
+| `ChoixApparence.tsx` | Les trois pilules Auto · Jour · Nuit (boutons radio) |
+| `MontantTelephone.tsx` | Un montant au téléphone, centimes en gris |
 | `EmptyState.tsx` | État vide (aucune donnée à afficher) |
 | `ListeRecherche.tsx` | Liste déroulante à choix multiples avec recherche (Enseigne / Événement, page Dépenses) — reprise du site privé |
 | `Skeleton.tsx` | Loaders animés (KPI, graphiques, donut, table) pour le chargement |

@@ -19,7 +19,7 @@ import { useResponsive } from "@/hooks/useResponsive";
 export function ProfilBascule() {
   const origin = useDataStore((s) => s.origin);
   const status = useDataStore((s) => s.status);
-  const { isSmall } = useResponsive();
+  const { isMobile } = useResponsive();
 
   // La présence d'un jeu mémorisé se lit dans le stockage, qui ne prévient
   // personne quand il change. On la relit à chaque fois que le jeu affiché
@@ -38,11 +38,11 @@ export function ProfilBascule() {
     void action.finally(() => setEnCours(false));
   }, [mesDonnees]);
 
-  // Rien d'importé, rien de mémorisé : il n'y a pas de choix à offrir. Sur
-  // petit écran la pastille disparaît alors complètement — la première ligne
-  // de l'en-tête porte déjà le titre, les filtres et le bouton d'import.
+  // Rien d'importé, rien de mémorisé : il n'y a pas de choix à offrir. Au
+  // téléphone (< 768 px), la bascule vit dans Filtres > Plus et la pastille de
+  // l'en-tête dit déjà « Démo » : on n'y met pas d'étiquette inerte.
   if (!mesDonnees && !personnelDispo) {
-    if (isSmall) return null;
+    if (isMobile) return null;
     return (
       <span
         title="Aucun fichier importé sur cet appareil"

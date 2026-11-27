@@ -21,6 +21,7 @@ import { SkeletonPage } from "@/components/ui/Skeleton";
 
 import { useFilterStore } from "@/stores/useFilterStore";
 import { useDataStore } from "@/stores/useDataStore";
+import { useApparence } from "@/hooks/useApparence";
 import { useSalaryPageData } from "@/hooks/useSalaryPageData";
 import { useFilterSync } from "@/hooks/useFilterSync";
 import { useChartSize } from "@/hooks/useChartSize";
@@ -79,6 +80,9 @@ function AreaTooltip({ active, payload, label }: {
 
 // ─── Page Salaire ────────────────────────────────────────────────────────
 export default function Salaire() {
+  // Les noms d'employeur, écrits dans la couleur de l'employeur, restent
+  // lisibles sur la carte (Jour comme Nuit).
+  const { contraste } = useApparence();
   const { status, origin } = useDataStore();
   useFilterSync({ ent: "selEntreprise" });
 
@@ -186,7 +190,7 @@ export default function Salaire() {
                     1.2 avait traité les `tick={{fontSize}}` et les
                     `wrapperStyle`, mais pas les `<Label>` — forme syntaxique
                     différente, occurrence unique. */}
-                <Label value={ch.entreprise} position="top" fill={couleurEmployeurStable(ch.entreprise)} fontSize={11} />
+                <Label value={ch.entreprise} position="top" fill={contraste(couleurEmployeurStable(ch.entreprise))} fontSize={11} />
               </ReferenceLine>
             ))}
           </LineChart>
@@ -286,7 +290,7 @@ export default function Salaire() {
               <div className="text-text-sec text-xs mb-1">Net cumulé {projection.year}</div>
               <div className="text-text text-xl font-bold tabular-nums">{fmtShort(projection.netY)}</div>
               <div className="text-text-sec text-[11px] mt-0.5">{projection.nbY} mois — brut : {fmtShort(projection.brutY)}</div>
-              <div className="w-full h-1.5 bg-white/[0.06] rounded-full mt-2 overflow-hidden">
+              <div className="w-full h-1.5 bg-border rounded-full mt-2 overflow-hidden">
                 <div className="h-full bg-green rounded-full" style={{ width: `${Math.min((projection.nbY / 12) * 100, 100)}%` }} />
               </div>
               <div className="text-[11px] text-text-sec mt-1">{projection.nbY}/12 mois</div>
@@ -297,7 +301,7 @@ export default function Salaire() {
               <div className="text-text-sec text-xs mb-1">Net cumulé {projection.prevYear}</div>
               <div className="text-text text-xl font-bold tabular-nums">{fmtShort(projection.netPY)}</div>
               <div className="text-text-sec text-[11px] mt-0.5">{projection.nbPY} mois — brut : {fmtShort(projection.brutPY)}</div>
-              <div className="w-full h-1.5 bg-white/[0.06] rounded-full mt-2 overflow-hidden">
+              <div className="w-full h-1.5 bg-border rounded-full mt-2 overflow-hidden">
                 <div className="h-full bg-indigo/50 rounded-full" style={{ width: `${Math.min((projection.nbPY / 12) * 100, 100)}%` }} />
               </div>
               <div className="text-[11px] text-text-sec mt-1">{projection.nbPY}/12 mois</div>

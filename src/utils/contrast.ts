@@ -8,7 +8,8 @@
 // `config/colors.ts` — la couleur du compte ou de la catégorie concernée.
 //
 //   #6366F1 → 3,97   #2563EB → 3,43   #DC2626 → 3,67   #64748B → 3,72
-//   (sur `surface` #111827, 18 px gras, seuil AA = 4,5:1)
+//   (sur l'ancien `surface` #111827, 18 px gras, seuil AA = 4,5:1 ; depuis le
+//   thème Auto · Jour · Nuit, le fond vient de useApparence : `contraste()`)
 //
 // Ces valeurs ne sont pas des tokens de design : ce sont des identifiants
 // visuels qui servent AUSSI à colorer les secteurs de graphique, où le seuil
@@ -88,5 +89,36 @@ export function ensureContrast(fg: string, bg: string, cible = 4.5): string {
   return "#ffffff";
 }
 
-/** Fond des cartes KPI (`surface`). Constante pour éviter la divergence. */
+/**
+ * Ancien fond des cartes (thème sombre d'avant Auto · Jour · Nuit). Plus
+ * employé par l'appli (useApparence donne le fond du thème) ; gardé pour les
+ * tests de contraste.
+ */
 export const FOND_SURFACE = "#111827";
+
+/**
+ * Le contraire d'`ensureContrast`, pour un fond CLAIR
+ * (le mode Jour, cartes blanches). Assombrit `fg` vers le noir,
+ * par pas de 2 %, jusqu'à `cible` sur `bg`. Même idée : la teinte reste
+ * reconnaissable (un vert reste vert, plus foncé). `fg` inchangé s'il est déjà
+ * conforme ; le noir si rien n'y suffit.
+ *
+ * Éclaircir sur un fond blanc ne marche pas : `ensureContrast` y rendrait du
+ * blanc. Test : src/__tests__/utils/contrast.jour.test.ts.
+ */
+export function assombrirPourContraste(fg: string, bg: string, cible = 4.5): string {
+  const rgb = hexToRgb(fg);
+  if (!rgb || !hexToRgb(bg)) return fg;
+
+  const actuel = contrastRatio(fg, bg);
+  if (actuel === null || actuel >= cible) return fg;
+
+  const [r0, g0, b0] = rgb;
+  for (let i = 1; i <= 50; i += 1) {
+    const t = 1 - i / 50;
+    const candidat = rgbToHex(r0 * t, g0 * t, b0 * t);
+    const ratio = contrastRatio(candidat, bg);
+    if (ratio !== null && ratio >= cible) return candidat;
+  }
+  return "#000000";
+}

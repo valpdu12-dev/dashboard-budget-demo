@@ -1,19 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { render as renderBrut, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import userEvent from "@testing-library/user-event";
+import { screen } from "@testing-library/react";
 import { Header } from "@/components/layout/Header";
 import { useFilterStore } from "@/stores/useFilterStore";
+import { useDataStore } from "@/stores/useDataStore";
+// L'en-tête porte un lien (Paramètres) → rendu dans un routeur.
+import { renderWithRouter } from "../helpers/renderWithProviders";
 
-/**
- * L'en-tête porte depuis le lot C.2 un lien vers l'écran Paramètres. Un
- * `NavLink` hors routeur lève — d'où ce rendu enveloppé, qui ne change rien
- * à ce que ces tests vérifient.
- */
-const render = (ui: React.ReactElement) =>
-  renderBrut(<MemoryRouter>{ui}</MemoryRouter>);
-
-/** Samsung Galaxy A56 — sous le palier `isSmall` (430 px). */
+/** Samsung Galaxy A56. */
 const A56 = 412;
 const PC = 1440;
 
@@ -24,6 +17,7 @@ function setWindowWidth(width: number) {
 beforeEach(() => {
   sessionStorage.clear();
   useFilterStore.setState({ period: "12M", cat1Filter: "all", showTransfers: false });
+  useDataStore.setState({ origin: "static" });
 });
 
 afterEach(() => {
@@ -31,90 +25,70 @@ afterEach(() => {
   sessionStorage.clear();
 });
 
-describe("Header — repli des filtres sous 430 px (lot 1.2)", () => {
-  it("affiche les filtres dépliés au premier rendu de la session", () => {
+// Au téléphone (< 768 px) : titre de la page + pastille. Les filtres de
+// l'en-tête (ancien repli sous 430 px) passent dans le bouton « Filtres (n) » :
+// voir FiltresTelephone.test.tsx. Grand écran : inchangé.
+describe("Header — au téléphone", () => {
+  it("montre le titre de la page et la pastille, sans les filtres", () => {
     setWindowWidth(A56);
-    render(<Header />);
+    renderWithRouter(<Header />, { initialEntries: ["/depenses/budget"] });
 
-    // La rangée de filtres est présente : les chips Cat1 sont atteignables.
-    expect(screen.getByText("Occasionnelle")).toBeTruthy();
-  });
-
-  it("replie les filtres une fois la session marquée comme vue", () => {
-    setWindowWidth(A56);
-    // Simule un rendu antérieur dans la même session d'onglet.
-    sessionStorage.setItem("budget.header.filtersSeen", "1");
-    render(<Header />);
-
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Budget");
+    expect(screen.getByText(/^Démo/)).toBeTruthy();
     expect(screen.queryByText("Occasionnelle")).toBeNull();
-  });
-
-  it("mémorise l'affichage pour que le rendu suivant parte replié", async () => {
-    setWindowWidth(A56);
-    const { unmount } = render(<Header />);
-    expect(sessionStorage.getItem("budget.header.filtersSeen")).toBe("1");
-    unmount();
-
-    render(<Header />);
-    expect(screen.queryByText("Occasionnelle")).toBeNull();
-  });
-
-  it("laisse rouvrir les filtres au bouton une fois repliés", async () => {
-    setWindowWidth(A56);
-    sessionStorage.setItem("budget.header.filtersSeen", "1");
-    render(<Header />);
-
-    await userEvent.click(screen.getByRole("button", { name: /Afficher les filtres/ }));
-    expect(screen.getByText("Occasionnelle")).toBeTruthy();
-  });
-
-  it("garde les filtres toujours visibles sur PC, sans bouton de repli", () => {
-    setWindowWidth(PC);
-    sessionStorage.setItem("budget.header.filtersSeen", "1");
-    render(<Header />);
-
-    expect(screen.getByText("Occasionnelle")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /les filtres/ })).toBeNull();
+  });
+
+  it("vaut aussi jusqu'à 767 px (même palier que la barre du bas)", () => {
+    setWindowWidth(767);
+    renderWithRouter(<Header />);
+
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Comptes");
+    expect(screen.queryByText("Occasionnelle")).toBeNull();
+  });
+
+  it("garde le titre de l'onglet du navigateur (Démo / Mes données)", () => {
+    setWindowWidth(A56);
+    useDataStore.setState({ origin: "upload" });
+    renderWithRouter(<Header />);
+    expect(document.title).toBe("Dashboard Budget — Mes données");
+    expect(screen.getByText("Mes données")).toBeTruthy();
   });
 });
 
-describe("Header — période lisible sur le bouton replié (lot 1.2)", () => {
-  it("porte le libellé de la période active", () => {
-    setWindowWidth(A56);
-    sessionStorage.setItem("budget.header.filtersSeen", "1");
-    useFilterStore.setState({ period: "3M" });
-    render(<Header />);
+describe("Header — grand écran inchangé", () => {
+  it("garde les filtres toujours visibles sur PC, sans bouton de repli", () => {
+    setWindowWidth(PC);
+    renderWithRouter(<Header />);
 
-    const bouton = screen.getByRole("button", { name: /Afficher les filtres/ });
-    expect(bouton.textContent).toContain("3M");
+    expect(screen.getByText("Occasionnelle")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /les filtres/ })).toBeNull();
+    expect(screen.getByText("Dashboard Budget — Démo")).toBeTruthy();
   });
 
-  it("suit le changement de période", () => {
-    setWindowWidth(A56);
-    sessionStorage.setItem("budget.header.filtersSeen", "1");
-    useFilterStore.setState({ period: "all" });
-    render(<Header />);
+  it("à 768 px, c'est encore l'en-tête du grand écran", () => {
+    setWindowWidth(768);
+    renderWithRouter(<Header />);
 
-    expect(screen.getByRole("button", { name: /Afficher les filtres/ }).textContent).toContain("Tout");
+    expect(screen.getByText("Occasionnelle")).toBeTruthy();
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+  });
+});
+
+// Le bouton Auto · Jour · Nuit dans l'en-tête du grand écran, avant Paramètres ;
+// au téléphone, il est dans Filtres (pas dans l'en-tête).
+describe("Header — bouton Auto · Jour · Nuit", () => {
+  it("grand écran : dans l'en-tête, avant Paramètres", () => {
+    setWindowWidth(PC);
+    renderWithRouter(<Header />);
+    const groupe = screen.getByRole("radiogroup", { name: "Apparence" });
+    const parametres = screen.getByRole("link", { name: /Paramètres/ });
+    expect(groupe.compareDocumentPosition(parametres) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("expose la période dans le nom accessible du bouton", () => {
+  it("téléphone : pas dans l'en-tête", () => {
     setWindowWidth(A56);
-    sessionStorage.setItem("budget.header.filtersSeen", "1");
-    useFilterStore.setState({ period: "YTD" });
-    render(<Header />);
-
-    expect(screen.getByRole("button", { name: /période YTD/ })).toBeTruthy();
-  });
-
-  it("ajoute le compteur des autres filtres sans masquer la période", () => {
-    setWindowWidth(A56);
-    sessionStorage.setItem("budget.header.filtersSeen", "1");
-    useFilterStore.setState({ period: "1M", cat1Filter: "Dépense Fixe", showTransfers: true });
-    render(<Header />);
-
-    const bouton = screen.getByRole("button", { name: /Afficher les filtres/ });
-    expect(bouton.textContent).toContain("1M");
-    expect(bouton.textContent).toContain("2");
+    renderWithRouter(<Header />);
+    expect(screen.queryByRole("radiogroup", { name: "Apparence" })).toBeNull();
   });
 });

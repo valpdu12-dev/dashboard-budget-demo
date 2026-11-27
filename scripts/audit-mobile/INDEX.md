@@ -1,5 +1,11 @@
 # scripts/audit-mobile — outillage de mesure mobile A56
 
+> **Historique.** Ces scripts mesurent l'en-tête des lots 1.x, dont les filtres se repliaient
+> sous 430 px. Depuis la vue téléphone (moins de 768 px), l'en-tête n'a plus de filtres : ils
+> sont dans le bouton « Filtres (n) », fermé au départ, sous l'en-tête. L'étape « replier » de
+> `measures.mjs` et `check-measures.mjs` ne trouve donc plus rien, et le dit ; les autres
+> mesures restent valables.
+
 Scripts de la mesure « AVANT / APRÈS » de `docs/audits/AUDIT_MOBILE_A56.md` (lots 1.0 et 1.5
 du plan V3). Ils émulent un Samsung Galaxy A56 (412 × 915 dip, DPR 2,625) sous le Chrome
 installé localement.

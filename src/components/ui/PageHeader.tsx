@@ -12,11 +12,19 @@ interface PageHeaderProps {
   subtitle?: string;
   breadcrumbs?: Crumb[];
   actions?: React.ReactNode;
+  /**
+   * Une précision sur les chiffres, montrée AU TÉLÉPHONE seulement (le
+   * sous-titre y est caché). Ex. « Chiffres à fin octobre 2026 ».
+   */
+  noteTelephone?: string;
 }
 
-function PageHeaderComponent({ title, subtitle, breadcrumbs, actions }: PageHeaderProps) {
+function PageHeaderComponent({ title, subtitle, breadcrumbs, actions, noteTelephone }: PageHeaderProps) {
   return (
-    <div className="flex items-start justify-between mb-5">
+    // Au téléphone (< 768 px), le titre est dans l'en-tête (EnTeteTelephone) :
+    // on ne le répète pas. Le bloc entier disparaît s'il n'a ni fil d'Ariane,
+    // ni actions, ni note. Grand écran : inchangé.
+    <div className={`flex items-start justify-between mb-5${breadcrumbs?.length || actions || noteTelephone ? "" : " max-md:hidden"}`}>
       <div>
         {breadcrumbs && breadcrumbs.length > 0 && (
           <div className="flex items-center gap-1 text-xs text-text-sec mb-1">
@@ -34,8 +42,9 @@ function PageHeaderComponent({ title, subtitle, breadcrumbs, actions }: PageHead
             ))}
           </div>
         )}
-        <h1 className="text-lg font-title font-bold text-text">{title}</h1>
-        {subtitle && <p className="text-xs text-text-sec mt-0.5">{subtitle}</p>}
+        <h1 className="text-lg font-title font-bold text-text max-md:hidden">{title}</h1>
+        {subtitle && <p className="text-xs text-text-sec mt-0.5 max-md:hidden">{subtitle}</p>}
+        {noteTelephone && <p className="text-[13px] text-text-sec md:hidden">{noteTelephone}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>

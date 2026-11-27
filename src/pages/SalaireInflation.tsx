@@ -433,7 +433,8 @@ export default function SalaireInflation() {
             })}
           </div>
         ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo" tabIndex={0} role="region" aria-label="Synthèse annuelle (défilement horizontal)">
+          {/* Zone qui défile = atteignable au clavier (comme DataTable). */}
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border text-text-sec">
@@ -541,7 +542,7 @@ export default function SalaireInflation() {
               return (
                 <div
                   key={it.key}
-                  className="flex items-start gap-2.5 rounded-lg bg-white/[0.02] border-l-2 pl-3 pr-3 py-2"
+                  className="flex items-start gap-2.5 rounded-lg bg-surface-2 border-l-2 pl-3 pr-3 py-2"
                   style={{ borderLeftColor: tone.border }}
                 >
                   <span className={`mt-0.5 ${tone.text}`}>{it.icon}</span>

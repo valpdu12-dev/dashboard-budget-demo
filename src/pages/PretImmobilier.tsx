@@ -17,6 +17,7 @@ import { KPICard } from "@/components/ui/KPICard";
 import { ChartTooltip } from "@/components/ui/ChartTooltip";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SkeletonPage } from "@/components/ui/Skeleton";
+import { useApparence } from "@/hooks/useApparence";
 
 import { useMortgageData } from "@/hooks/useMortgageData";
 import { useChartSize } from "@/hooks/useChartSize";
@@ -29,6 +30,8 @@ const C_RESTANT = "#64748b";   // restant — gris
 
 // ─── Page ────────────────────────────────────────────────────────────────
 export default function PretImmobilier() {
+  // Couleur de texte lisible sur le fond de la carte (Jour : assombrie).
+  const { contraste } = useApparence();
   // Lot 1.2 — dimensions de graphique pilotées par le palier d'affichage.
   const { chartHeight, donutRadii, isSmall } = useChartSize();
   const donut = donutRadii(60, 100);
@@ -298,7 +301,7 @@ export default function PretImmobilier() {
           </div>
           <div className="kpi-card">
             <div className="text-text-sec text-xs">Économie d'intérêts</div>
-            <div className="text-xl font-title font-bold" style={{ color: C_REMB }}>{fmt(sim.economieInterets)}</div>
+            <div className="text-xl font-title font-bold" style={{ color: contraste(C_REMB) }}>{fmt(sim.economieInterets)}</div>
           </div>
           <div className="kpi-card">
             <div className="text-text-sec text-xs">Échéances restantes</div>

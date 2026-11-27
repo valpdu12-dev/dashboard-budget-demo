@@ -134,6 +134,7 @@ const BUILD_AUTORISE = [
   { motif: /^favicon\.svg$/, quoi: "favicon" },
   { motif: /^manifest\.webmanifest$/, quoi: "manifeste PWA" },
   { motif: /^sw\.js$/, quoi: "service worker" },
+  { motif: /^theme\.js$/, quoi: "script du thème Auto · Jour · Nuit (posé avant l'affichage)" },
   { motif: /^_redirects$/, quoi: "repli SPA de l'hébergeur" },
   { motif: /^_headers$/, quoi: "en-têtes de sécurité de l'hébergeur (produits par le build)" },
   { motif: /^icons\/icon-(192|512)\.svg$/, quoi: "icônes PWA" },

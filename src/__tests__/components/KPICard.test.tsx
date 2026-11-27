@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { KPICard } from "@/components/ui/KPICard";
-import { contrastRatio, FOND_SURFACE } from "@/utils/contrast";
+import { contrastRatio } from "@/utils/contrast";
+import { FOND_CARTE_JOUR } from "@/hooks/useApparence";
 
 describe("KPICard — affichage de la valeur", () => {
   it("formate en euros par défaut", () => {
@@ -84,12 +85,13 @@ describe("KPICard — variation (delta)", () => {
     expect(Number(r)).toBeGreaterThan(Number(b));
     expect(contrastRatio(el.style.color.replace(/rgb\((\d+), (\d+), (\d+)\)/, (_, x, y, z) =>
       "#" + [x, y, z].map((v: string) => Number(v).toString(16).padStart(2, "0")).join("")
-    ), FOND_SURFACE) as number).toBeGreaterThanOrEqual(4.5);
+    ), FOND_CARTE_JOUR) as number).toBeGreaterThanOrEqual(4.5); // fond Jour (blanc) par défaut
   });
 
   it("laisse subColor intact quand il est déjà conforme", () => {
-    render(<KPICard label="KPI" value={1000} customSub="Note" subColor="#E5E7EB" />);
-    expect(screen.getByText("Note").style.color).toBe("rgb(229, 231, 235)");
+    // Fond Jour (blanc) par défaut : une couleur foncée y est déjà lisible.
+    render(<KPICard label="KPI" value={1000} customSub="Note" subColor="#17181B" />);
+    expect(screen.getByText("Note").style.color).toBe("rgb(23, 24, 27)");
   });
 });
 

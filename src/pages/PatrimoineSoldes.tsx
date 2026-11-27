@@ -334,7 +334,10 @@ export default function PatrimoineSoldes() {
         aria-label="Inclure l'immobilier"
         onClick={() => setInclureImmobilier((v) => !v)}
         className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border transition-colors ${
-          inclureImmobilier ? "bg-indigo border-indigo" : "bg-border border-border"
+          // Rail assez marqué dans les deux thèmes (≥ 3:1 contre la carte et
+          // contre le rond blanc) : allumé = aplat foncé de l'accent, éteint =
+          // gris doux plein.
+          inclureImmobilier ? "bg-indigo-deep border-indigo-deep" : "bg-text-sec border-text-sec"
         }`}
       >
         <span
@@ -422,6 +425,7 @@ export default function PatrimoineSoldes() {
       <PageHeader
         title={titre}
         subtitle={`${sousTitreBase} — chiffres à fin ${moisLong(moisKpi)} (dernier mois complet)`}
+        noteTelephone={`Chiffres à fin ${moisLong(moisKpi)} (dernier mois complet)`}
       />
 
       {interrupteur}

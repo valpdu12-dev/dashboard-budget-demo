@@ -35,6 +35,7 @@ import { useChartSize } from "@/hooks/useChartSize";
 import { fmt, fmtShort, mkLabel } from "@/utils/formatters";
 import { projectMonthEnd, daysInMonthOf, lastTxDayOfMonth } from "@/utils/projection";
 import { useCouleurs } from "@/hooks/useCouleurs";
+import { useApparence } from "@/hooks/useApparence";
 import { dictionnaire } from "@/utils/dictionnaire";
 
 /** monthKey "YYYY-MM" → même mois l'année précédente. */
@@ -80,6 +81,8 @@ function renderDonutLabel({
 export default function Comptes() {
   const { config, salary, status, budgets } = useDataStore();
   const couleurs = useCouleurs();
+  // Le solde total (carte et courbe « Total ») prend l'accent du thème.
+  const { accentTexte } = useApparence();
   const { allMonths, allMonthsInRange, currentMonth, prevMonth, baseTx } = useFilteredData();
 
   const initBalances = config?.init ?? {};
@@ -210,9 +213,11 @@ export default function Comptes() {
       )}
 
       {/* ═══ Bandeau KPI (11 cards) ════════════════════════════════════════ */}
+      {/* Au téléphone : solde total, puis le mois (dépenses, recettes, net), puis
+          les comptes, puis le reste (max-md:order-*). Grand écran : ordre inchangé. */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 stagger-grid">
         {!aucunSoldeConnu && (
-          <KPICard label="Solde Total" value={soldeTotalCur} prev={soldeTotalPrev} color="#6366F1" icon={<Wallet size={14} />} />
+          <KPICard label="Solde Total" value={soldeTotalCur} prev={soldeTotalPrev} color={accentTexte} icon={<Wallet size={14} />} />
         )}
 
         {aucunSoldeConnu
@@ -224,6 +229,7 @@ export default function Comptes() {
                 prev={variationsByMonth[prevMonth ?? ""]?.[compte]}
                 color={couleurs.compte(compte)}
                 icon={ICONE_COMPTE}
+                className="max-md:order-2"
               />
             ))
           : COMPTES_AVEC_SOLDE_CONNU.map((compte) => (
@@ -234,12 +240,13 @@ export default function Comptes() {
                 prev={kpis.prevBal[compte] || 0}
                 color={couleurs.compte(compte)}
                 icon={ICONE_COMPTE}
+                className="max-md:order-2"
               />
             ))}
 
-        <KPICard label="Dépenses mois" value={kpis.depCur} prev={kpis.depPrev} color="#EF4444" icon={<TrendingDown size={14} />} />
-        <KPICard label="Recettes mois" value={kpis.recCur} prev={kpis.recPrev} color="#10B981" icon={<TrendingUp size={14} />} />
-        <KPICard label="Net du mois" value={kpis.netMonth} color={kpis.netMonth >= 0 ? "#10B981" : "#EF4444"} icon={<Scale size={14} />} />
+        <KPICard label="Dépenses mois" value={kpis.depCur} prev={kpis.depPrev} color="#EF4444" icon={<TrendingDown size={14} />} className="max-md:order-1" />
+        <KPICard label="Recettes mois" value={kpis.recCur} prev={kpis.recPrev} color="#10B981" icon={<TrendingUp size={14} />} className="max-md:order-1" />
+        <KPICard label="Net du mois" value={kpis.netMonth} color={kpis.netMonth >= 0 ? "#10B981" : "#EF4444"} icon={<Scale size={14} />} className="max-md:order-1" />
 
         <KPICard
           label="Salaire net"
@@ -250,6 +257,7 @@ export default function Comptes() {
               : ""
           }
           icon={<Banknote size={14} />}
+          className="max-md:order-3"
         />
 
         <KPICard
@@ -258,6 +266,7 @@ export default function Comptes() {
           format="pct"
           color={kpis.tauxEpargne === null ? undefined : kpis.tauxEpargne >= 0 ? "#10B981" : "#EF4444"}
           icon={<PiggyBank size={14} />}
+          className="max-md:order-3"
         />
 
         <KPICard
@@ -266,6 +275,7 @@ export default function Comptes() {
           customSub={`${fmt(kpis.fixe)} / ${fmt(kpis.occ)}`}
           subColor="#6B7280"
           icon={<BarChart3 size={14} />}
+          className="max-md:order-3"
         />
       </div>
 
@@ -281,8 +291,7 @@ export default function Comptes() {
             {projection && projection.reliable ? (
               <>
                 <span
-                  className="text-xl font-title font-bold tabular-nums"
-                  style={{ color: projection.projectedNet >= 0 ? "#10B981" : "#EF4444" }}
+                  className={`text-xl font-title font-bold tabular-nums ${projection.projectedNet >= 0 ? "text-green" : "text-red"}`}
                 >
                   {projection.projectedNet >= 0 ? "+" : ""}{fmt(projection.projectedNet)}
                 </span>
@@ -325,12 +334,11 @@ export default function Comptes() {
             {/* Sans mois comparable, « Aucun dépassement » en vert serait une
                 bonne nouvelle inventée : on ne sait pas. */}
             <span
-              className="text-xl font-title font-bold tabular-nums"
-              style={{
-                color: aucunObjectif || budgetKpis.overrunCount === null
-                  ? undefined
-                  : budgetKpis.overrunCount > 0 ? "#EF4444" : "#10B981",
-              }}
+              className={`text-xl font-title font-bold tabular-nums ${
+                aucunObjectif || budgetKpis.overrunCount === null
+                  ? ""
+                  : budgetKpis.overrunCount > 0 ? "text-red" : "text-green"
+              }`}
             >
               {aucunObjectif
                 ? "Aucun objectif défini"
@@ -382,7 +390,7 @@ export default function Comptes() {
               {COMPTES_AVEC_SOLDE_CONNU.map((compte) => (
                 <Line key={compte} type="monotone" dataKey={compte} stroke={couleurs.compte(compte)} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
               ))}
-              <Line type="monotone" dataKey="Total" stroke={couleurs.compte("Total")} strokeWidth={2.5} strokeDasharray="6 3" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
+              <Line type="monotone" dataKey="Total" stroke={accentTexte} strokeWidth={2.5} strokeDasharray="6 3" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
             </LineChart>
           </ResponsiveContainer>
           )}

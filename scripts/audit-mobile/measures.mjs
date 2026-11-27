@@ -96,6 +96,9 @@ for (const [n, r] of ROUTES) {
   const deplie = await p.evaluate(PROBE);
 
   // Puis on replie via le bouton `aria-expanded` de l'en-tete.
+  // HISTORIQUE : depuis la vue telephone (< 768 px), l'en-tete n'a plus de
+  // filtres repliables (bouton « Filtres (n) » sous l'en-tete, ferme au depart) :
+  // ce bouton n'est plus trouve, aReplie vaut false. Voir INDEX.md.
   const aReplie = await p.evaluate(() => {
     const btn = document.querySelector('header [aria-expanded="true"]');
     if (!btn) return false;

@@ -6,10 +6,11 @@ Cœur de l'application React. Les données viennent de l'API D1 Cloudflare ; ell
 
 | Fichier | Rôle |
 |---|---|
-| `main.tsx` | Point d'entrée : monte React dans le DOM |
+| `main.tsx` | Point d'entrée : pose le thème (Auto · Jour · Nuit), monte React dans le DOM |
 | `App.tsx` | Composant racine V3 — orchestre le chargement des données (API D1) et le layout |
 | `router.tsx` | Router centralisé avec lazy-loading de chaque page (remplace le switch/case de V1) |
-| `index.css` | Styles globaux + directives Tailwind |
+| `index.css` | Styles globaux + directives Tailwind ; couleurs Jour / Nuit en variables, Inter, cartes, graphiques au thème |
+| `theme.ts` | L'apparence Auto · Jour · Nuit : la changer, suivre l'appareil et les autres onglets (`public/theme.js` la pose avant l'affichage) |
 | `vite-env.d.ts` | Déclarations de types Vite |
 
 ## Sous-dossiers

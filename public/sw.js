@@ -2,19 +2,21 @@
 // Stratégie :
 //   • Cache First  → /assets/** (JS/CSS/polices buildés par Vite — hash dans le nom)
 //   • Network First → /data/**  (JSON de données — peut évoluer entre sessions)
-//   • Network First → navigation (index.html)
+//   • Network First → navigation (index.html) et /theme.js (script du thème,
+//     nom fixe sans hash ; la copie en cache sert hors ligne)
 //
 // Les polices sont embarquées et sortent dans /assets/ : elles suivent donc
 // la stratégie Cache First, comme le reste du build. Aucune requête vers un
 // domaine tiers n'est possible — il n'y en a plus une seule dans le site.
 
-const CACHE_NAME = 'budget-demo-v1';
+const CACHE_NAME = 'budget-demo-v2'; // + /theme.js ; repli hors ligne corrigé
 
 // Ressources précachées au moment de l'installation
 const PRECACHE_URLS = [
   '/',
   '/manifest.webmanifest',
   '/favicon.svg',
+  '/theme.js',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
 ];
@@ -72,6 +74,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Le script du thème (nom fixe, sans hash) : réseau d'abord, la copie en
+  // cache sert hors ligne.
+  if (url.pathname === '/theme.js') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
   // Network First — navigation SPA (index.html)
   if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request));
@@ -108,6 +117,8 @@ async function networkFirst(request) {
     const cached = await cache.match(request);
     if (cached) return cached;
     // Fallback SPA : retourner index.html en cache si disponible
-    return cache.match('/') ?? new Response('Offline', { status: 503 });
+    // cache.match rend une promesse (jamais null) : sans await, le 503 ne
+    // servait jamais.
+    return (await cache.match('/')) ?? new Response('Offline', { status: 503 });
   }
 }

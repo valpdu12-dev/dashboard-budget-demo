@@ -237,7 +237,7 @@ function ListeRechercheComponent({
       )}
 
       {ouvert && (
-        <div className="absolute z-40 left-0 right-0 md:right-auto md:w-80 mt-1 rounded-xl border border-[#374151] bg-surface shadow-xl overflow-hidden">
+        <div className="absolute z-40 left-0 right-0 md:right-auto md:w-80 mt-1 rounded-xl border border-border bg-surface shadow-xl overflow-hidden">
           <div className="flex items-center gap-2 px-3 min-h-[44px] border-b border-border">
             <Search size={14} aria-hidden="true" className="text-text-sec shrink-0" />
             <input

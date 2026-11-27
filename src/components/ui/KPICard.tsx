@@ -7,9 +7,12 @@ import { fmt, fmtPct, pctChange } from "@/utils/formatters";
 // catégorie. Quatre d'entre elles tombaient sous 4,5:1 en texte 18 px gras sur
 // `surface`. Elles sont relevées à l'affichage, sans toucher `colors.ts`, qui
 // sert aussi à colorer les graphiques (seuil non-texte 3:1, déjà tenu).
-import { ensureContrast, FOND_SURFACE } from "@/utils/contrast";
+import { useApparence } from "@/hooks/useApparence";
+import { MontantTelephone } from "./MontantTelephone";
 
 interface KPICardProps {
+  /** Classes en plus sur la carte (ex. `max-md:order-1`, ordre au téléphone). */
+  className?: string;
   label: string;
   value?: number;
   prev?: number;
@@ -22,8 +25,10 @@ interface KPICardProps {
 }
 
 function KPICardComponent({
-  label, value, prev, format = "euro", customValue, customSub, subColor, icon, color,
+  label, value, prev, format = "euro", customValue, customSub, subColor, icon, color, className,
 }: KPICardProps) {
+  // Le fond de la carte suit le thème (Jour : blanc, Nuit : #131519).
+  const { telephone, contraste } = useApparence();
   const formatted = customValue
     ?? (value !== undefined
       ? (format === "euro" ? fmt(value) : format === "pct" ? fmtPct(value) : String(value))
@@ -40,21 +45,21 @@ function KPICardComponent({
     // 2 lignes). `p-3` rend 16 px de largeur utile, `text-lg` retire ~10 %
     // a la largeur du texte. Le rendu PC est inchange par construction :
     // `max-xs:` ne s'applique jamais au-dessus de 430 px.
-    <div className="kpi-card max-xs:p-3">
+    <div className={className ? `kpi-card max-xs:p-3 ${className}` : "kpi-card max-xs:p-3"}>
       <div className="flex items-center gap-2 text-text-sec text-xs">
         {icon && <span>{icon}</span>}
         <span>{label}</span>
       </div>
       <div
         className="text-xl max-xs:text-lg font-title font-bold"
-        style={{ color: color ? ensureContrast(color, FOND_SURFACE) : undefined }}
+        style={{ color: color ? contraste(color) : undefined }}
       >
-        {formatted}
+        {telephone ? <MontantTelephone texte={formatted} /> : formatted}
       </div>
       {delta && (
         <div
           className={`text-xs font-medium ${subColor ? "" : isPositive ? "text-green" : "text-red"}`}
-          style={subColor ? { color: ensureContrast(subColor, FOND_SURFACE) } : undefined}
+          style={subColor ? { color: contraste(subColor) } : undefined}
         >
           {delta}
         </div>

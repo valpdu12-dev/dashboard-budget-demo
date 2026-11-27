@@ -308,6 +308,9 @@ Les dix écrans, en 1440 px et en 412 px, sont dans
 [`docs/captures/`](docs/captures/). Toutes les captures sont prises sur cette
 démonstration, avec ses données.
 
+Apparence **Auto · Jour · Nuit** (bouton de l'en-tête ; Auto suit l'appareil), police Inter servie par le site.
+Au téléphone (moins de 768 px) : titre de la page et pastille « Démo » en haut, filtres repliés dans « Filtres (n) », barre du bas.
+
 ---
 
 ## Importer votre propre fichier
@@ -487,5 +490,5 @@ que corrigé en silence.
 ## Licences
 
 Code sous licence MIT.
-Polices DM Sans et IBM Plex Sans sous SIL Open Font License 1.1 — voir
+Police Inter sous SIL Open Font License 1.1 — voir
 [`src/assets/fonts/PROVENANCE.md`](src/assets/fonts/PROVENANCE.md).
